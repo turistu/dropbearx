@@ -223,7 +223,12 @@ group1 in Dropbear server too */
 
 /* Authentication Types - at least one required.
    RFC Draft requires pubkey auth, and recommends password */
+
+#ifdef __ANDROID__
+#define DROPBEAR_SVR_PASSWORD_AUTH 0
+#else
 #define DROPBEAR_SVR_PASSWORD_AUTH 1
+#endif
 
 /* Note: PAM auth is quite simple and only works for PAM modules which just do
  * a simple "Login: " "Password: " (you can edit the strings in svr-authpam.c).
