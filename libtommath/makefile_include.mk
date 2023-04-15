@@ -109,6 +109,7 @@ LTM_LFLAGS += $(LFLAGS)
 LTM_LDFLAGS += $(LDFLAGS)
 LTM_LIBTOOLFLAGS += $(LIBTOOLFLAGS)
 
+LTM_CFLAGS += -Wno-unused-parameter -Wno-declaration-after-statement
 
 ifeq ($(PLATFORM),FreeBSD)
   _ARCH := $(shell sysctl -b hw.machine_arch)
