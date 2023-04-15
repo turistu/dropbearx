@@ -279,6 +279,7 @@ distclean: clean tidy
 	-rm -f config.h
 	-rm -f Makefile
 	-rm -f default_options_guard.h
+	-rm -fr config.log config.status autom4te.cache
 
 tidy:
 	-rm -f *~ *.gcov */*~
