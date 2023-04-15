@@ -851,7 +851,7 @@ fi
 AC_PROG_GCC_TRADITIONAL
 AC_FUNC_MEMCMP
 AC_FUNC_SELECT_ARGTYPES
-AC_CHECK_FUNCS([getpass getspnam getusershell putenv])
+AC_CHECK_FUNCS([getspnam getusershell putenv])
 AC_CHECK_FUNCS([clearenv strlcpy strlcat daemon basename _getpty getaddrinfo ])
 AC_CHECK_FUNCS([freeaddrinfo getnameinfo fork writev getgrouplist fexecve])
 
@@ -897,12 +897,6 @@ if test $BUNDLED_LIBTOM = 1 ; then
 AC_MSG_NOTICE([Using bundled libtomcrypt and libtommath])
 else
 AC_MSG_NOTICE([Using system libtomcrypt and libtommath])
-fi
-
-
-if test "x$ac_cv_func_getpass" != xyes; then
-AC_MSG_NOTICE()
-AC_MSG_NOTICE([getpass() not available, dbclient will only have public-key authentication])
 fi
 
 if test "t$found_crypt_func" != there; then

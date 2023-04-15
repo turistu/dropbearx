@@ -333,14 +333,17 @@ int cli_auth_try() {
 }
 
 #if DROPBEAR_CLI_PASSWORD_AUTH || DROPBEAR_CLI_INTERACT_AUTH
-/* A helper for getpass() that exits if the user cancels. The returned
- * password is statically allocated by getpass() */
+/* A getpass()-like functions that exits if the user cancels.
+   The returned password is a pointer to a static buffer */
 char* getpass_or_cancel(const char* prompt)
 {
-	char* password = NULL;
+	int td; ssize_t l;
+	struct termios ts = {0}, sts, nts;
+	static char buf[DROPBEAR_MAX_CLI_PASS + 1];
 	
 #if DROPBEAR_USE_PASSWORD_ENV
 	/* Password provided in an environment var */
+	char* password = NULL;
 	password = getenv(DROPBEAR_PASSWORD_ENV);
 	if (password)
 	{
@@ -348,12 +351,50 @@ char* getpass_or_cancel(const char* prompt)
 	}
 #endif
 
-	password = getpass(prompt);
-
-	/* 0x03 is a ctrl-c character in the buffer. */
-	if (password == NULL || strchr(password, '\3') != NULL) {
+	if ((td = open(_PATH_TTY, O_RDWR|O_NOCTTY)) == -1) {
+		dropbear_exit("open %s, rw: %s", _PATH_TTY, strerror(errno));
+	}
+	tcflush(td, TCIOFLUSH);
+	tcgetattr(td, &ts);
+	sts = nts = ts;
+	ts.c_iflag &= ~(IXON|IGNCR|ISTRIP|INLCR);
+#ifdef IUCLC
+	ts.c_iflag &= ~IUCLC;
+#endif
+	ts.c_iflag |= ICRNL;
+	ts.c_lflag &= ~ECHO;
+	ts.c_lflag |= ICANON|ECHOE|ECHOK|ECHONL;
+	ts.c_cc[VEOL] = ts.c_cc[VINTR];
+	ts.c_cc[VINTR] = _POSIX_VDISABLE;
+	if (tcsetattr(td, TCSANOW, &ts) || tcgetattr(td, &nts) ||
+			memcmp(&ts, &nts, sizeof ts)) {
+		dropbear_exit("failed to change terminal attributes");
+	}
+	if (write(td, prompt, strlen(prompt)) == -1) {
+		tcsetattr(td, TCSANOW, &sts);
+		dropbear_exit("write >%s: %s", _PATH_TTY, strerror(errno));
+	}
+	while ((l = read(td, buf, sizeof buf - 1)) == -1) {
+		if (errno != EINTR) {
+			tcsetattr(td, TCSANOW, &sts);
+			dropbear_exit("read <%s: %s",
+				_PATH_TTY, strerror(errno));
+		}
+	}
+	if (tcsetattr(td, TCSANOW, &sts) || tcgetattr(td, &nts) ||
+			memcmp(&sts, &nts, sizeof sts)) {
+		dropbear_exit("failed to restore terminal attributes");
+	}
+	if (l > 0 && buf[l - 1] == sts.c_cc[VINTR]) {
 		dropbear_close("Interrupted.");
 	}
-	return password;
+	if (l > 0 && buf[l - 1] == '\n') {
+		l--;
+	} else {
+		(void)!write(td, "\n", 1);
+	}
+	close(td);
+	buf[l] = '\0';
+	return buf;
 }
 #endif
