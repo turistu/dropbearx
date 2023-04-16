@@ -122,6 +122,7 @@ typedef struct svr_runopts {
 	int delay_hostkey;
 
 	char *hostkey_files[MAX_HOSTKEYS];
+	char *authorized_keys_file;
 	int num_hostkey_files;
 
 	buffer * banner;

@@ -60,6 +60,7 @@ static void printhelp(const char * progname) {
 #if DROPBEAR_ED25519
 					"		- ed25519 %s\n"
 #endif
+					"-A authkeys	use instead of %s\n"
 #if DROPBEAR_DELAY_HOSTKEY
 					"-R		Create hostkeys as required\n" 
 #endif
@@ -126,6 +127,7 @@ static void printhelp(const char * progname) {
 #if DROPBEAR_ED25519
 					ED25519_PRIV_FILENAME,
 #endif
+					AUTHORIZED_KEYS_FILE,
 					MAX_AUTH_TRIES,
 					DROPBEAR_MAX_PORTS, DROPBEAR_DEFPORT, DROPBEAR_PIDFILE,
 					DEFAULT_RECV_WINDOW, DEFAULT_KEEPALIVE, DEFAULT_IDLE_TIMEOUT);
@@ -180,6 +182,8 @@ void svr_getopts(int argc, char ** argv) {
 #endif
 	svr_opts.pass_on_env = 0;
 	svr_opts.reexec_childpipe = -1;
+
+	svr_opts.authorized_keys_file = AUTHORIZED_KEYS_FILE;
 
 #ifndef DISABLE_ZLIB
 	opts.compress_mode = DROPBEAR_COMPRESS_DELAYED;
@@ -328,6 +332,9 @@ void svr_getopts(int argc, char ** argv) {
 					break;
 				case 'z':
 					opts.disable_ip_tos = 1;
+					break;
+				case 'A':
+					next = &svr_opts.authorized_keys_file;
 					break;
 				default:
 					fprintf(stderr, "Invalid option -%c\n", c);

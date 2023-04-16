@@ -73,7 +73,6 @@
 
 static int checkpubkey(const char* keyalgo, unsigned int keyalgolen,
 		const unsigned char* keyblob, unsigned int keybloblen);
-static int checkpubkeyperms(void);
 static void send_msg_userauth_pk_ok(const char* sigalgo, unsigned int sigalgolen,
 		const unsigned char* keyblob, unsigned int keybloblen);
 static int checkfileperm(char * filename);
@@ -431,6 +430,23 @@ out:
 	return ret;
 }
 
+/* warning: path should be writable */
+static FILE *check_fopen(char *path, const char *mode) {
+	char *e; int r;
+	if(!path || !*path)
+		return NULL;
+	if(checkfileperm(*path == '/' ? "/" : ".") != DROPBEAR_SUCCESS)
+		return NULL;
+	for(e = path + 1;; e++){
+		if((e = strchr(e, '/'))) *e = '\0';
+		r = checkfileperm(path);
+		if(e) *e = '/';
+		if(r != DROPBEAR_SUCCESS) return NULL;
+		if(!e) break;
+	}
+	return fopen(path, mode);
+}
+
 
 /* Checks whether a specified publickey (and associated algorithm) is an
  * acceptable key for authentication */
@@ -439,10 +455,9 @@ static int checkpubkey(const char* keyalgo, unsigned int keyalgolen,
 		const unsigned char* keyblob, unsigned int keybloblen) {
 
 	FILE * authfile = NULL;
-	char * filename = NULL;
 	int ret = DROPBEAR_FAILURE;
 	buffer * line = NULL;
-	unsigned int len;
+	char * filename;
 	int line_num;
 	uid_t origuid;
 	gid_t origgid;
@@ -458,23 +473,16 @@ static int checkpubkey(const char* keyalgo, unsigned int keyalgolen,
 		dropbear_exit("Failed to set euid");
 	}
 #endif
-	/* check file permissions, also whether file exists */
-	if (checkpubkeyperms() == DROPBEAR_FAILURE) {
-		TRACE(("bad authorized_keys permissions, or file doesn't exist"))
+	filename = svr_opts.authorized_keys_file;
+	if (!strncmp(svr_opts.authorized_keys_file, "~/", 2)) {
+		filename = m_asprintf("%s%s", ses.authstate.pw_dir,
+			svr_opts.authorized_keys_file + 1);
 	} else {
-		/* we don't need to check pw and pw_dir for validity, since
-		 * its been done in checkpubkeyperms. */
-		len = strlen(ses.authstate.pw_dir);
-		/* allocate max required pathname storage,
-		 * = path + "/.ssh/authorized_keys" + '\0' = pathlen + 22 */
-		filename = m_malloc(len + 22);
-		snprintf(filename, len + 22, "%s/.ssh/authorized_keys",
-					ses.authstate.pw_dir);
-
-		authfile = fopen(filename, "r");
-		if (!authfile) {
-			TRACE(("checkpubkey: failed opening %s: %s", filename, strerror(errno)))
-		}
+		filename = m_strdup(svr_opts.authorized_keys_file);
+	}
+	authfile = check_fopen(filename, "r");
+	if (!authfile) {
+		TRACE(("checkpubkey: failed opening %s: %s", filename, strerror(errno)))
 	}
 #if DROPBEAR_SVR_MULTIUSER
 	if ((seteuid(origuid)) < 0 ||
@@ -518,61 +526,6 @@ out:
 	}
 	m_free(filename);
 	TRACE(("leave checkpubkey: ret=%d", ret))
-	return ret;
-}
-
-
-/* Returns DROPBEAR_SUCCESS if file permissions for pubkeys are ok,
- * DROPBEAR_FAILURE otherwise.
- * Checks that the user's homedir, ~/.ssh, and
- * ~/.ssh/authorized_keys are all owned by either root or the user, and are
- * g-w, o-w */
-static int checkpubkeyperms() {
-
-	char* filename = NULL;
-	int ret = DROPBEAR_FAILURE;
-	unsigned int len;
-
-	TRACE(("enter checkpubkeyperms"))
-
-	if (ses.authstate.pw_dir == NULL) {
-		goto out;
-	}
-
-	if ((len = strlen(ses.authstate.pw_dir)) == 0) {
-		goto out;
-	}
-
-	/* allocate max required pathname storage,
-	 * = path + "/.ssh/authorized_keys" + '\0' = pathlen + 22 */
-	len += 22;
-	filename = m_malloc(len);
-	strlcpy(filename, ses.authstate.pw_dir, len);
-
-	/* check ~ */
-	if (checkfileperm(filename) != DROPBEAR_SUCCESS) {
-		goto out;
-	}
-
-	/* check ~/.ssh */
-	strlcat(filename, "/.ssh", len);
-	if (checkfileperm(filename) != DROPBEAR_SUCCESS) {
-		goto out;
-	}
-
-	/* now check ~/.ssh/authorized_keys */
-	strlcat(filename, "/authorized_keys", len);
-	if (checkfileperm(filename) != DROPBEAR_SUCCESS) {
-		goto out;
-	}
-
-	/* file looks ok, return success */
-	ret = DROPBEAR_SUCCESS;
-
-out:
-	m_free(filename);
-
-	TRACE(("leave checkpubkeyperms"))
 	return ret;
 }
 
