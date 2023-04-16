@@ -22,6 +22,31 @@ void * m_strdup(const char * str) {
     return ret;
 }
 
+void * m_asprintf(const char * format, ...) {
+	char * ret;
+	va_list va;
+	int len;
+
+#if defined(HAVE_VASPRINTF) && !DROPBEAR_TRACKING_MALLOC
+	va_start(va, format); len = vasprintf(&ret, format, va); va_end(va);
+	if (len < 0) {
+		dropbear_exit("vasprintf:");
+	}
+	return ret;
+#else
+	va_start(va, format);
+	len = vsnprintf(NULL, 0, format, va) + 1;
+	va_end(va);
+	if (len < 0) {
+		dropbear_exit("vsnprintf:");
+	}
+	ret = m_malloc(len);
+	va_start(va, format); vsnprintf(ret, len, format, va); va_end(va);
+#endif
+	return ret;
+}
+
+
 #if !DROPBEAR_TRACKING_MALLOC
 
 /* Simple wrappers around malloc etc */
