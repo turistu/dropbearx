@@ -1,0 +1,31 @@
+#! /bin/sh
+api=21
+arch=armv7a
+ndk=/point-me-to-the/android-ndk
+
+src=$(dirname "$0")
+
+set -e
+test -e "$src/configure" || autoreconf "$src"
+while :; do
+	case $1 in
+	aarch64|armv7a|i686|x86_64) arch=$1;;
+	[1-9][0-9]|[1-9])	api=$1;;
+	*/android-ndk-*)	ndk=$1;;
+	*=*)	eval "$1";;
+	*) break;;
+	esac
+	shift
+done
+case $arch in
+armv7a) eabi=eabi;;
+*) eabi=;;
+esac
+die(){ echo >&2 "$@"; exit 1; }
+test -d "$ndk" || die not a directory: "$ndk"
+tc=$(realpath $ndk/toolchains/llvm/prebuilt/linux-x86_64)
+cc=$tc/bin/$arch-linux-android$eabi$api-clang
+test -x "$cc" || die not an executable: "$cc"
+strip=$tc/bin/llvm-strip
+test -x "$strip" || die not an executable: "$strip"
+CC=$cc STRIP=$strip exec "$src/configure" --host="$arch-linux-android$api"
