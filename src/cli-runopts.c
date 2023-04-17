@@ -100,6 +100,12 @@ static void printhelp() {
 #if DEBUG_TRACE
 					"-v    verbose (repeat for more verbose)\n"
 #endif
+					"-Z <timeout>  Same as:\n"
+					"	-o BatchMode=yes -o ExitOnForwardFailure=yes\n	-K <timeout> -o ConnectTimeout=<timeout>"
+#ifndef DISABLE_SYSLOG
+					" -o UseSyslog=yes"
+#endif
+					"\n"
 					,DROPBEAR_VERSION, cli_opts.progname,
 #if DROPBEAR_CLI_PUBKEY_AUTH
 					DROPBEAR_DEFAULT_CLI_AUTHKEY,
@@ -134,6 +140,7 @@ void cli_getopts(int argc, char ** argv) {
 	char* keepalive_arg = NULL;
 	char* idle_timeout_arg = NULL;
 	char *host_arg = NULL;
+	char *Z_timeout_arg = NULL;
 	char *bind_arg = NULL;
 	char c;
 
@@ -330,6 +337,9 @@ void cli_getopts(int argc, char ** argv) {
 				case 'z':
 					opts.disable_ip_tos = 1;
 					break;
+				case 'Z':
+					next = &Z_timeout_arg;
+					break;
 				default:
 					fprintf(stderr,
 						"WARNING: Ignoring unknown option -%c\n", c);
@@ -467,6 +477,15 @@ void cli_getopts(int argc, char ** argv) {
 
 	if (idle_timeout_arg) {
 		opts.idle_timeout_secs = parse_uint_value(idle_timeout_arg, "idle_timeout");
+	}
+
+	if (Z_timeout_arg) {
+		opts.keepalive_secs = opts.conn_timeout =
+			parse_uint_value(Z_timeout_arg, "-Z timeout");
+#ifndef DISABLE_SYSLOG
+		opts.usingsyslog = 1;
+#endif
+		cli_opts.batchmode = cli_opts.exit_on_fwd_failure = 1;
 	}
 
 #if DROPBEAR_CLI_NETCAT
