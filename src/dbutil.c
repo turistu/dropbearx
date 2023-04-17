@@ -614,18 +614,9 @@ int m_str_to_uint(const char* str, unsigned int *val) {
 	unsigned long l;
 	char *endp;
 
+	errno = 0;
 	l = strtoul(str, &endp, 10);
-
-	if (endp == str || *endp != '\0') {
-		/* parse error */
-		return DROPBEAR_FAILURE;
-	}
-
-	/* The c99 spec doesn't actually seem to define EINVAL, but most platforms
-	 * I've looked at mention it in their manpage */
-	if ((l == 0 && errno == EINVAL)
-		|| (l == ULONG_MAX && errno == ERANGE)
-		|| (l > UINT_MAX)) {
+	if (endp == str || *endp || errno || l > UINT_MAX) {
 		return DROPBEAR_FAILURE;
 	} else {
 		*val = l;
