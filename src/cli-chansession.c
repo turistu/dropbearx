@@ -96,7 +96,7 @@ static void cli_closechansess(const struct Channel *UNUSED(channel)) {
  * RCSID("OpenBSD: sshtty.c,v 1.5 2003/09/19 17:43:35 markus Exp "); */
 static void cli_tty_setup() {
 
-	struct termios tio;
+	struct termios tio = { 0 }, tio1 = { 0 };
 
 	TRACE(("enter cli_pty_setup"))
 
@@ -106,7 +106,7 @@ static void cli_tty_setup() {
 	}
 
 	if (tcgetattr(STDIN_FILENO, &tio) == -1) {
-		dropbear_exit("Failed to set raw TTY mode");
+		return;	/* STDIN_FILENO may not be a tty */
 	}
 
 	/* make a copy */
@@ -124,7 +124,9 @@ static void cli_tty_setup() {
 	tio.c_oflag &= ~OPOST;
 	tio.c_cc[VMIN] = 1;
 	tio.c_cc[VTIME] = 0;
-	if (tcsetattr(STDIN_FILENO, TCSADRAIN, &tio) == -1) {
+	if (tcsetattr(STDIN_FILENO, TCSADRAIN, &tio) == -1
+			|| tcgetattr(STDIN_FILENO, &tio1)
+			|| memcmp(&tio, &tio1, sizeof tio)) {
 		dropbear_exit("Failed to set raw TTY mode");
 	}
 
@@ -163,7 +165,6 @@ static void put_termcodes() {
 	TRACE(("enter put_termcodes"))
 
 	if (tcgetattr(STDIN_FILENO, &tio) == -1) {
-		dropbear_log(LOG_WARNING, "Failed reading termmodes");
 		buf_putint(ses.writepayload, 1); /* Just the terminator */
 		buf_putbyte(ses.writepayload, 0); /* TTY_OP_END */
 		return;
