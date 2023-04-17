@@ -36,6 +36,7 @@ cli_runopts cli_opts; /* GLOBAL */
 static void printhelp(void);
 static void parse_hostname(const char* orighostarg);
 static void parse_multihop_hostname(const char* orighostarg, const char* argv0);
+static unsigned int parse_uint_value(const char *value, const char *swtch);
 static void fill_own_user(void);
 #if DROPBEAR_CLI_PUBKEY_AUTH
 static void loadidentityfile(const char* filename, int warnfail);
@@ -461,19 +462,11 @@ void cli_getopts(int argc, char ** argv) {
 		parse_recv_window(recv_window_arg);
 	}
 	if (keepalive_arg) {
-		unsigned int val;
-		if (m_str_to_uint(keepalive_arg, &val) == DROPBEAR_FAILURE) {
-			dropbear_exit("Bad keepalive '%s'", keepalive_arg);
-		}
-		opts.keepalive_secs = val;
+		opts.keepalive_secs = parse_uint_value(keepalive_arg, "keepalive");
 	}
 
 	if (idle_timeout_arg) {
-		unsigned int val;
-		if (m_str_to_uint(idle_timeout_arg, &val) == DROPBEAR_FAILURE) {
-			dropbear_exit("Bad idle_timeout '%s'", idle_timeout_arg);
-		}
-		opts.idle_timeout_secs = val;
+		opts.idle_timeout_secs = parse_uint_value(idle_timeout_arg, "idle_timeout");
 	}
 
 #if DROPBEAR_CLI_NETCAT
@@ -887,6 +880,13 @@ static int parse_flag_value(const char *value) {
 
 	dropbear_exit("Bad yes/no argument '%s'", value);
 }
+static unsigned int parse_uint_value(const char *value, const char *swtch) {
+	unsigned int ret;
+	if (m_str_to_uint(value, &ret) == DROPBEAR_FAILURE) {
+		dropbear_exit("Bad %s '%s'", swtch, value);
+	}
+	return ret;
+}
 
 static void add_extendedopt(const char* origstr) {
 	const char *optstr = origstr;
@@ -936,11 +936,7 @@ static void add_extendedopt(const char* origstr) {
 		return;
 	}
 	if (match_extendedopt(&optstr, "ConnectTimeout") == DROPBEAR_SUCCESS) {
-		unsigned int val;
-		if (m_str_to_uint(optstr, &val) == DROPBEAR_FAILURE) {
-			dropbear_exit("Bad ConnectTimeout '%s'", optstr);
-		}
-		opts.conn_timeout = val;
+		opts.conn_timeout = parse_uint_value(optstr, "ConnectTimeout");
 		return;
 	}
 
