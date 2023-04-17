@@ -894,6 +894,7 @@ static void add_extendedopt(const char* origstr) {
 	if (strcmp(origstr, "help") == 0) {
 		dropbear_log(LOG_INFO, "Available options:\n"
 			"\tBatchMode\n"
+			"\tConnectTimeout\n"
 #if DROPBEAR_CLI_ANYTCPFWD
 			"\tExitOnForwardFailure\n"
 #endif
@@ -932,6 +933,14 @@ static void add_extendedopt(const char* origstr) {
 
 	if (match_extendedopt(&optstr, "DisableTrivialAuth") == DROPBEAR_SUCCESS) {
 		cli_opts.disable_trivial_auth = parse_flag_value(optstr);
+		return;
+	}
+	if (match_extendedopt(&optstr, "ConnectTimeout") == DROPBEAR_SUCCESS) {
+		unsigned int val;
+		if (m_str_to_uint(optstr, &val) == DROPBEAR_FAILURE) {
+			dropbear_exit("Bad ConnectTimeout '%s'", optstr);
+		}
+		opts.conn_timeout = val;
 		return;
 	}
 

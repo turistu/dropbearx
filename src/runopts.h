@@ -58,6 +58,7 @@ typedef struct runopts {
 	char *cipher_list;
 	char *mac_list;
 #endif
+	int conn_timeout;
 
 } runopts;
 

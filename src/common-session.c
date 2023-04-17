@@ -539,6 +539,11 @@ static void checktimeouts() {
 		&& elapsed(now, ses.connect_time) >= AUTH_TIMEOUT) {
 			dropbear_close("Timeout before auth");
 	}
+	if (IS_DROPBEAR_CLIENT && opts.conn_timeout
+		&& !ses.authstate.authdone && ses.connect_time
+		&& now - ses.connect_time >= opts.conn_timeout) {
+			dropbear_close("Timeout");
+	}
 
 	/* we can't rekey if we haven't done remote ident exchange yet */
 	if (ses.remoteident == NULL) {
@@ -604,6 +609,11 @@ static long select_timeout() {
 	if (ses.authstate.authdone != 1 && IS_DROPBEAR_SERVER) {
 		/* AUTH_TIMEOUT is only relevant before authdone */
 		update_timeout(AUTH_TIMEOUT, now, ses.connect_time, &timeout);
+	}
+
+	if (IS_DROPBEAR_CLIENT && opts.conn_timeout && !ses.authstate.authdone) {
+		update_timeout(opts.conn_timeout, now, ses.connect_time,
+			&timeout);
 	}
 
 	if (ses.authstate.authdone) {
