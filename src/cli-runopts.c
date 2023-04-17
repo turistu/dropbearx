@@ -865,6 +865,10 @@ static int match_extendedopt(const char** strptr, const char *optname) {
 		++str;
 	}
 
+	if (!seen_eq) {
+		dropbear_exit("Malformed option format, should be %s=<val>", optname);
+	}
+
 	if (str-*strptr == optlen) {
 		/* matched just a prefix of optname */
 		return DROPBEAR_FAILURE;
