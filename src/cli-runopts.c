@@ -37,7 +37,6 @@ static void printhelp(void);
 static void parse_hostname(const char* orighostarg);
 static void parse_multihop_hostname(const char* orighostarg, const char* argv0);
 static unsigned int parse_uint_value(const char *value, const char *swtch);
-static void fill_own_user(void);
 #if DROPBEAR_CLI_PUBKEY_AUTH
 static void loadidentityfile(const char* filename, int warnfail);
 #endif
@@ -199,7 +198,7 @@ void cli_getopts(int argc, char ** argv) {
 	opts.keepalive_secs = DEFAULT_KEEPALIVE;
 	opts.idle_timeout_secs = DEFAULT_IDLE_TIMEOUT;
 
-	fill_own_user();
+	cli_opts.own_user = get_username();
 
 	for (i = 1; i < (unsigned int)argc; i++) {
 		/* Handle non-flag arguments such as hostname or commands for the remote host */
@@ -507,7 +506,8 @@ void cli_getopts(int argc, char ** argv) {
 	   -i argument for multihop, so handle it later. */
 #if (DROPBEAR_CLI_PUBKEY_AUTH)
 	{
-		char *expand_path = expand_homedir_path(DROPBEAR_DEFAULT_CLI_AUTHKEY);
+		char *expand_path =
+			expand_homedir_path(DROPBEAR_DEFAULT_CLI_AUTHKEY);
 		loadidentityfile(expand_path, 0);
 		m_free(expand_path);
 	}
@@ -742,22 +742,6 @@ fail:
 	dropbear_exit("Bad netcat endpoint '%s'", origstr);
 }
 #endif
-
-static void fill_own_user() {
-	uid_t uid;
-	struct passwd *pw = NULL; 
-
-	uid = getuid();
-
-	pw = getpwuid(uid);
-	if (pw && pw->pw_name != NULL) {
-		cli_opts.own_user = m_strdup(pw->pw_name);
-	} else {
-		dropbear_log(LOG_INFO, "Warning: failed to identify current user. Trying anyway.");
-		cli_opts.own_user = m_strdup("unknown");
-	}
-
-}
 
 #if DROPBEAR_CLI_ANYTCPFWD
 /* Turn a "[listenaddr:]listenport:remoteaddr:remoteport" string into into a forwarding

@@ -328,8 +328,7 @@ static void printpubkey(sign_key * key, int keytype) {
 	const char * typestring = NULL;
 	char *fp = NULL;
 	int len;
-	struct passwd * pw = NULL;
-	char * username = NULL;
+	const char * username = NULL;
 	char hostname[100];
 
 	buf = buf_new(MAX_PUBKEY_SIZE);
@@ -350,11 +349,7 @@ static void printpubkey(sign_key * key, int keytype) {
 	fp = sign_key_fingerprint(buf_getptr(buf, len), len);
 
 	/* a user@host comment is informative */
-	username = "";
-	pw = getpwuid(getuid());
-	if (pw) {
-		username = pw->pw_name;
-	}
+	username = get_username();
 
 	gethostname(hostname, sizeof(hostname));
 	hostname[sizeof(hostname)-1] = '\0';

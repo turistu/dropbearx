@@ -91,6 +91,8 @@ time_t monotonic_now(void);
 /* Higher resolution clock_gettime(CLOCK_MONOTONIC) wrapper */
 void gettime_wrapper(struct timespec *now);
 
+const char *get_homedir(void);
+const char *get_username(void);
 char * expand_homedir_path(const char *inpath);
 
 void fsync_parent_dir(const char* fn);

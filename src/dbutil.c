@@ -627,27 +627,11 @@ int m_str_to_uint(const char* str, unsigned int *val) {
 /* Returns malloced path. inpath beginning with '~/' expanded,
    otherwise returned as-is */
 char * expand_homedir_path(const char *inpath) {
-	struct passwd *pw = NULL;
 	if (strncmp(inpath, "~/", 2) == 0) {
-		char *homedir = getenv("HOME");
-
-		if (!homedir) {
-			pw = getpwuid(getuid());
-			if (pw) {
-				homedir = pw->pw_dir;
-			}
-		}
-
-		if (homedir) {
-			int len = strlen(inpath)-2 + strlen(homedir) + 2;
-			char *buf = m_malloc(len);
-			snprintf(buf, len, "%s/%s", homedir, inpath+2);
-			return buf;
-		}
+		return m_asprintf("%s/%s", get_homedir(), inpath + 2);
+	} else {
+		return m_strdup(inpath);
 	}
-
-	/* Fallback */
-	return m_strdup(inpath);
 }
 
 int constant_time_memcmp(const void* a, const void *b, size_t n)
@@ -774,4 +758,22 @@ int m_snprintf(char *str, size_t size, const char *format, ...) {
 		dropbear_exit("snprintf failed");
 	}
 	return ret;
+}
+const char *get_homedir(void) {
+	char *h;
+	struct passwd *pw;
+	if ((h = getenv("HOME")))
+		return h;
+	if ((pw = getpwuid(getuid())) && (h = pw->pw_dir) && *h)
+		return h;
+	return "/";
+}
+const char *get_username(void) {
+	char *u;
+	struct passwd *pw;
+	if ((u = getenv("USER")))
+		return u;
+	if ((pw = getpwuid(getuid())) && (u = pw->pw_name) && *u)
+		return u;
+	return "";
 }

@@ -247,17 +247,9 @@ static FILE* open_known_hosts_file(int * readonly)
 {
 	FILE * hostsfile = NULL;
 	char * filename = NULL;
-	char * homedir = NULL;
+	const char * homedir = NULL;
 	
-	homedir = getenv("HOME");
-
-	if (!homedir) {
-		struct passwd * pw = NULL;
-		pw = getpwuid(getuid());
-		if (pw) {
-			homedir = pw->pw_dir;
-		}
-	}
+	homedir = get_homedir();
 
 	if (homedir) {
 		unsigned int len;
