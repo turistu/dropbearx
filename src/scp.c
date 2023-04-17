@@ -199,7 +199,8 @@ do_cmd(char *host, char *remuser, char *cmd, int *fdin, int *fdout)
 	 * Reserve two descriptors so that the real pipes won't get
 	 * descriptors 0 and 1 because that will screw up dup2 below.
 	 */
-	pipe(reserved);
+	if(pipe(reserved) < 0)
+		fatal("pipe: %s", strerror(errno));
 
 	/* Create a socket pair for communicating with ssh. */
 	if (pipe(pin) < 0)
@@ -602,7 +603,7 @@ source(int argc, char **argv)
 	static BUF buffer;
 	BUF *bp;
 	off_t i, amt, statbytes;
-	size_t result;
+	ssize_t result;
 	int fd = -1, haderr, indx;
 	char *last, *name, buf[2048];
 	int len;
@@ -610,6 +611,7 @@ source(int argc, char **argv)
 	for (indx = 0; indx < argc; ++indx) {
 		name = argv[indx];
 		statbytes = 0;
+		(void)statbytes;
 		len = strlen(name);
 		while (len > 1 && name[len-1] == '/')
 			name[--len] = '\0';
@@ -1005,6 +1007,7 @@ bad:			run_err("%s: %s", np, strerror(errno));
 		wrerr = NO;
 
 		statbytes = 0;
+		(void)statbytes;
 #ifdef PROGRESS_METER
 		if (showprogress)
 			start_progress_meter(curfile, size, &statbytes);
@@ -1234,6 +1237,7 @@ allocbuf(BUF *bp, int fd, int blksize)
 	if (size == 0)
 		size = blksize;
 #else /* HAVE_STRUCT_STAT_ST_BLKSIZE */
+	(void)fd;	/* silence warn, should better define HAVE_STRUCT_STAT_ST_BLKSIZE */
 	size = blksize;
 #endif /* HAVE_STRUCT_STAT_ST_BLKSIZE */
 	if (bp->cnt >= size)
@@ -1251,7 +1255,7 @@ void
 lostconn(int signo)
 {
 	if (!iamremote)
-		write(STDERR_FILENO, "lost connection\n", 16);
+		(void)!write(STDERR_FILENO, "lost connection\n", 16);
 	if (signo)
 		_exit(1);
 	else
