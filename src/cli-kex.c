@@ -247,49 +247,37 @@ static FILE* open_known_hosts_file(int * readonly)
 {
 	FILE * hostsfile = NULL;
 	char * filename = NULL;
-	const char * homedir = NULL;
+	char * slash;
 	
-	homedir = get_homedir();
-
-	if (homedir) {
-		unsigned int len;
-		len = strlen(homedir);
-		filename = m_malloc(len + 18); /* "/.ssh/known_hosts" and null-terminator*/
-
-		snprintf(filename, len+18, "%s/.ssh", homedir);
-		/* Check that ~/.ssh exists - easiest way is just to mkdir */
-		if (mkdir(filename, S_IRWXU) != 0) {
-			if (errno != EEXIST) {
-				dropbear_log(LOG_INFO, "Warning: failed creating %s/.ssh: %s",
-						homedir, strerror(errno));
-				TRACE(("mkdir didn't work: %s", strerror(errno)))
-				goto out;
-			}
-		}
-
-		snprintf(filename, len+18, "%s/.ssh/known_hosts", homedir);
-		hostsfile = fopen(filename, "a+");
-		
-		if (hostsfile != NULL) {
-			*readonly = 0;
-			fseek(hostsfile, 0, SEEK_SET);
-		} else {
-			/* We mightn't have been able to open it if it was read-only */
-			if (errno == EACCES || errno == EROFS) {
-					TRACE(("trying readonly: %s", strerror(errno)))
-					*readonly = 1;
-					hostsfile = fopen(filename, "r");
-			}
+	filename = expand_homedir_path("~/.ssh/known_hosts");
+	/* Check that ~/.ssh exists - easiest way is just to mkdir */
+	slash = strrchr(filename, '/');
+	*slash = '\0';
+	if (mkdir(filename, S_IRWXU) != 0) {
+		if (errno != EEXIST) {
+			dropbear_log(LOG_INFO, "Warning: failed creating %s: %s",
+					filename, strerror(errno));
+			TRACE(("mkdir didn't work: %s", strerror(errno)))
+			goto out;
 		}
 	}
-
+	*slash = '/';
+	hostsfile = fopen(filename, "a+");
+	if (hostsfile != NULL) {
+		*readonly = 0;
+		fseek(hostsfile, 0, SEEK_SET);
+	} else {
+		/* We mightn't have been able to open it if it was read-only */
+		if (errno == EACCES || errno == EROFS) {
+			TRACE(("trying readonly: %s", strerror(errno)))
+			*readonly = 1;
+			hostsfile = fopen(filename, "r");
+		}
+	}
 	if (hostsfile == NULL) {
 		TRACE(("hostsfile didn't open: %s", strerror(errno)))
-		dropbear_log(LOG_WARNING, "Failed to open %s/.ssh/known_hosts",
-				homedir);
-		goto out;
+		dropbear_log(LOG_WARNING, "Failed to open %s", filename);
 	}	
-
 out:
 	m_free(filename);
 	return hostsfile;
