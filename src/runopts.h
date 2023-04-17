@@ -193,6 +193,7 @@ typedef struct cli_runopts {
 #endif
 	char *bind_address;
 	char *bind_port;
+	int batchmode;
 } cli_runopts;
 
 extern cli_runopts cli_opts;

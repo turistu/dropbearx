@@ -889,6 +889,7 @@ static void add_extendedopt(const char* origstr) {
 
 	if (strcmp(origstr, "help") == 0) {
 		dropbear_log(LOG_INFO, "Available options:\n"
+			"\tBatchMode\n"
 #if DROPBEAR_CLI_ANYTCPFWD
 			"\tExitOnForwardFailure\n"
 #endif
@@ -899,6 +900,11 @@ static void add_extendedopt(const char* origstr) {
 			"\tPort\n"
 		);
 		exit(EXIT_SUCCESS);
+	}
+	if (match_extendedopt(&optstr, "BatchMode") == DROPBEAR_SUCCESS) {
+		cli_opts.batchmode = parse_flag_value(optstr);
+		opts.keepalive_secs = 300;
+		return;
 	}
 
 #if DROPBEAR_CLI_ANYTCPFWD

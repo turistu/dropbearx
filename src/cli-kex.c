@@ -217,6 +217,9 @@ static void ask_to_confirm(const unsigned char* keyblob, unsigned int keybloblen
 		m_free(fp);
 		return;
 	}
+	if (cli_opts.batchmode) {
+		dropbear_exit("Host '%s' is not in the trusted hosts file.\n(%s fingerprint %s)", cli_opts.remotehost, algoname, fp);
+	}
 	fprintf(stderr, "\nHost '%s' is not in the trusted hosts file.\n(%s fingerprint %s)\nDo you want to continue connecting? (y/n) ", 
 			cli_opts.remotehost, 
 			algoname,

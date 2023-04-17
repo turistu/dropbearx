@@ -295,6 +295,9 @@ int cli_auth_try() {
 		cli_ses.lastauthtype = AUTH_TYPE_PUBKEY;
 	}
 #endif
+	if (cli_opts.batchmode) {
+		goto done;
+	}
 
 #if DROPBEAR_CLI_INTERACT_AUTH
 	if (!finished && (ses.authstate.authtypes & AUTH_TYPE_INTERACT)) {
@@ -322,6 +325,7 @@ int cli_auth_try() {
 	}
 #endif
 
+done:
 	TRACE(("cli_auth_try lastauthtype %d", cli_ses.lastauthtype))
 
 	if (finished) {
