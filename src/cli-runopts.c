@@ -114,7 +114,7 @@ static void printhelp() {
 }
 
 void cli_getopts(int argc, char ** argv) {
-	unsigned int i, j;
+	int i, j;
 	char ** next = NULL;
 	enum {
 		OPT_EXTENDED_OPTIONS,
@@ -200,7 +200,7 @@ void cli_getopts(int argc, char ** argv) {
 
 	cli_opts.own_user = get_username();
 
-	for (i = 1; i < (unsigned int)argc; i++) {
+	for (i = 1; i < argc; i++) {
 		/* Handle non-flag arguments such as hostname or commands for the remote host */
 		if (argv[i][0] != '-')
 		{
@@ -412,20 +412,21 @@ void cli_getopts(int argc, char ** argv) {
 	}
 	TRACE(("host is: %s", host_arg))
 
-	if (i < (unsigned int)argc) {
+	if (i < argc) {
 		/* Build the command to send */
+		char *e;
 		cmdlen = 0;
-		for (j = i; j < (unsigned int)argc; j++)
+		for (j = i; j < argc; j++)
 			cmdlen += strlen(argv[j]) + 1; /* +1 for spaces */
 
 		/* Allocate the space */
-		cli_opts.cmd = (char*)m_malloc(cmdlen);
-		cli_opts.cmd[0] = '\0';
+		cli_opts.cmd = m_malloc(cmdlen);
 
 		/* Append all the bits */
-		for (j = i; j < (unsigned int)argc; j++) {
-			strlcat(cli_opts.cmd, argv[j], cmdlen);
-			strlcat(cli_opts.cmd, " ", cmdlen);
+		for(j = i, e = cli_opts.cmd; ;){
+			e = stpcpy(e, argv[j++]);
+			if(j < argc) *e++ = ' ';
+			else{ *e = '\0'; break; }
 		}
 		/* It'll be null-terminated here */
 		TRACE(("cmd is: %s", cli_opts.cmd))
