@@ -254,7 +254,8 @@ AC_ARG_ENABLE(zlib,
 	],
 	[
 		# if not disabled, check for zlib
-		AC_CHECK_LIB(z, deflate, , AC_MSG_ERROR([*** zlib missing - install first or check config.log ***]))
+		PKG_CHECK_MODULES(ZLIB, [zlib], [],
+			AC_CHECK_LIB(z, deflate, , AC_MSG_ERROR([*** zlib missing - install first or check config.log ***])))
 		AC_MSG_NOTICE(Enabling zlib)
 	]
 )
