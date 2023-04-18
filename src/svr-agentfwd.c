@@ -121,17 +121,12 @@ static void agentaccept(const struct Listener *UNUSED(listener), int sock) {
 void svr_agentset(const struct ChanSess * chansess) {
 
 	char *path = NULL;
-	int len;
 
 	if (chansess->agentlistener == NULL) {
 		return;
 	}
 
-	/* 2 for "/" and "\0" */
-	len = strlen(chansess->agentdir) + strlen(chansess->agentfile) + 2;
-
-	path = m_malloc(len);
-	snprintf(path, len, "%s/%s", chansess->agentdir, chansess->agentfile);
+	path = m_asprintf("%s/%s", chansess->agentdir, chansess->agentfile);
 	addnewvar("SSH_AUTH_SOCK", path);
 	m_free(path);
 }
@@ -142,7 +137,6 @@ void svr_agentcleanup(struct ChanSess * chansess) {
 	char *path = NULL;
 	uid_t uid;
 	gid_t gid;
-	int len;
 
 	if (chansess->agentlistener != NULL) {
 		remove_listener(chansess->agentlistener);
@@ -162,11 +156,7 @@ void svr_agentcleanup(struct ChanSess * chansess) {
 		}
 #endif
 
-		/* 2 for "/" and "\0" */
-		len = strlen(chansess->agentdir) + strlen(chansess->agentfile) + 2;
-
-		path = m_malloc(len);
-		snprintf(path, len, "%s/%s", chansess->agentdir, chansess->agentfile);
+		path = m_asprintf("%s/%s", chansess->agentdir, chansess->agentfile);
 		unlink(path);
 		m_free(path);
 

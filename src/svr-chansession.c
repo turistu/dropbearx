@@ -629,19 +629,16 @@ static int sessionpty(struct ChanSess * chansess) {
 #if !DROPBEAR_VFORK
 static void make_connection_string(struct ChanSess *chansess) {
 	char *local_ip, *local_port, *remote_ip, *remote_port;
-	size_t len;
 	get_socket_address(ses.sock_in, &local_ip, &local_port, &remote_ip, &remote_port, 0);
 
 	/* "remoteip remoteport localip localport" */
-	len = strlen(local_ip) + strlen(remote_ip) + 20;
-	chansess->connection_string = m_malloc(len);
-	snprintf(chansess->connection_string, len, "%s %s %s %s", remote_ip, remote_port, local_ip, local_port);
+	chansess->connection_string = m_asprintf("%s %s %s %s",
+		remote_ip, remote_port, local_ip, local_port);
 
 	/* deprecated but bash only loads .bashrc if SSH_CLIENT is set */ 
 	/* "remoteip remoteport localport" */
-	len = strlen(remote_ip) + 20;
-	chansess->client_string = m_malloc(len);
-	snprintf(chansess->client_string, len, "%s %s %s", remote_ip, remote_port, local_port);
+	chansess->client_string = m_asprintf("%s %s %s",
+		remote_ip, remote_port, local_port);
 
 	m_free(local_ip);
 	m_free(local_port);
@@ -865,13 +862,7 @@ static int ptycommand(struct Channel *channel, struct ChanSess *chansess) {
 #if DO_MOTD
 		if (svr_opts.domotd && !chansess->cmd) {
 			/* don't show the motd if ~/.hushlogin exists */
-
-			/* 12 == strlen("/.hushlogin\0") */
-			len = strlen(ses.authstate.pw_dir) + 12; 
-
-			hushpath = m_malloc(len);
-			snprintf(hushpath, len, "%s/.hushlogin", ses.authstate.pw_dir);
-
+			hushpath = m_asprintf("%s/.hushlogin", ses.authstate.pw_dir);
 			if (stat(hushpath, &sb) < 0) {
 				char *expand_path = NULL;
 				/* more than a screenful is stupid IMHO */
@@ -1094,20 +1085,9 @@ void svr_chansessinitialise() {
 }
 
 /* add a new environment variable, allocating space for the entry */
-void addnewvar(const char* param, const char* var) {
-
-	char* newvar = NULL;
-	int plen, vlen;
-
-	plen = strlen(param);
-	vlen = strlen(var);
-
-	newvar = m_malloc(plen + vlen + 2); /* 2 is for '=' and '\0' */
-	memcpy(newvar, param, plen);
-	newvar[plen] = '=';
-	memcpy(&newvar[plen+1], var, vlen);
-	newvar[plen+vlen+1] = '\0';
+void addnewvar(const char* name, const char* val) {
 	/* newvar is leaked here, but that's part of putenv()'s semantics */
+	char *newvar = m_asprintf("%s=%s", name, val);
 	if (putenv(newvar) < 0) {
 		dropbear_exit("environ error");
 	}

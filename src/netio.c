@@ -83,10 +83,8 @@ static void connect_try_next(struct dropbear_progress_connection *c) {
 
 			err = getaddrinfo(c->bind_address, c->bind_port, &hints, &bindaddr);
 			if (err) {
-				int len = 100 + strlen(gai_strerror(err));
 				m_free(c->errstring);
-				c->errstring = (char*)m_malloc(len);
-				snprintf(c->errstring, len, "Error resolving bind address '%s' (port %s). %s", 
+				c->errstring = m_asprintf("Error resolving bind address '%s' (port %s). %s",
 						c->bind_address, c->bind_port, gai_strerror(err));
 				TRACE(("Error resolving bind: %s", gai_strerror(err)))
 				close(c->sock);
@@ -99,10 +97,8 @@ static void connect_try_next(struct dropbear_progress_connection *c) {
 			if (res < 0) {
 				/* failure */
 				int keep_errno = errno;
-				int len = 300;
 				m_free(c->errstring);
-				c->errstring = m_malloc(len);
-				snprintf(c->errstring, len, "Error binding local address '%s' (port %s). %s", 
+				c->errstring = m_asprintf("Error binding local address '%s' (port %s). %s",
 						c->bind_address, c->bind_port, strerror(keep_errno));
 				close(c->sock);
 				c->sock = -1;
@@ -205,10 +201,7 @@ struct dropbear_progress_connection *connect_remote(const char* remotehost, cons
 
 	err = getaddrinfo(remotehost, remoteport, &hints, &c->res);
 	if (err) {
-		int len;
-		len = 100 + strlen(gai_strerror(err));
-		c->errstring = (char*)m_malloc(len);
-		snprintf(c->errstring, len, "Error resolving '%s' port '%s'. %s", 
+		c->errstring = m_asprintf("Error resolving '%s' port '%s'. %s", 
 				remotehost, remoteport, gai_strerror(err));
 		TRACE(("Error resolving: %s", gai_strerror(err)))
 	} else {
@@ -507,10 +500,7 @@ int dropbear_listen(const char* address, const char* port,
 
 	if (err) {
 		if (errstring != NULL && *errstring == NULL) {
-			int len;
-			len = 20 + strlen(gai_strerror(err));
-			*errstring = (char*)m_malloc(len);
-			snprintf(*errstring, len, "Error resolving: %s", gai_strerror(err));
+			*errstring = m_asprintf("Error resolving: %s", gai_strerror(err));
 		}
 		if (res0) {
 			freeaddrinfo(res0);
@@ -595,10 +585,7 @@ int dropbear_listen(const char* address, const char* port,
 
 	if (nsock == 0) {
 		if (errstring != NULL && *errstring == NULL) {
-			int len;
-			len = 20 + strlen(strerror(err));
-			*errstring = (char*)m_malloc(len);
-			snprintf(*errstring, len, "Error listening: %s", strerror(err));
+			*errstring = m_asprintf("Error listening: %s", strerror(err));
 		}
 		TRACE(("leave dropbear_listen: failure, %s", strerror(err)))
 		return -1;

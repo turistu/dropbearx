@@ -621,9 +621,7 @@ static void parse_multihop_hostname(const char* orighostarg, const char* argv0) 
 	if (cli_opts.username 
 			&& strchr(cli_opts.username, ',') 
 			&& strchr(cli_opts.username, '@')) {
-		unsigned int len = strlen(orighostarg) + strlen(cli_opts.username) + 2;
-		hostbuf = m_malloc(len);
-		m_snprintf(hostbuf, len, "%s@%s", cli_opts.username, orighostarg);
+		hostbuf = m_asprintf("%s@%s", cli_opts.username, orighostarg);
 	} else {
 		hostbuf = m_strdup(orighostarg);
 	}
@@ -644,19 +642,14 @@ static void parse_multihop_hostname(const char* orighostarg, const char* argv0) 
 
 	if (last_hop) {
 		/* Set up the proxycmd */
-		unsigned int cmd_len = 0;
 		char *passthrough_args = multihop_passthrough_args();
 		if (cli_opts.remoteport == NULL) {
 			cli_opts.remoteport = "22";
 		}
-		cmd_len = strlen(argv0) + strlen(remainder)
-			+ strlen(cli_opts.remotehost) + strlen(cli_opts.remoteport)
-			+ strlen(passthrough_args)
-			+ 30;
 		/* replace proxycmd. old -J arguments have been copied
 		   to passthrough_args */
-		cli_opts.proxycmd = m_realloc(cli_opts.proxycmd, cmd_len);
-		m_snprintf(cli_opts.proxycmd, cmd_len, "%s -B %s:%s %s %s",
+		m_free(cli_opts.proxycmd);
+		cli_opts.proxycmd = m_asprintf("%s -B %s:%s %s %s",
 				argv0, cli_opts.remotehost, cli_opts.remoteport,
 				passthrough_args, remainder);
 #ifndef DISABLE_ZLIB

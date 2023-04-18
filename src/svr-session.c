@@ -104,7 +104,6 @@ svr_session_cleanup(void) {
 
 void svr_session(int sock, int childpipe) {
 	char *host, *port;
-	size_t len;
 
 	common_session_init(sock, sock);
 
@@ -116,9 +115,7 @@ void svr_session(int sock, int childpipe) {
 
 	/* for logging the remote address */
 	get_socket_address(ses.sock_in, NULL, NULL, &host, &port, 0);
-	len = strlen(host) + strlen(port) + 2;
-	svr_ses.addrstring = m_malloc(len);
-	snprintf(svr_ses.addrstring, len, "%s:%s", host, port);
+	svr_ses.addrstring = m_asprintf("%s:%s", host, port);
 	m_free(host);
 	m_free(port);
 
