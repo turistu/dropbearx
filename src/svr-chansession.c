@@ -710,6 +710,17 @@ static int sessioncommand(struct Channel *channel, struct ChanSess *chansess,
 		svr_pubkey_set_forced_command(chansess);
 	}
 
+#ifdef DBMULTI_scp
+	if (chansess->cmd && strncmp(chansess->cmd, "scp ", 4) == 0) {
+		struct stat st; char p[64];
+		snprintf(p, sizeof p, "/proc/%d/exe", getpid());
+		if (stat(p, &st) == 0) {
+			char *ocmd = chansess->cmd;
+			chansess->cmd = m_asprintf("%s %s", p, ocmd);
+			m_free(ocmd);
+		}
+	}
+#endif
 
 #if LOG_COMMANDS
 	if (chansess->cmd) {

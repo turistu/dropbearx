@@ -111,7 +111,7 @@ int dropbear_main(int argc, char ** argv, const char * multipath);
 int cli_main(int argc, char ** argv);
 int dropbearkey_main(int argc, char ** argv);
 int dropbearconvert_main(int argc, char ** argv);
-int scp_main(int argc, char ** argv);
+int scp_main(int argc, char ** argv, const char * multipath);
 
 
 #endif /* DROPBEAR_DBUTIL_H_ */
