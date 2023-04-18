@@ -855,7 +855,7 @@ AC_CHECK_FUNCS([getspnam getusershell putenv])
 AC_CHECK_FUNCS([clearenv strlcpy strlcat daemon basename _getpty getaddrinfo ])
 AC_CHECK_FUNCS([freeaddrinfo getnameinfo fork writev getgrouplist fexecve])
 
-AC_CHECK_FUNCS([vasprintf])
+AC_CHECK_FUNCS([socketpair vasprintf])
 
 AC_SEARCH_LIBS(basename, gen, AC_DEFINE(HAVE_BASENAME))
 

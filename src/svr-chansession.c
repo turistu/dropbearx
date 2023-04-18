@@ -772,7 +772,7 @@ static int noptycommand(struct Channel *channel, struct ChanSess *chansess) {
 	ses.maxfd = MAX(ses.maxfd, channel->writefd);
 	ses.maxfd = MAX(ses.maxfd, channel->readfd);
 	ses.maxfd = MAX(ses.maxfd, channel->errfd);
-	channel->bidir_fd = 0;
+	channel->bidir_fd = channel->writefd == channel->readfd;
 
 	addchildpid(chansess, chansess->pid);
 

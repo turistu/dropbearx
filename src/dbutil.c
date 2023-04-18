@@ -273,13 +273,17 @@ int connect_unix(const char* path) {
  * ret_pid can be passed as  NULL to discard the pid. */
 int spawn_command(void(*exec_fn)(const void *user_data), const void *exec_data,
 		int *ret_writefd, int *ret_readfd, int *ret_errfd, pid_t *ret_pid) {
+#if HAVE_SOCKETPAIR
+	int sock[2];
+#else
 	int infds[2];
 	int outfds[2];
+#endif
 	int errfds[2];
 	pid_t pid;
-
 	const int FDIN = 0;
 	const int FDOUT = 1;
+
 
 #if DROPBEAR_FUZZ
 	if (fuzz.fuzzing) {
@@ -288,12 +292,18 @@ int spawn_command(void(*exec_fn)(const void *user_data), const void *exec_data,
 #endif
 
 	/* redirect stdin/stdout/stderr */
+#if HAVE_SOCKETPAIR
+	if (socketpair(AF_UNIX, SOCK_STREAM, 0, sock)) {
+		return DROPBEAR_FAILURE;
+	}
+#else
 	if (pipe(infds) != 0) {
 		return DROPBEAR_FAILURE;
 	}
 	if (pipe(outfds) != 0) {
 		return DROPBEAR_FAILURE;
 	}
+#endif
 	if (ret_errfd && pipe(errfds) != 0) {
 		return DROPBEAR_FAILURE;
 	}
@@ -318,18 +328,27 @@ int spawn_command(void(*exec_fn)(const void *user_data), const void *exec_data,
 		}
 
 		/* redirect stdin/stdout */
-
+#if HAVE_SOCKETPAIR
+		if ((dup2(sock[1], STDIN_FILENO) < 0) ||
+			(dup2(sock[1], STDOUT_FILENO) < 0) ||
+			(ret_errfd && dup2(errfds[FDOUT], STDERR_FILENO) < 0)) {
+			TRACE(("leave noptycommand: error redirecting FDs"))
+			dropbear_exit("Child dup2() failure");
+		}
+		close(sock[0]);
+		close(sock[1]);
+#else
 		if ((dup2(infds[FDIN], STDIN_FILENO) < 0) ||
 			(dup2(outfds[FDOUT], STDOUT_FILENO) < 0) ||
 			(ret_errfd && dup2(errfds[FDOUT], STDERR_FILENO) < 0)) {
 			TRACE(("leave noptycommand: error redirecting FDs"))
 			dropbear_exit("Child dup2() failure");
 		}
-
 		close(infds[FDOUT]);
 		close(infds[FDIN]);
 		close(outfds[FDIN]);
 		close(outfds[FDOUT]);
+#endif
 		if (ret_errfd)
 		{
 			close(errfds[FDIN]);
@@ -341,26 +360,29 @@ int spawn_command(void(*exec_fn)(const void *user_data), const void *exec_data,
 		return DROPBEAR_FAILURE;
 	} else {
 		/* parent */
+#if HAVE_SOCKETPAIR
+		close(sock[1]);
+		setnonblocking(sock[0]);
+		*ret_writefd = *ret_readfd = sock[0];
+#else
 		close(infds[FDIN]);
 		close(outfds[FDOUT]);
-
 		setnonblocking(outfds[FDIN]);
 		setnonblocking(infds[FDOUT]);
+		*ret_writefd = infds[FDOUT];
+		*ret_readfd = outfds[FDIN];
+#endif
 
 		if (ret_errfd) {
 			close(errfds[FDOUT]);
 			setnonblocking(errfds[FDIN]);
+			*ret_errfd = errfds[FDIN];
 		}
 
 		if (ret_pid) {
 			*ret_pid = pid;
 		}
 
-		*ret_writefd = infds[FDOUT];
-		*ret_readfd = outfds[FDIN];
-		if (ret_errfd) {
-			*ret_errfd = errfds[FDIN];
-		}
 		return DROPBEAR_SUCCESS;
 	}
 }
@@ -379,9 +401,7 @@ void run_shell_command(const char* cmd, unsigned int maxfd, char* usershell) {
 		argv[0] = baseshell;
 	} else {
 		/* a login shell should be "-bash" for "/bin/bash" etc */
-		int len = strlen(baseshell) + 2; /* 2 for "-" */
-		argv[0] = (char*)m_malloc(len);
-		snprintf(argv[0], len, "-%s", baseshell);
+		argv[0] = m_asprintf("-%s", baseshell);
 	}
 
 	if (cmd != NULL) {
