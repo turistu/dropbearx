@@ -1,3 +1,43 @@
+#### see the [original README below](#original-readmemd)
+
+This is a fork of [Matt Johnston's dropbear](https://matt.ucc.asn.au/dropbear/dropbear.html) ssh client/server with some new features like:
+- support for `-o BatchMode=yes` for the client.
+- support for `-o ConnectTimeout=<secs>` for the client.
+- allow the user to prevent the server from creating pidfiles with `-P none`;
+        also allow that misfeature to be configured away at compile time
+	with `--disable-pidfile`.
+- a new `-A <path>` option to let the server use some other file than the
+        remote user's `~/.ssh/authorized_keys`.
+- use of a unix domain socket instead of a pair of pipes for the stdin/out
+        of the spawned command in non-interactive mode.
+- a better password-reading function which doesn't depend on the deprecated
+	`getpass()`.
+	
+some incompatible changes:
+- allow `-t` (force pty) to work even when the stdin of the client is not
+  a tty ([57f9cc9][57f9]); this simplifies implementing simple command line
+  emulators. Unlike in openssh, a single `-t` should suffice.
+- when in non-interactive mode, wait for an eof on the pipe reading from the
+  child ([e48d1b0][e48d]); this brings it in line with openssh, simplifies
+  scripts using background processes, and allows for passing the stdin/out fd
+  to kernel modules (like nbd or usbib) or to other processes via `SCM_RIGHTS`.
+- allow `-i` (inetd mode) of the server to be combined with `-E`.
+
+and some fixes for:
+- cross-compiling for and using it on android
+- cross-compiling for openwrt
+- building in another (sub-)directory
+
+Build for Android with the NDK with:
+```
+autoreconf
+./ndk-configure aarch64 /path-to/android-ndk-r25c
+make -j
+```
+[e48d]: https://github.com/turistu/dropbearx/commit/e48d1b0fb55a939e623124f3edd257ebdc688b8b
+[57f9]: https://github.com/turistu/dropbearx/commit/57f9cc95140c71dfb835a84327e3b65c0e4b0f8c
+
+## Original README.md
 ## Dropbear SSH
 A smallish SSH server and client
 https://matt.ucc.asn.au/dropbear/dropbear.html
