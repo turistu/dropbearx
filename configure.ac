@@ -856,30 +856,9 @@ AC_CHECK_FUNCS([getspnam getusershell putenv])
 AC_CHECK_FUNCS([clearenv strlcpy strlcat daemon basename _getpty getaddrinfo ])
 AC_CHECK_FUNCS([freeaddrinfo getnameinfo fork writev getgrouplist fexecve])
 
-AC_CHECK_FUNCS([socketpair vasprintf])
+AC_CHECK_FUNCS([socketpair vasprintf posix_openpt])
 
 AC_SEARCH_LIBS(basename, gen, AC_DEFINE(HAVE_BASENAME))
-
-# Solaris needs ptmx
-if test -z "$no_ptmx_check" ; then
-	if test x"$cross_compiling" = x"no" ; then
-		if test -e /dev/ptmx ; then
-			AC_DEFINE(USE_DEV_PTMX,1,Use /dev/ptmx)
-		fi
-	else
-		AC_MSG_NOTICE([Not checking for /dev/ptmx, we're cross-compiling])
-	fi
-fi
-
-if test -z "$no_ptc_check" ; then
-	if test x"$cross_compiling" = x"no" ; then
-		if test -e /dev/ptc ; then
-			AC_DEFINE(HAVE_DEV_PTS_AND_PTC,1,Use /dev/ptc & /dev/pts)
-		fi
-	else
-		AC_MSG_NOTICE([Not checking for /dev/ptc & /dev/pts since we're cross-compiling])
-	fi
-fi
 
 AC_EXEEXT
 

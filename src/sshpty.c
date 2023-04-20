@@ -22,18 +22,6 @@
 #include "errno.h"
 #include "sshpty.h"
 
-/* Pty allocated with _getpty gets broken if we do I_PUSH:es to it. */
-#if defined(HAVE__GETPTY) || defined(HAVE_OPENPTY)
-#undef HAVE_DEV_PTMX
-#endif
-
-#ifdef HAVE_PTY_H
-# include <pty.h>
-#endif
-#if defined(USE_DEV_PTMX) && defined(HAVE_STROPTS_H)
-# include <stropts.h>
-#endif
-
 #ifndef O_NOCTTY
 #define O_NOCTTY 0
 #endif
@@ -48,11 +36,19 @@
 int
 pty_allocate(int *ptyfd, int *ttyfd, char **nameptr)
 {
+#ifdef HAVE_POSIX_OPENPT
 	*ptyfd = posix_openpt(O_RDWR|O_NOCTTY);
 	if(*ptyfd == -1){
 		dropbear_log(LOG_WARNING, "posix_openpt: %s", strerror(errno));
 		return 0;
 	}
+#else
+	*ptyfd = open("/dev/ptmx", O_RDWR|O_NOCTTY);
+	if(*ptyfd == -1){
+		dropbear_log(LOG_WARNING, "open /dev/ptmx: %s", strerror(errno));
+		return 0;
+	}
+#endif
 	if(unlockpt(*ptyfd)){
 		dropbear_log(LOG_WARNING, "unlockpt: %s", strerror(errno));
 		return 0;
