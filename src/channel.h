@@ -65,9 +65,6 @@ struct Channel {
 	/* whether close/eof messages have been exchanged */
 	int sent_close, recv_close;
 	int recv_eof, sent_eof;
-	/* once flushing is set, readfd will close once no more data is available
-	(not waiting for EOF) */
-	int flushing;
 
 	struct dropbear_progress_connection *conn_pending;
 	int initconn; /* used for TCP forwarding, whether the channel has been

@@ -293,19 +293,6 @@ static void check_close(struct Channel *channel) {
 		close_allowed = 1;
 	}
 
-	/* In flushing mode we close FDs as soon as pipes are empty.
-	This is used to drain out FDs when the process exits, in the case
-	where the FD doesn't have EOF - "sleep 10&echo hello" case */
-	if (channel->flushing) {
-		if (channel->readfd >= 0 && !fd_read_pending(channel->readfd)) {
-			close_chan_fd(channel, channel->readfd, SHUT_RD);
-		}
-		if (ERRFD_IS_READ(channel)
-			&& channel->errfd >= 0 && !fd_read_pending(channel->errfd)) {
-			close_chan_fd(channel, channel->errfd, SHUT_RD);
-		}
-	}
-
 	if (channel->recv_close && !write_pending(channel) && close_allowed) {
 		if (!channel->sent_close) {
 			TRACE(("Sending MSG_CHANNEL_CLOSE in response to same."))

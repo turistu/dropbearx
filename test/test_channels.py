@@ -45,29 +45,6 @@ def test_read_pty(request, dropbear, size):
 	r.check_returncode()
 	assert r.stdout.decode() == dat
 
-@pytest.mark.parametrize("fd", [1, 2])
-def test_bg_sleep(request, fd, dropbear):
-	# https://lists.ucc.asn.au/pipermail/dropbear/2006q1/000362.html
-	# Rob Landley "Is this a bug?" 24 Mar 2006
-	# dbclient user@system "sleep 10& echo hello"
-	#
-	# It should return right after printing hello, but it doesn't.  It waits until
-	# the child process exits.
-
-	# failure is TimeoutExpired
-	redir = "" if fd == 1 else " >&2 "
-	r = dbclient(request, f"sleep 10& echo hello {redir}",
-		capture_output=True, timeout=2, text=True)
-	r.check_returncode()
-	st = r.stdout if fd == 1 else r.stderr
-
-	if fd == 2 and 'accepted unconditionally' in st:
-		# ignore hostkey warning, a bit of a hack
-		assert st.endswith("\n\nhello\n")
-	else:
-		assert st.rstrip() == "hello"
-
-
 def test_idle(request, dropbear):
 	# Idle test, -I 1 should make it return before the 2 second timeout
 	r = dbclient(request, "-I", "1", "echo zong; sleep 10",

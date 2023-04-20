@@ -78,9 +78,6 @@ static int sesscheckclose(struct Channel *channel) {
 	struct ChanSess *chansess = (struct ChanSess*)channel->typedata;
 	TRACE(("sesscheckclose, pid %d, exitpid %d", chansess->pid, chansess->exit.exitpid))
 
-	if (chansess->exit.exitpid != -1) {
-		channel->flushing = 1;
-	}
 	return chansess->pid == 0 || chansess->exit.exitpid != -1;
 }
 
