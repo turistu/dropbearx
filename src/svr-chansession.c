@@ -580,7 +580,6 @@ static void get_termmodes(const struct ChanSess *chansess) {
 static int sessionpty(struct ChanSess * chansess) {
 
 	unsigned int termlen;
-	char namebuf[65];
 	struct passwd * pw = NULL;
 
 	TRACE(("enter sessionpty"))
@@ -601,20 +600,15 @@ static int sessionpty(struct ChanSess * chansess) {
 	if (chansess->master != -1) {
 		dropbear_exit("Multiple pty requests");
 	}
-	if (pty_allocate(&chansess->master, &chansess->slave, namebuf, 64) == 0) {
+	if (pty_allocate(&chansess->master, &chansess->slave, &chansess->tty) == 0) {
 		TRACE(("leave sessionpty: failed to allocate pty"))
 		return DROPBEAR_FAILURE;
 	}
 	
-	chansess->tty = m_strdup(namebuf);
-	if (!chansess->tty) {
-		dropbear_exit("Out of memory"); /* TODO disconnect */
-	}
-
 	pw = getpwnam(ses.authstate.pw_name);
 	if (!pw)
 		dropbear_exit("getpwnam failed after succeeding previously");
-	pty_setowner(pw, chansess->tty);
+	pty_setowner(pw, chansess->slave);
 
 	/* Set up the rows/col counts */
 	sessionwinchange(chansess);
