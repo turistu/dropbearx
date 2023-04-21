@@ -1112,3 +1112,16 @@ void addnewvar(const char* param, const char* var) {
 		dropbear_exit("environ error");
 	}
 }
+
+#ifdef __ANDROID__
+static int usershell_done;
+void setusershell(void) { usershell_done = 0; }
+void endusershell(void) { usershell_done = 2; }
+char *getusershell(void){
+	switch(usershell_done++){
+	case 0:	return "/system/bin/sh";
+	case 1: return "/bin/sh";
+	default: return NULL;
+	}
+}
+#endif

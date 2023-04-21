@@ -395,4 +395,18 @@
 #define DROPBEAR_DSS 1
 #endif
 
+#ifdef __ANDROID__
+#define HAVE_GETUSERSHELL	1
+char *getusershell(void);
+void setusershell(void), endusershell(void);
+
+#define DISABLE_UTMP   1
+#define DISABLE_UTMPX  1
+#define DISABLE_WTMP   1
+#define DISABLE_WTMPX  1
+#define DISABLE_PUTUTLINE      1
+#define DISABLE_PUTUTXLINE     1
+#define DISABLE_LASTLOG        1
+#endif
+
 /* no include guard for this file */
