@@ -411,6 +411,7 @@ void setusershell(void), endusershell(void);
 #define DISABLE_PUTUTLINE      1
 #define DISABLE_PUTUTXLINE     1
 #define DISABLE_LASTLOG        1
+#define DISABLE_PIDFILE	1
 #endif
 
 /* no include guard for this file */
