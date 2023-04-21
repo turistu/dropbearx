@@ -130,7 +130,9 @@ static void main_noinetd(int argc, char ** argv, const char* multipath) {
 	int maxsock = -1;
 	int listensocks[MAX_LISTEN_ADDR];
 	size_t listensockcount = 0;
+#ifndef DISABLE_PIDFILE
 	FILE *pidfile = NULL;
+#endif
 	int execfd = -1;
 
 	int childpipes[MAX_UNAUTH_CLIENTS];
@@ -197,12 +199,16 @@ static void main_noinetd(int argc, char ** argv, const char* multipath) {
 		dropbear_log(LOG_INFO, "Not backgrounding");
 	}
 
+#ifndef DISABLE_PIDFILE
 	/* create a PID file so that we can be killed easily */
-	pidfile = fopen(svr_opts.pidfile, "w");
-	if (pidfile) {
-		fprintf(pidfile, "%d\n", getpid());
-		fclose(pidfile);
+	if(strcmp(svr_opts.pidfile, "none")){
+		pidfile = fopen(expand_homedir_path(svr_opts.pidfile), "w");
+		if (pidfile) {
+			fprintf(pidfile, "%d\n", getpid());
+			fclose(pidfile);
+		}
 	}
+#endif
 
 	/* incoming connection select loop */
 	for(;;) {
@@ -225,7 +231,9 @@ static void main_noinetd(int argc, char ** argv, const char* multipath) {
 		val = select(maxsock+1, &fds, NULL, NULL, NULL);
 
 		if (ses.exitflag) {
+#ifndef DISABLE_PIDFILE
 			unlink(svr_opts.pidfile);
+#endif
 			dropbear_exit("Terminated by signal");
 		}
 

@@ -640,6 +640,15 @@ AC_ARG_WITH(lastlog,
 	]
 )
 
+AC_ARG_ENABLE(pidfile,
+	[  --disable-pidfile      Don't create pidfiles, ever   [no]],
+	[
+		if test "x$enableval" = "xno" ; then
+			AC_DEFINE(DISABLE_PIDFILE,1,Disable use of pidfiles)
+		fi
+	]
+)
+
 if test -z "$no_loginfunc_check"; then
 	dnl    Checks for libutil functions (login(), logout() etc, not openpty() )
 	AC_SEARCH_LIBS(login, util bsd, [AC_DEFINE(HAVE_LOGIN,1,[Have login() function])])
@@ -831,7 +840,7 @@ AC_PROG_GCC_TRADITIONAL
 AC_FUNC_MEMCMP
 AC_FUNC_SELECT_ARGTYPES
 AC_CHECK_FUNCS([getspnam getusershell putenv])
-AC_CHECK_FUNCS([clearenv strlcpy strlcat daemon basename _getpty getaddrinfo ])
+AC_CHECK_FUNCS([clearenv strlcpy strlcat daemon basename getaddrinfo ])
 AC_CHECK_FUNCS([freeaddrinfo getnameinfo fork writev getgrouplist fexecve])
 
 AC_CHECK_FUNCS([socketpair vasprintf posix_openpt])

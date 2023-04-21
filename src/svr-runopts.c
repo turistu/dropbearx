@@ -97,8 +97,10 @@ static void printhelp(const char * progname) {
 					"		Listen on specified tcp port (and optionally address),\n"
 					"		up to %d can be specified\n"
 					"		(default port is %s if none specified)\n"
+#ifndef DISABLE_PIDFILE
 					"-P PidFile	Create pid file PidFile\n"
 					"		(default %s)\n"
+#endif
 #if INETD_MODE
 					"-i		Start for inetd\n"
 #endif
@@ -129,7 +131,10 @@ static void printhelp(const char * progname) {
 #endif
 					AUTHORIZED_KEYS_FILE,
 					MAX_AUTH_TRIES,
-					DROPBEAR_MAX_PORTS, DROPBEAR_DEFPORT, DROPBEAR_PIDFILE,
+					DROPBEAR_MAX_PORTS, DROPBEAR_DEFPORT,
+				#ifndef DISABLE_PIDFILE
+					DROPBEAR_PIDFILE,
+				#endif
 					DEFAULT_RECV_WINDOW, DEFAULT_KEEPALIVE, DEFAULT_IDLE_TIMEOUT);
 }
 
@@ -169,7 +174,9 @@ void svr_getopts(int argc, char ** argv) {
 	svr_opts.portcount = 0;
 	svr_opts.hostkey = NULL;
 	svr_opts.delay_hostkey = 0;
-	svr_opts.pidfile = expand_homedir_path(DROPBEAR_PIDFILE);
+#ifndef DISABLE_PIDFILE
+	svr_opts.pidfile = DROPBEAR_PIDFILE;
+#endif
 #if DROPBEAR_SVR_LOCALTCPFWD
 	svr_opts.nolocaltcp = 0;
 #endif
@@ -266,9 +273,11 @@ void svr_getopts(int argc, char ** argv) {
 				case 'p':
 					nextisport = 1;
 					break;
+#ifndef DISABLE_PIDFILE
 				case 'P':
 					next = &svr_opts.pidfile;
 					break;
+#endif
 #if DO_MOTD
 				/* motd is displayed by default, -m turns it off */
 				case 'm':
