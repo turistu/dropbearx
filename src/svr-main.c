@@ -133,7 +133,9 @@ static void main_noinetd(int argc, char ** argv, const char* multipath) {
 #ifndef DISABLE_PIDFILE
 	FILE *pidfile = NULL;
 #endif
+#if DROPBEAR_DO_REEXEC
 	int execfd = -1;
+#endif
 
 	int childpipes[MAX_UNAUTH_CLIENTS];
 	char * preauth_addrs[MAX_UNAUTH_CLIENTS];
@@ -168,14 +170,17 @@ static void main_noinetd(int argc, char ** argv, const char* multipath) {
 	}
 
 #if DROPBEAR_DO_REEXEC
-	if (multipath) {
-		execfd = open(multipath, O_CLOEXEC|O_RDONLY);
-	} else {
-		execfd = open(argv[0], O_CLOEXEC|O_RDONLY);
-	}
-	if (execfd < 0) {
-		/* Just fallback to straight fork */
-		TRACE(("Couldn't open own binary %s, disabling re-exec: %s", argv[0], strerror(errno)))
+	execfd = open("/proc/self/exe", O_CLOEXEC|O_RDONLY);
+	if (execfd == -1) {
+		if (multipath) {
+			execfd = open(multipath, O_CLOEXEC|O_RDONLY);
+		} else {
+			execfd = open(argv[0], O_CLOEXEC|O_RDONLY);
+		}
+		if (execfd < 0) {
+			/* Just fallback to straight fork */
+			TRACE(("Couldn't open own binary %s, disabling re-exec: %s", argv[0], strerror(errno)))
+		}
 	}
 #endif
 
@@ -351,8 +356,8 @@ static void main_noinetd(int argc, char ** argv, const char* multipath) {
 
 				m_close(childpipe[0]);
 
-				if (execfd >= 0) {
 #if DROPBEAR_DO_REEXEC
+				if (execfd >= 0) {
 					/* Add "-2 childpipe[1]" to the args and re-execute ourself. */
 					char **new_argv = m_malloc(sizeof(char*) * (argc+4));
 					char buf[10];
@@ -386,8 +391,8 @@ static void main_noinetd(int argc, char ** argv, const char* multipath) {
 					dropbear_log(LOG_WARNING, "fexecve failed, disabling re-exec: %s", strerror(errno));
 					m_close(STDIN_FILENO);
 					m_free(new_argv);
-#endif /* DROPBEAR_DO_REEXEC */
 				}
+#endif /* DROPBEAR_DO_REEXEC */
 
 				/* start the session */
 				svr_session(childsock, childpipe[1]);
