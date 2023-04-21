@@ -137,6 +137,12 @@ static int cli_localtcp(const char* listenaddr,
 
 	ret = listen_tcpfwd(tcpinfo, NULL);
 
+	if (listenport == 0) {
+		dropbear_log(LOG_INFO,
+			"Allocated port %d for local forward to %s:%d",
+			tcpinfo->listenport, remoteaddr, remoteport);
+	}
+
 	if (ret == DROPBEAR_FAILURE) {
 		m_free(tcpinfo);
 	}
