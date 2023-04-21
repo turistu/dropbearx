@@ -400,10 +400,6 @@
 char *getusershell(void);
 void setusershell(void), endusershell(void);
 
-/* XXX should use ioctl(TIOCGPTPEER) on newer androids */
-#undef USE_DEV_PTMX
-#define USE_DEV_PTMX   1
-
 #define DISABLE_UTMP   1
 #define DISABLE_UTMPX  1
 #define DISABLE_WTMP   1
