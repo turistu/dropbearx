@@ -54,7 +54,7 @@ void recv_msg_global_request_remotetcp() {
 #endif /* !DROPBEAR_SVR_REMOTETCPFWD */
 
 static int svr_cancelremotetcp(void);
-static int svr_remotetcpreq(int *allocated_listen_port);
+static int svr_remotetcpreq(void);
 static int newtcpdirect(struct Channel * channel);
 
 #if DROPBEAR_SVR_REMOTETCPFWD
@@ -75,6 +75,7 @@ void recv_msg_global_request_remotetcp() {
 	char* reqname = NULL;
 	unsigned int namelen;
 	unsigned int wantreply = 0;
+	unsigned int port = 0;
 	int ret = DROPBEAR_FAILURE;
 
 	TRACE(("enter recv_msg_global_request_remotetcp"))
@@ -93,15 +94,8 @@ void recv_msg_global_request_remotetcp() {
 	}
 
 	if (strcmp("tcpip-forward", reqname) == 0) {
-		int allocated_listen_port = 0;
-		ret = svr_remotetcpreq(&allocated_listen_port);
-		/* client expects-port-number-to-make-use-of-server-allocated-ports */
-		if (DROPBEAR_SUCCESS == ret) {
-			CHECKCLEARTOWRITE();
-			buf_putbyte(ses.writepayload, SSH_MSG_REQUEST_SUCCESS);
-			buf_putint(ses.writepayload, allocated_listen_port);
-			encrypt_packet();
-			wantreply = 0; /* avoid out: below sending another reply */
+		if ((port = svr_remotetcpreq())) {
+			ret = DROPBEAR_SUCCESS;
 		}
 	} else if (strcmp("cancel-tcpip-forward", reqname) == 0) {
 		ret = svr_cancelremotetcp();
@@ -112,7 +106,7 @@ void recv_msg_global_request_remotetcp() {
 out:
 	if (wantreply) {
 		if (ret == DROPBEAR_SUCCESS) {
-			send_msg_request_success();
+			send_msg_request_success(port);
 		} else {
 			send_msg_request_failure();
 		}
@@ -168,9 +162,8 @@ out:
 	return ret;
 }
 
-static int svr_remotetcpreq(int *allocated_listen_port) {
+static int svr_remotetcpreq(void) {
 
-	int ret = DROPBEAR_FAILURE;
 	char * request_addr = NULL;
 	unsigned int addrlen;
 	struct TCPListener *tcpinfo = NULL;
@@ -187,16 +180,14 @@ static int svr_remotetcpreq(int *allocated_listen_port) {
 
 	port = buf_getint(ses.payload);
 
-	if (port != 0) {
-		if (port < 1 || port > 65535) {
-			TRACE(("invalid port: %d", port))
-			goto out;
-		}
+	if (port > 65535) {
+		TRACE(("invalid port: %d", port))
+		goto out;
+	}
 
-		if (!ses.allowprivport && port < IPPORT_RESERVED) {
-			TRACE(("can't assign port < 1024 for non-root"))
-			goto out;
-		}
+	if (!ses.allowprivport && port > 0 && port < IPPORT_RESERVED) {
+		TRACE(("can't assign port < 1024 for non-root"))
+		goto out;
 	}
 
 	tcpinfo = (struct TCPListener*)m_malloc(sizeof(struct TCPListener));
@@ -216,23 +207,19 @@ static int svr_remotetcpreq(int *allocated_listen_port) {
 		tcpinfo->listenaddr = m_strdup(request_addr);
 	}
 
-	ret = listen_tcpfwd(tcpinfo, &listener);
-	if (DROPBEAR_SUCCESS == ret) {
-		tcpinfo->listenport = get_sock_port(listener->socks[0]);
-		*allocated_listen_port = tcpinfo->listenport;
-	}
-
+	if (listen_tcpfwd(tcpinfo, &listener) == DROPBEAR_FAILURE) {
 out:
-	if (ret == DROPBEAR_FAILURE) {
 		/* we only free it if a listener wasn't created, since the listener
 		 * has to remember it if it's to be cancelled */
 		m_free(request_addr);
 		m_free(tcpinfo);
-	}
+		port = 0;
+	} else
+		port = tcpinfo->listenport;
 
 	TRACE(("leave remotetcpreq"))
 
-	return ret;
+	return port;
 }
 
 #endif /* DROPBEAR_SVR_REMOTETCPFWD */

@@ -422,45 +422,15 @@ void set_sock_priority(int sock, enum dropbear_prio prio) {
 
 }
 
-/* from openssh/canohost.c avoid premature-optimization */
-int get_sock_port(int sock) {
-	struct sockaddr_storage from;
-	socklen_t fromlen;
-	char strport[NI_MAXSERV];
-	int r;
-
-	/* Get IP address of client. */
-	fromlen = sizeof(from);
-	memset(&from, 0, sizeof(from));
-	if (getsockname(sock, (struct sockaddr *)&from, &fromlen) < 0) {
-		TRACE(("getsockname failed: %d", errno))
-		return 0;
-	}
-
-	/* Work around Linux IPv6 weirdness */
-	if (from.ss_family == AF_INET6)
-		fromlen = sizeof(struct sockaddr_in6);
-
-	/* Non-inet sockets don't have a port number. */
-	if (from.ss_family != AF_INET && from.ss_family != AF_INET6)
-		return 0;
-
-	/* Return port number. */
-	if ((r = getnameinfo((struct sockaddr *)&from, fromlen, NULL, 0,
-	    strport, sizeof(strport), NI_NUMERICSERV)) != 0) {
-		TRACE(("netio.c/get_sock_port/getnameinfo NI_NUMERICSERV failed: %d", r))
-	}
-	return atoi(strport);
-}
-
 /* Listen on address:port. 
  * Special cases are address of "" listening on everything,
  * and address of NULL listening on localhost only.
  * Returns the number of sockets bound on success, or -1 on failure. On
  * failure, if errstring wasn't NULL, it'll be a newly malloced error
  * string.*/
-int dropbear_listen(const char* address, const char* port,
-		int *socks, unsigned int sockcount, char **errstring, int *maxfd) {
+int dropbear_listen(const char* address, const char* portstring,
+		int *socks, unsigned int sockcount, char **errstring,
+		int *maxfd, unsigned int *portp) {
 
 	struct addrinfo hints, *res = NULL, *res0 = NULL;
 	int err;
@@ -468,14 +438,13 @@ int dropbear_listen(const char* address, const char* port,
 	struct linger linger;
 	int val;
 	int sock;
-	uint16_t *allocated_lport_p = NULL;
-	int allocated_lport = 0;
+	int port = 0;
 	
 	TRACE(("enter dropbear_listen"))
 
 #if DROPBEAR_FUZZ
 	if (fuzz.fuzzing) {
-		return fuzz_dropbear_listen(address, port, socks, sockcount, errstring, maxfd);
+		return fuzz_dropbear_listen(address, portstring, socks, sockcount, errstring, maxfd);
 	}
 #endif
 	
@@ -496,7 +465,7 @@ int dropbear_listen(const char* address, const char* port,
 		}
 		hints.ai_flags = AI_PASSIVE;
 	}
-	err = getaddrinfo(address, port, &hints, &res0);
+	err = getaddrinfo(address, portstring, &hints, &res0);
 
 	if (err) {
 		if (errstring != NULL && *errstring == NULL) {
@@ -510,24 +479,9 @@ int dropbear_listen(const char* address, const char* port,
 		return -1;
 	}
 
-	/* When listening on server-assigned-port 0
-	 * the assigned ports may differ for address families (v4/v6)
-	 * causing problems for tcpip-forward.
-	 * Caller can do a get_socket_address to discover assigned-port
-	 * hence, use same port for all address families */
-	allocated_lport = 0;
 	nsock = 0;
 	for (res = res0; res != NULL && nsock < sockcount;
 			res = res->ai_next) {
-		if (allocated_lport > 0) {
-			if (AF_INET == res->ai_family) {
-				allocated_lport_p = &((struct sockaddr_in *)res->ai_addr)->sin_port;
-			} else if (AF_INET6 == res->ai_family) {
-				allocated_lport_p = &((struct sockaddr_in6 *)res->ai_addr)->sin6_port;
-			}
-			*allocated_lport_p = htons(allocated_lport);
-		}
-
 		/* Get a socket */
 		socks[nsock] = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
 		sock = socks[nsock]; /* For clarity */
@@ -556,11 +510,31 @@ int dropbear_listen(const char* address, const char* port,
 #endif
 		set_sock_nodelay(sock);
 
+		if (port > 0) {
+			if (res->ai_family == AF_INET) {
+				((struct sockaddr_in *)res->ai_addr)->sin_port
+					= port;
+			} else if (res->ai_family == AF_INET6) {
+				((struct sockaddr_in6 *)res->ai_addr)->sin6_port
+					= port;
+			}
+		}
 		if (bind(sock, res->ai_addr, res->ai_addrlen) < 0) {
 			err = errno;
 			close(sock);
-			TRACE(("bind(%s) failed", port))
+			TRACE(("bind(%d) failed", ntohs(port)))
 			continue;
+		}
+
+		if (port == 0) {
+			getsockname(sock, res->ai_addr, &res->ai_addrlen);
+			if (res->ai_family == AF_INET) {
+				port = ((struct sockaddr_in*)res->ai_addr)->
+					sin_port;
+			} else if (res->ai_family == AF_INET6) {
+				port = ((struct sockaddr_in6*)res->ai_addr)->
+					sin6_port;
+			}
 		}
 
 		if (listen(sock, DROPBEAR_LISTEN_BACKLOG) < 0) {
@@ -568,10 +542,6 @@ int dropbear_listen(const char* address, const char* port,
 			close(sock);
 			TRACE(("listen() failed"))
 			continue;
-		}
-
-		if (0 == allocated_lport) {
-			allocated_lport = get_sock_port(sock);
 		}
 
 		*maxfd = MAX(*maxfd, sock);
@@ -589,6 +559,10 @@ int dropbear_listen(const char* address, const char* port,
 		}
 		TRACE(("leave dropbear_listen: failure, %s", strerror(err)))
 		return -1;
+	}
+
+	if (port > 0 && portp) {
+		*portp = ntohs(port);
 	}
 
 	TRACE(("leave dropbear_listen: success, %d socks bound", nsock))

@@ -501,7 +501,7 @@ static size_t listensockets(int *socks, size_t sockcount, int *maxfd) {
 
 		nsock = dropbear_listen(svr_opts.addresses[i], svr_opts.ports[i], &socks[sockpos], 
 				sockcount - sockpos,
-				&errstring, maxfd);
+				&errstring, maxfd, NULL);
 
 		if (nsock < 0) {
 			dropbear_log(LOG_WARNING, "Failed listening on '%s': %s", 

@@ -134,7 +134,7 @@ void recv_msg_channel_open_failure(void);
 #endif
 void start_send_channel_request(const struct Channel *channel, const char *type);
 
-void send_msg_request_success(void);
+void send_msg_request_success(int port);
 void send_msg_request_failure(void);
 
 

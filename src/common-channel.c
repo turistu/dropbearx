@@ -1170,9 +1170,12 @@ void recv_msg_channel_open_failure() {
 }
 #endif /* DROPBEAR_LISTENERS */
 
-void send_msg_request_success() {
+void send_msg_request_success(int port) {
 	CHECKCLEARTOWRITE();
 	buf_putbyte(ses.writepayload, SSH_MSG_REQUEST_SUCCESS);
+	if (port) {
+		buf_putint(ses.writepayload, port);
+	}
 	encrypt_packet();
 }
 
