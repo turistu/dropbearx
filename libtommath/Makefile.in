@@ -10,6 +10,8 @@ CFLAGS += -I$(srcdir) -I../libtomcrypt/src/headers/ -I$(srcdir)/../libtomcrypt/s
 CFLAGS += -Wno-deprecated
 CFLAGS += $(CPPFLAGS)
 
+ARFLAGS = cr
+
 V = 1
 
 ifeq ($V,1)

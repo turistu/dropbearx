@@ -36,7 +36,7 @@ BINPATH   = $(PREFIX)/bin
 # Dropbear passes paths from parent makefile
 #CC        = cc
 #AR        = ar
-ARFLAGS   = r
+ARFLAGS   = cr
 #RANLIB    = ranlib
 #CFLAGS    = -O2 -DUSE_LTM -DLTM_DESC -I../libtommath
 EXTRALIBS = ../libtommath/libtommath.a
