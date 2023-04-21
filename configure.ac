@@ -298,28 +298,6 @@ AC_ARG_ENABLE(pam,
 	]
 )
 
-AC_ARG_ENABLE(openpty,
-	[  --disable-openpty       Don't use openpty, use alternative method],
-	[
-		if test "x$enableval" = "xno"; then
-			AC_MSG_NOTICE(Not using openpty)
-		else
-			AC_MSG_NOTICE(Using openpty if available)
-			AC_SEARCH_LIBS(openpty, util, [dropbear_cv_func_have_openpty=yes])
-		fi
-	],
-	[
-		AC_MSG_NOTICE(Using openpty if available)
-		AC_SEARCH_LIBS(openpty, util, [dropbear_cv_func_have_openpty=yes])
-	]
-)
-
-if test "x$dropbear_cv_func_have_openpty" = "xyes"; then
-	AC_DEFINE(HAVE_OPENPTY,,Have openpty() function)
-	no_ptc_check=yes
-	no_ptmx_check=yes
-fi
-
 AC_ARG_ENABLE(syslog,
 	[  --disable-syslog        Don't include syslog support],
 	[
