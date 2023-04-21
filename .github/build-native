@@ -1,0 +1,17 @@
+#! /bin/sh
+unset IFS
+set -xe
+os=${1:-$(uname)}-$(uname -m)
+srcdir=$(pwd)
+outdir=$srcdir/OUT/dropbearx-$os
+bdir=$srcdir/OUT/build
+mkdir -p $bdir $outdir
+case $MULTI in
+1) exec >$outdir/BUILD-LOG-MULTI ;;
+*) exec >$outdir/BUILD-LOG ;;
+esac
+exec 2>&1
+autoreconf
+cd $bdir
+$srcdir/configure --prefix=$outdir
+make -j install

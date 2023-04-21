@@ -1,0 +1,29 @@
+name: Native build
+on:
+  push:
+    branches:
+      - fixes
+  workflow_dispatch:
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-20.04, macos-11]
+        multi: [0, 1]
+    runs-on: ${{matrix.os}}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install automake
+        if: runner.os == 'macOS'
+        run: brew install automake
+      - name: Build
+        id: build
+        run: MULTI=${{matrix.multi}} .github/build-native ${{matrix.os}}
+
+      - name: Save output
+        if: success() || failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: dropbearx-${{matrix.os}}${{steps.build.conclusion == 'failure' && '-FAILED' || ''}}
+          path: OUT/dropbearx-*
