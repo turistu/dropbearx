@@ -245,23 +245,24 @@ void dropbear_trace5(const char* format, ...) {
 
 /* Connect to a given unix socket. The socket is blocking */
 #if ENABLE_CONNECT_UNIX
-int connect_unix(const char* path) {
+int connect_unix(const char* path, int len) {
 	struct sockaddr_un addr = {0};
 	int fd = -1;
-	int len;
 
 	addr.sun_family = AF_UNIX;
-	len = snprintf(addr.sun_path, sizeof addr.sun_path, "%s", path);
+	if(len < 0) len = strlen(path);
 	if(len >= (int)sizeof addr.sun_path){
 		TRACE(("path too long for a unix socket: %s", path))
 		return -1;
 	}
+	memcpy(addr.sun_path, path, len);
 	fd = socket(PF_UNIX, SOCK_STREAM, 0);
 	if (fd < 0) {
 		TRACE(("Failed to open unix socket"))
 		return -1;
 	}
 	if (connect(fd, (struct sockaddr*)&addr, sizeof addr) < 0) {
+		/* XXX XXX should s/@/\@/ + s/\0/@/ */
 		TRACE(("Failed to connect to '%s' socket", path))
 		m_close(fd);
 		return -1;

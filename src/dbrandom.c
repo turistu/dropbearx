@@ -59,7 +59,7 @@ process_file(hash_state *hs, const char *filename,
 
 	if (prngd) {
 #if DROPBEAR_USE_PRNGD
-		readfd = connect_unix(filename);
+		readfd = connect_unix(filename, -1);
 #endif
 	} else {
 		readfd = open(filename, O_RDONLY);

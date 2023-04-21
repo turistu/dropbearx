@@ -64,7 +64,7 @@ static int connect_agent() {
 	if (agent_sock == NULL)
 		return -1;
 
-	fd = connect_unix(agent_sock);
+	fd = connect_unix(agent_sock, -1);
 
 	if (fd < 0) {
 		dropbear_log(LOG_INFO, "Failed to connect to agent");
