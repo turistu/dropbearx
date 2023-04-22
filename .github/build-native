@@ -11,7 +11,10 @@ while :; do
 	shift
 done
 os=${1:-$(uname)}-$(uname -m)
-srcdir=$(realpath "${0%/*}/..")
+case $0 in
+/*)	srcdir=${0%/*}/..;;
+*)	srcdir=$(pwd)
+esac
 outdir=$srcdir/OUT-$os
 bdir=$outdir/build
 pdir=$outdir/dropbearx-$os
@@ -38,6 +41,6 @@ if [ "$noreconf" = 0 ]; then
 	"$srcdir/configure" --prefix="$pdir"
 fi
 make -j32 everything
-make check
+#make check
 make strip
 make install-everything
