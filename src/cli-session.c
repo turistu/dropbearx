@@ -480,6 +480,7 @@ void cli_dropbear_log(int priority, const char* format, va_list param) {
 #ifndef DISABLE_SYSLOG
 	if (opts.usingsyslog) {
 		syslog(priority, "%s", printbuf);
+		return;
 	}
 #endif
 
