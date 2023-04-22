@@ -30,12 +30,14 @@ static int runprog(const char *multipath,
 	*match = DROPBEAR_SUCCESS;
 
 #ifdef DBMULTI_dropbear
-		if (strcmp(progname, "dropbear") == 0) {
+		if (strcmp(progname, "dropbear") == 0
+				|| strcmp(progname, "dsshd") == 0) {
 			return dropbear_main(argc, argv, multipath);
 		}
 #endif
 #ifdef DBMULTI_dbclient
 		if (strcmp(progname, "dbclient") == 0
+				|| strcmp(progname, "dssh") == 0
 				|| strcmp(progname, "ssh") == 0) {
 			return cli_main(argc, argv);
 		}
@@ -51,7 +53,8 @@ static int runprog(const char *multipath,
 		}
 #endif
 #ifdef DBMULTI_scp
-		if (strcmp(progname, "scp") == 0) {
+		if (strcmp(progname, "scp") == 0
+				|| strcmp(progname, "dscp") == 0) {
 			return scp_main(argc, argv);
 		}
 #endif
