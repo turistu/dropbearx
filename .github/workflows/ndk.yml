@@ -11,7 +11,6 @@ jobs:
       fail-fast: false
       matrix:
         arch: [aarch64, x86_64, armv7a, i686]
-        multi: [0, 1]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -29,7 +28,7 @@ jobs:
 
       - name: Build with the NDK
         id: build
-        run: MULTI=${{matrix.multi}} .github/build-with-ndk ${{matrix.arch}} >BUILD-LOG${{matrix.multi=='1'&&'-MULTI'||''}} 2>&1
+        run: .github/build-with-ndk ${{matrix.arch}} >BUILD-LOG 2>&1
 
       - name: Save output
         if: success() || failure()
@@ -37,7 +36,7 @@ jobs:
         with:
           name: dropbearx-android-${{matrix.arch}}${{steps.build.conclusion == 'failure' && '-FAILED' || ''}}
           path: |
-            BUILD-LOG*
+            BUILD-LOG
             dropbear
             dropbearconvert
             dropbearkey

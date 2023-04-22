@@ -23,7 +23,8 @@
 #
 
 # Dropbear can build out of tree
-VPATH=@srcdir@
+vpath %.c @srcdir@
+vpath %.h @srcdir@
 srcdir=@srcdir@
 
 #The following can be overridden from command line e.g. "make -f makefile.unix CC=gcc ARFLAGS=rcs"

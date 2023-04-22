@@ -1,17 +1,43 @@
 #! /bin/sh
-unset IFS
-set -xe
+set -e
+noreconf=0
+noredir=0
+while :; do
+	case $1 in
+	-n)	noreconf=1;;
+	-e)	noredir=1;;
+	*)	break;;
+	esac
+	shift
+done
 os=${1:-$(uname)}-$(uname -m)
-srcdir=$(pwd)
-outdir=$srcdir/OUT/dropbearx-$os
-bdir=$srcdir/OUT/build
-mkdir -p $bdir $outdir
-case $MULTI in
-1) exec >$outdir/BUILD-LOG-MULTI ;;
-*) exec >$outdir/BUILD-LOG ;;
-esac
-exec 2>&1
-autoreconf
-cd $bdir
-$srcdir/configure --prefix=$outdir
-make -j install
+srcdir=$(realpath "${0%/*}/..")
+outdir=$srcdir/OUT-$os
+bdir=$outdir/build
+pdir=$outdir/dropbearx-$os
+rm -fr "$bdir/*" "$pdir"
+mkdir -p "$bdir" "$pdir"
+exec 3>&2
+onexit(){
+	err=$?
+	exec >&3
+	if [ "$err" = 0 ]; then
+		echo "OK, $bdir done"
+	else
+		tail -n20 "$pdir/BUILD-LOG"; echo FAILED
+	fi
+}
+trap onexit EXIT
+if [ "$noredir" = 0 ]; then
+	exec >$pdir/BUILD-LOG
+	exec 2>&1
+fi
+[ "$noreconf" = 0 ] && autoreconf "$srcdir"
+cd "$bdir"
+if [ "$noreconf" = 0 ]; then
+	"$srcdir/configure" --prefix="$pdir"
+fi
+make -j32 everything
+make check
+make strip
+make install-everything

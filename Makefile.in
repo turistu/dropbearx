@@ -1,19 +1,9 @@
 # This Makefile is for Dropbear SSH Server and Client
 # @configure_input@
 
-# invocation:
-# make PROGRAMS="dropbear dbclient scp" MULTI=1 SCPPROGRESS=1
-#
-# to make a multiple-program binary "dropbearmulti".
-# This example will include dropbear, scp, dropbearkey, dropbearconvert, and
-# dbclient functionality, and includes the progress-bar functionality in scp.
-
-ifndef PROGRAMS
-	PROGRAMS=dropbear dbclient dropbearkey dropbearconvert scp
-endif
+PROGRAMS=dropbear dbclient dropbearkey dropbearconvert scp
 
 srcdir=@srcdir@/src
-VPATH=@srcdir@/src
 
 STATIC_LTC=libtomcrypt/libtomcrypt.a
 STATIC_LTM=libtommath/libtommath.a
@@ -33,10 +23,9 @@ ifneq ($(wildcard ./localoptions.h),)
 	OPTION_HEADERS += ./localoptions.h
 endif
 
-OBJ_DIR=./obj
 MAN_DIR=@srcdir@/manpages
 
-_COMMONOBJS=dbutil.o buffer.o dbhelpers.o \
+COMMONOBJS=dbutil.o buffer.o dbhelpers.o \
 		dss.o bignum.o \
 		signkey.o rsa.o dbrandom.o \
 		queue.o \
@@ -45,39 +34,32 @@ _COMMONOBJS=dbutil.o buffer.o dbhelpers.o \
 		curve25519.o ed25519.o sk-ed25519.o \
 		dbmalloc.o \
 		gensignkey.o gendss.o genrsa.o gened25519.o
-COMMONOBJS = $(patsubst %,$(OBJ_DIR)/%,$(_COMMONOBJS))
 
-_SVROBJS=svr-kex.o svr-auth.o sshpty.o \
+SVROBJS=svr-kex.o svr-auth.o sshpty.o \
 		svr-authpasswd.o svr-authpubkey.o svr-authpubkeyoptions.o svr-session.o svr-service.o \
 		svr-chansession.o svr-runopts.o svr-agentfwd.o svr-main.o svr-x11fwd.o\
 		svr-tcpfwd.o svr-authpam.o
-SVROBJS = $(patsubst %,$(OBJ_DIR)/%,$(_SVROBJS))
 
-_CLIOBJS=cli-main.o cli-auth.o cli-authpasswd.o cli-kex.o \
+CLIOBJS=cli-main.o cli-auth.o cli-authpasswd.o cli-kex.o \
 		cli-session.o cli-runopts.o cli-chansession.o \
 		cli-authpubkey.o cli-tcpfwd.o cli-channel.o cli-authinteract.o \
 		cli-agentfwd.o
-CLIOBJS = $(patsubst %,$(OBJ_DIR)/%,$(_CLIOBJS))
 
-_CLISVROBJS=common-session.o packet.o common-algo.o common-kex.o \
+CLISVROBJS=common-session.o packet.o common-algo.o common-kex.o \
 		common-channel.o common-chansession.o termcodes.o loginrec.o \
 		tcp-accept.o listener.o process-packet.o dh_groups.o \
 		common-runopts.o circbuffer.o list.o netio.o chachapoly.o gcm.o
-CLISVROBJS = $(patsubst %,$(OBJ_DIR)/%,$(_CLISVROBJS))
 
-_KEYOBJS=dropbearkey.o
-KEYOBJS = $(patsubst %,$(OBJ_DIR)/%,$(_KEYOBJS))
+KEYOBJS=dropbearkey.o
 
-_CONVERTOBJS=dropbearconvert.o keyimport.o signkey_ossh.o
-CONVERTOBJS = $(patsubst %,$(OBJ_DIR)/%,$(_CONVERTOBJS))
+CONVERTOBJS=dropbearconvert.o keyimport.o signkey_ossh.o
 
-_SCPOBJS=scp.o progressmeter.o atomicio.o scpmisc.o compat.o
-SCPOBJS = $(patsubst %,$(OBJ_DIR)/%,$(_SCPOBJS))
+SCPOBJS=scp.o progressmeter.o atomicio.o scpmisc.o compat.o
 
 ifeq (@DROPBEAR_FUZZ@, 1)
-	allobjs = $(COMMONOBJS) fuzz/fuzz-common.o  fuzz/fuzz-wrapfd.o $(CLISVROBJS) $(CLIOBJS) $(SVROBJS) @CRYPTLIB@
-	allobjs:=$(subst $(OBJ_DIR)/svr-main.o, ,$(allobjs))
-	allobjs:=$(subst $(OBJ_DIR)/cli-main.o, ,$(allobjs))
+	allobjs = $(addprefix fuzz/, $(COMMONOBJS) $(CLISVROBJS) $(CLIOBJS) $(SVROBJS)) fuzz/fuzz-common.o  fuzz/fuzz-wrapfd.o @CRYPTLIB@
+	allobjs:=$(subst fuzz/svr-main.o, ,$(allobjs))
+	allobjs:=$(subst fuzz/cli-main.o, ,$(allobjs))
 
 	dropbearobjs=$(allobjs) svr-main.o
 	dbclientobjs=$(allobjs) cli-main.o
@@ -87,11 +69,11 @@ ifeq (@DROPBEAR_FUZZ@, 1)
 	CXX=@CXX@
 	FUZZ_CLEAN=fuzz-clean
 else
-	dropbearobjs=$(COMMONOBJS) $(CLISVROBJS) $(SVROBJS)
-	dbclientobjs=$(COMMONOBJS) $(CLISVROBJS) $(CLIOBJS)
-	dropbearkeyobjs=$(COMMONOBJS) $(KEYOBJS)
-	dropbearconvertobjs=$(COMMONOBJS) $(CONVERTOBJS)
-	scpobjs=$(SCPOBJS)
+	dropbear_objs = $(COMMONOBJS) $(CLISVROBJS) $(SVROBJS)
+	dbclient_objs = $(COMMONOBJS) $(CLISVROBJS) $(CLIOBJS)
+	dropbearkey_objs = $(COMMONOBJS) $(KEYOBJS)
+	dropbearconvert_objs = $(COMMONOBJS) $(CONVERTOBJS)
+	scp_objs = $(SCPOBJS)
 endif
 
 ifeq (@DROPBEAR_PLUGIN@, 1)
@@ -145,43 +127,49 @@ ifeq ($(STATIC), 1)
 	LDFLAGS+=-static
 endif
 
-ifeq ($(MULTI), 1)
-	TARGETS=dropbearmulti$(EXEEXT)
-else
-	TARGETS=$(PROGRAMS)
-endif
-
 # for the scp progress meter. The -D doesn't affect anything else.
 ifeq ($(SCPPROGRESS), 1)
 	CPPFLAGS+=-DPROGRESS_METER
 endif
 
-all: $(TARGETS)
+separate: $(PROGRAMS)
+install: $(addprefix inst_, $(PROGRAMS))
+
+multi: dropbearmulti
+install-multi: inst_dropbearmulti
+
+everything: separate multi
+install-everything: install install-multi
 
 # for simplicity assume all source depends on all headers
 HEADERS=$(wildcard $(srcdir)/*.h *.h) $(OPTION_HEADERS)
 
-$(OBJ_DIR):
+MULTI_CPPFLAGS = $(addprefix -DDBMULTI_, $(PROGRAMS)) -DDROPBEAR_MULTI
+
+sep-obj multi-obj:
 	mkdir -p $@
 
-$(OBJ_DIR)/%.o: $(srcdir)/%.c $(HEADERS) | $(OBJ_DIR)
+sep-obj/%.o: $(srcdir)/%.c $(HEADERS) | sep-obj
+	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+
+fuzz/%.o: $(srcdir)/%.c $(HEADERS)
 	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
 
 fuzz/%.o: $(srcdir)/../fuzz/%.c $(HEADERS)
 	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+
+multi-obj/%.o: $(srcdir)/%.c $(HEADERS) | multi-obj
+	$(CC) -c $(CFLAGS) $(CPPFLAGS) $(MULTI_CPPFLAGS) $< -o $@
+
 
 default_options_guard.h: $(srcdir)/default_options.h
 	@echo Creating $@
 	@printf "/*\n > > > Do not edit this file (default_options_guard.h) < < <\nGenerated from "$^"\nLocal customisation goes in localoptions.h\n*/\n\n" > $@.tmp
 	@$(srcdir)/ifndef_wrapper.sh < $^ >> $@.tmp
 	mv $@.tmp $@
-	pwd
-	ls -l $@
 
-strip: $(TARGETS)
-	$(STRIP) $(addsuffix $(EXEEXT), $(TARGETS))
-
-install: $(addprefix inst_, $(TARGETS))
+strip: $(PROGRAMS)
+	$(STRIP) $(addsuffix $(EXEEXT), $(PROGRAMS))
 
 insmultidropbear: dropbearmulti$(EXEEXT)
 	$(INSTALL) -d $(DESTDIR)$(sbindir)
@@ -207,48 +195,40 @@ inst_dropbear: dropbear
 inst_%: %
 	$(INSTALL) -d $(DESTDIR)$(bindir)
 	$(INSTALL) $*$(EXEEXT) $(DESTDIR)$(bindir)
-	$(INSTALL) -d $(DESTDIR)$(mandir)/man1
-	if test -e $(MAN_DIR)/$*.1; then $(INSTALL) -m 644 $(MAN_DIR)/$*.1 $(DESTDIR)$(mandir)/man1/$*.1; fi
+	if test -e $(MAN_DIR)/$*.1; then \
+		$(INSTALL) -d $(DESTDIR)$(mandir)/man1; \
+		$(INSTALL) -m 644 $(MAN_DIR)/$*.1 $(DESTDIR)$(mandir)/man1/$*.1;\
+	fi
 
-inst_dropbearmulti: $(addprefix insmulti, $(PROGRAMS))
+multi_objs=$(addprefix multi-obj/, dbmulti.o $(sort $(foreach prog, $(PROGRAMS), $($(prog)_objs))))
 
-# for some reason the rule further down doesn't like $($@objs) as a prereq.
-dropbear: $(dropbearobjs)
-dbclient: $(dbclientobjs)
-dropbearkey: $(dropbearkeyobjs)
-dropbearconvert: $(dropbearconvertobjs)
+sep_dropbear_objs = $(addprefix sep-obj/, $(dropbear_objs))
+dropbear: $(sep_dropbear_objs)
+
+sep_dbclient_objs = $(addprefix sep-obj/, $(dbclient_objs))
+dbclient: $(sep_dbclient_objs)
+
+sep_dropbearkey_objs = $(addprefix sep-obj/, $(dropbearkey_objs))
+dropbearkey: $(sep_dropbearkey_objs)
+
+sep_dropbearconvert_objs = $(addprefix sep-obj/, $(dropbearconvert_objs))
+dropbearconvert: $(sep_dropbearconvert_objs)
+
+sep_scp_objs = $(addprefix sep-obj/, $(scp_objs))
+scp: $(sep_scp_objs)
 
 dropbear: $(HEADERS) $(LIBTOM_DEPS) Makefile
-	$(CC) $(LDFLAGS) -o $@$(EXEEXT) $($@objs) $(LIBTOM_LIBS) $(LIBS) @CRYPTLIB@ $(PLUGIN_LIBS)
+	$(CC) $(LDFLAGS) -o $@$(EXEEXT) $(sep_$@_objs) $(LIBTOM_LIBS) $(LIBS) @CRYPTLIB@ $(PLUGIN_LIBS)
 
-dbclient: $(HEADERS) $(LIBTOM_DEPS) Makefile
-	$(CC) $(LDFLAGS) -o $@$(EXEEXT) $($@objs) $(LIBTOM_LIBS) $(LIBS)
-
-dropbearkey dropbearconvert: $(HEADERS) $(LIBTOM_DEPS) Makefile
-	$(CC) $(LDFLAGS) -o $@$(EXEEXT) $($@objs) $(LIBTOM_LIBS) $(LIBS)
+dbclient dropbearkey dropbearconvert: $(HEADERS) $(LIBTOM_DEPS) Makefile
+	$(CC) $(LDFLAGS) -o $@$(EXEEXT) $(sep_$@_objs) $(LIBTOM_LIBS) $(LIBS)
 
 # scp doesn't use the libs so is special.
-scp: $(SCPOBJS)  $(HEADERS) Makefile
-	$(CC) $(LDFLAGS) -o $@$(EXEEXT) $(SCPOBJS)
+scp: $(HEADERS) Makefile
+	$(CC) $(LDFLAGS) -o $@$(EXEEXT) $(sep_$@_objs)
 
-
-# multi-binary compilation.
-MULTIOBJS=
-ifeq ($(MULTI),1)
-	MULTIOBJS=$(OBJ_DIR)/dbmulti.o $(sort $(foreach prog, $(PROGRAMS), $($(prog)objs)))
-	CPPFLAGS+=$(addprefix -DDBMULTI_, $(PROGRAMS)) -DDROPBEAR_MULTI
-endif
-
-dropbearmulti$(EXEEXT): $(HEADERS) $(MULTIOBJS) $(LIBTOM_DEPS) Makefile
-	$(CC) $(LDFLAGS) -o $@ $(MULTIOBJS) $(LIBTOM_LIBS) $(LIBS) @CRYPTLIB@
-
-multibinary: dropbearmulti$(EXEEXT)
-
-multilink: multibinary $(addprefix link, $(PROGRAMS))
-
-link%:
-	-rm -f $*$(EXEEXT)
-	-ln -s dropbearmulti$(EXEEXT) $*$(EXEEXT)
+dropbearmulti$(EXEEXT): $(HEADERS) $(multi_objs) $(LIBTOM_DEPS) Makefile
+	$(CC) $(LDFLAGS) -o $@ $(multi_objs) $(LIBTOM_LIBS) $(LIBS) @CRYPTLIB@
 
 $(STATIC_LTC): $(OPTION_HEADERS)
 	$(MAKE) -C libtomcrypt
@@ -272,8 +252,8 @@ clean: $(LIBTOM_CLEAN) $(FUZZ_CLEAN) thisclean
 thisclean:
 	-rm -f dropbear$(EXEEXT) dbclient$(EXEEXT) dropbearkey$(EXEEXT) \
 			dropbearconvert$(EXEEXT) scp$(EXEEXT) scp-progress$(EXEEXT) \
-			dropbearmulti$(EXEEXT) *.o *.da *.bb *.bbg *.prof \
-			$(OBJ_DIR)/*
+			dropbearmulti$(EXEEXT) *.o *.da *.bb *.bbg *.prof
+	-rm -fr multi-obj sep-obj
 
 distclean: clean tidy
 	-rm -f config.h

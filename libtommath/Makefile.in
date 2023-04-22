@@ -2,7 +2,8 @@
 #
 #Tom St Denis
 
-VPATH=@srcdir@
+vpath %.c @srcdir@
+vpath %.h @srcdir@
 srcdir=@srcdir@
 
 # So that libtommath can include Dropbear headers for options and m_burn()
