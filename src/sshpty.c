@@ -116,7 +116,7 @@ pty_setowner(struct passwd *pw, int ttyfd)
 		mode = S_IRUSR | S_IWUSR | S_IWGRP;
 	} else {
 		gid = pw->pw_gid;
-		mode = S_IRUSR | S_IWUSR | S_IWGRP | S_IWOTH;
+		mode = S_IRUSR | S_IWUSR;
 	}
 
 	/*
@@ -136,7 +136,7 @@ pty_setowner(struct passwd *pw, int ttyfd)
 			if (errno == EROFS &&
 			    (st.st_uid == pw->pw_uid || st.st_uid == 0)) {
 				dropbear_log(LOG_ERR,
-					"chown(%.100s, %u, %u) failed: %.100s",
+					"fchown(%.100s, %u, %u) failed: %.100s",
 						ttyname(ttyfd),
 						(unsigned int)pw->pw_uid, (unsigned int)gid,
 						strerror(errno));
@@ -150,15 +150,8 @@ pty_setowner(struct passwd *pw, int ttyfd)
 
 	if ((st.st_mode & (S_IRWXU|S_IRWXG|S_IRWXO)) != mode) {
 		if (fchmod(ttyfd, mode) < 0) {
-			if (errno == EROFS &&
-			    (st.st_mode & (S_IRGRP | S_IROTH)) == 0) {
-				dropbear_log(LOG_ERR,
-					"chmod(%.100s, 0%o) failed: %.100s",
-					ttyname(ttyfd), mode, strerror(errno));
-			} else {
-				dropbear_exit("chmod(%.100s, 0%o) failed: %.100s",
-				    ttyname(ttyfd), mode, strerror(errno));
-			}
+			dropbear_exit("fchmod(%d %.100s, 0%o -> 0%o) failed: %.100s",
+				ttyfd, ttyname(ttyfd), st.st_mode, mode, strerror(errno));
 		}
 	}
 }
