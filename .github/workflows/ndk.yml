@@ -3,7 +3,6 @@ on:
   push:
     branches:
       - fixes
-      - test
   workflow_dispatch:
 jobs:
   build:
@@ -28,18 +27,11 @@ jobs:
 
       - name: Build with the NDK
         id: build
-        run: scripts/build-with-ndk ${{matrix.arch}} >BUILD-LOG 2>&1
+        run: scripts/build-with-ndk dropbearx-android-${{matrix.arch}} ${{matrix.arch}}
 
       - name: Save output
         if: success() || failure()
         uses: actions/upload-artifact@v3
         with:
           name: dropbearx-android-${{matrix.arch}}${{steps.build.conclusion == 'failure' && '-FAILED' || ''}}
-          path: |
-            BUILD-LOG
-            dropbear
-            dropbearconvert
-            dropbearkey
-            dbclient
-            dropbearmulti
-            scp
+          path: dropbearx-android-${{matrix.arch}}
