@@ -28,7 +28,7 @@ jobs:
 
       - name: Build with the NDK
         id: build
-        run: .github/build-with-ndk ${{matrix.arch}} >BUILD-LOG 2>&1
+        run: scripts/build-with-ndk ${{matrix.arch}} >BUILD-LOG 2>&1
 
       - name: Save output
         if: success() || failure()

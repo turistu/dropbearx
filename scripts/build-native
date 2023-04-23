@@ -41,6 +41,7 @@ if [ "$noreconf" = 0 ]; then
 	"$srcdir/configure" --prefix="$pdir"
 fi
 make -j32 everything
-#make check
+# make check
+$srcdir/scripts/simple-test
 make strip
 make install-everything

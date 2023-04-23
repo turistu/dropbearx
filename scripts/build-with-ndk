@@ -1,5 +1,5 @@
 #! /bin/sh
 set -xe
-./ndk-configure tools/android-ndk-* "$@"
+scripts/ndk-configure tools/android-ndk-* "$@"
 make -j everything
 make strip

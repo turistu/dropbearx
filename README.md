@@ -3,6 +3,7 @@
 This is a fork of [Matt Johnston's dropbear](https://matt.ucc.asn.au/dropbear/dropbear.html) ssh client/server with some new features like:
 - support for `-o BatchMode=yes` for the client.
 - support for `-o ConnectTimeout=<secs>` for the client.
+- support for `-o UserKnownHostsFile=<path>` for the client.
 - allow the user to prevent the server from creating pidfiles with `-P none`;
         also allow that misfeature to be configured away at compile time
 	with `--disable-pidfile`.
@@ -31,7 +32,7 @@ and some fixes for:
 Build for Android with the NDK with:
 ```
 autoreconf
-./ndk-configure aarch64 /path-to/android-ndk-r25c
+scripts/ndk-configure aarch64 /path-to/android-ndk-r25c
 make -j
 ```
 [e48d]: https://github.com/turistu/dropbearx/commit/e48d1b0fb55a939e623124f3edd257ebdc688b8b

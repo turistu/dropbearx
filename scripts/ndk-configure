@@ -3,7 +3,7 @@ api=21
 arch=armv7a
 ndk=/point-me-to-the/android-ndk
 
-src=$(dirname "$0")
+src=$(realpath "${0%/*}/..")
 
 set -e
 test -e "$src/configure" || autoreconf "$src"
