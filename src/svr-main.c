@@ -497,17 +497,22 @@ static size_t listensockets(int *socks, size_t sockcount, int *maxfd) {
 
 	for (i = 0; i < svr_opts.portcount; i++) {
 
+		int port;
 		TRACE(("listening on '%s:%s'", svr_opts.addresses[i], svr_opts.ports[i]))
 
 		nsock = dropbear_listen(svr_opts.addresses[i], svr_opts.ports[i], &socks[sockpos], 
 				sockcount - sockpos,
-				&errstring, maxfd, NULL);
+				&errstring, maxfd, &port);
 
 		if (nsock < 0) {
 			dropbear_log(LOG_WARNING, "Failed listening on '%s': %s", 
 							svr_opts.ports[i], errstring);
 			m_free(errstring);
 			continue;
+		}
+		if (!strcmp(svr_opts.ports[i], "0")) {
+			dropbear_log(LOG_WARNING, "Listening on port %d", port);
+
 		}
 
 		for (n = 0; n < (unsigned int)nsock; n++) {
