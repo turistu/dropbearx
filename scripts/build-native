@@ -1,11 +1,9 @@
 #! /bin/sh
 set -e
-noreconf=0
-noredir=0
+opt=
 while :; do
 	case $1 in
-	-n)	noreconf=1;;
-	-e)	noredir=1;;
+	-*)	opt=$opt${1#-};;
 	*)	break;;
 	esac
 	shift
@@ -15,10 +13,11 @@ case $0 in
 /*)	srcdir=${0%/*}/..;;
 *)	srcdir=$(pwd)
 esac
-outdir=$srcdir/OUT-$os
-bdir=$outdir/build
-pdir=$outdir/dropbearx-$os
-rm -fr "$bdir/*" "$pdir"
+outdir=$srcdir/OUT
+bdir=$outdir/build-$os
+pdir=$outdir/inst-$os
+logfile=$outdir/dropbearx-$os-BUILD-LOG
+case $opt in *n*);;*)	rm -fr "$bdir" "$pdir"; esac
 mkdir -p "$bdir" "$pdir"
 exec 3>&2
 onexit(){
@@ -27,21 +26,19 @@ onexit(){
 	if [ "$err" = 0 ]; then
 		echo "OK, $bdir done"
 	else
-		tail -n20 "$pdir/BUILD-LOG"; echo FAILED
+		tail -n20 "$logfile"; echo FAILED
 	fi
 }
 trap onexit EXIT
-if [ "$noredir" = 0 ]; then
-	exec >$pdir/BUILD-LOG
-	exec 2>&1
-fi
-[ "$noreconf" = 0 ] && autoreconf "$srcdir"
+case $opt in *o*);;*)	exec >$logfile; esac
+case $opt in *e*);;*)	exec 2>&1; esac
+case $opt in *n*);;*)	autoreconf "$srcdir"; esac
 cd "$bdir"
-if [ "$noreconf" = 0 ]; then
-	"$srcdir/configure" --prefix="$pdir"
-fi
+case $opt in *n*);;*)	"$srcdir/configure" --prefix="$pdir"; esac
 make -j32 everything
 # make check
 $srcdir/scripts/simple-test
 make strip
 make install-everything
+cd "$pdir"
+tar -C "$pdir" -zcf "$outdir/dropbearx-$os.tgz" .

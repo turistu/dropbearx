@@ -1,66 +1,79 @@
 #! /bin/sh
-umask 022
+umask 066
 unset IFS
 err=0
 set -e
-s=$(pwd)
-t=$(mktemp -d)
-trap 'rm -fr "$t"; pkill -g0 "dropbear|dbclient"; wait; cat log; echo DONE' EXIT
-cd "$t"
-HOME=$t
-"$s/dropbearkey" -t ed25519 -f key
+tmpdir=$(mktemp -d)
+onexit(){
+	status=$?
+	set +e
+	pkill -g0 "dropbear|dbclient"; wait
+	[ "$status" = 0 ] || { echo '========='; cat LOG >&2; }
+	rm -fr "$tmpdir"
+}
+trap onexit EXIT INT
+s=${1:-.}
+case $s in /*);; *) s=$(pwd)/$s;; esac
+
+cd "$tmpdir"
+HOME=$tmpdir
+"$s/dropbearkey" -t ed25519 -f key >>LOG 2>&1
 "$s/dropbearkey" -y -f key > key.pub+
 grep ^ssh key.pub+ > key.pub
 rm key.pub+
 awk '{print "localhost", $1, $2 }' key.pub > known_hosts
 
 port=2222
-"$s/dropbear" -p $port -FE -r key -A key.pub 2>log &
+"$s/dropbear" -p $port -FE -r key -A key.pub 2>>LOG &
 sleep .2
 
 check(){
 	pat=$(printf "$1"); shift
-	printf ========; printf ' %s' "$@"; echo
+	printf '\n<<<<<<<<'; printf ' %s' "$@"; echo
 	case $# in 1) out=$(eval "$1");; *) out=$("$@"); esac
+	out=$?:$out
+	printf '>>>>>>>> ';
 	case $out in
-	$pat)	echo OK;;
+	$pat)	printf 'OK\n\n';;
 	*)	
 		out=$(printf %s "$out" | cat -v)
-		printf '\nFAIL <%s> !~ <%s>\n' "$out" "$pat"; err=1;;
+		printf 'FAIL <%s> !~ <%s>\n\n' "$out" "$pat"; err=1;;
 	esac
 }
 dssh(){
 	"$s/dbclient" -i key "$@"
 }
-echeck(){
-	t=$(mktemp -u)
-	check "$t" dssh "$@" localhost echo "$t"
-}
-ycheck(){
-	t=$(mktemp -u)
-	check "$t" dssh -y "$@" localhost echo "$t"
+dssh_h(){ dssh -o UserKnownHostsFile=known_hosts "$@"; }
+
+stuff=$$
+hcheck(){
+	t=$0$((stuff=stuff+1))
+	check "0:$t" dssh_h "$@" localhost echo "$t"
 }
 
-ycheck -p $port
-echeck -o UserKnownHostsFile=known_hosts -p $port
-check 'test\r' dssh -y -t -p $port localhost echo test
-check 'delay\r' dssh -y -t -p $port localhost 'sleep .2; echo delay'
-check foobar dssh -y -p $port localhost '{ sleep .5; echo bar; } & printf foo'
+##################################################################
 
-dssh -y \
+check '0:test' dssh -y -p $port localhost echo test
+hcheck -p $port
+check '0:test\r' dssh_h -t -p $port localhost echo test
+check 0:foobar dssh_h -p $port localhost '{ sleep .5; echo bar; } & printf foo'
+
+dssh_h \
 	-R 8888:localhost:$port \
 	-L 7777:localhost:$port \
 	-R 0:localhost:$port \
 	-L 0:localhost:$port \
 	-p $port -N localhost 2>&1 | tee stderr &
 sleep .3
-eval $(awk '/Allocated port [0-9]+ for /{print $6"_port="$4}' stderr)
+eval $(awk '/Allocated port [0-9]+ for (local|remote)/{print $6"_port="$4}' stderr)
 
-ycheck -p 7777
-ycheck -p 8888
-ycheck -p $remote_port
-ycheck -p $local_port
+#hcheck -p $port -o ExitOnForwardFailure=1 -R 8:localhost:$port
+hcheck -p 7777
+hcheck -p 8888
+hcheck -p $remote_port
+hcheck -p $local_port
+
+##################################################################
 
 echo STATUS $err
-find .
 exit $err

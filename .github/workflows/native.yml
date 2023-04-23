@@ -26,4 +26,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: dropbearx-${{matrix.os}}${{steps.build.conclusion == 'failure' && '-FAILED' || ''}}
-          path: OUT-*/dropbearx-*
+          path: OUT/dropbearx-*
