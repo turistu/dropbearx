@@ -5,7 +5,7 @@ err=0
 set -e
 s=$(pwd)
 t=$(mktemp -d)
-trap 'rm -fr "$t"; pkill -g0 "dropbear|dbclient"; wait; echo DONE' EXIT
+trap 'rm -fr "$t"; pkill -g0 "dropbear|dbclient"; wait; cat log; echo DONE' EXIT
 cd "$t"
 HOME=$t
 "$s/dropbearkey" -t ed25519 -f key

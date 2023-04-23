@@ -49,10 +49,8 @@ pty_allocate(int *ptyfd, int *ttyfd, char **nameptr)
 		return 0;
 	}
 #endif
-	if(unlockpt(*ptyfd)){
-		dropbear_log(LOG_WARNING, "unlockpt: %s", strerror(errno));
-		return 0;
-	}
+	grantpt(*ptyfd);
+	unlockpt(*ptyfd);
 #ifdef TIOCGPTPEER
 	*ttyfd = ioctl(*ptyfd, TIOCGPTPEER, O_RDWR|O_NOCTTY);
 	if(*ttyfd != -1){
