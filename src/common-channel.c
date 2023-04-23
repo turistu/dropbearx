@@ -412,7 +412,7 @@ static int writechannel_fallback(struct Channel* channel, int fd, circbuffer *cb
 	written = write(fd, circ_p1, circ_len1);
 	if (written < 0) {
 		if (errno != EINTR && errno != EAGAIN) {
-			TRACE(("channel IO write error fd %d %s", fd, strerror(errno)))
+			TRACE(("channel IO write error fd %d:", fd))
 			close_chan_fd(channel, fd, SHUT_WR);
 			return DROPBEAR_FAILURE;
 		}
@@ -476,7 +476,7 @@ static int writechannel_writev(struct Channel* channel, int fd, circbuffer *cbuf
 
 	if (written < 0) {
 		if (errno != EINTR && errno != EAGAIN) {
-			TRACE(("channel IO write error fd %d %s", fd, strerror(errno)))
+			TRACE(("channel IO write error fd %d:", fd))
 			close_chan_fd(channel, fd, SHUT_WR);
 			return DROPBEAR_FAILURE;
 		}

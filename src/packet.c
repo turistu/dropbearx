@@ -91,7 +91,7 @@ void write_packet() {
 			TRACE2(("leave write_packet: EINTR"))
 			return;
 		} else {
-			dropbear_exit("Error writing: %s", strerror(errno));
+			dropbear_exit("Error writing:");
 		}
 	}
 	}
@@ -120,7 +120,7 @@ void write_packet() {
 			TRACE2(("leave writepacket: EINTR"))
 			return;
 		} else {
-			dropbear_exit("Error writing: %s", strerror(errno));
+			dropbear_exit("Error writing:");
 		}
 	} 
 
@@ -191,7 +191,7 @@ void read_packet() {
 				TRACE2(("leave read_packet: EINTR or EAGAIN"))
 				return;
 			} else {
-				dropbear_exit("Error reading: %s", strerror(errno));
+				dropbear_exit("Error reading:");
 			}
 		}
 
@@ -241,7 +241,7 @@ static int read_packet_init() {
 			TRACE2(("leave read_packet_init: EINTR"))
 			return DROPBEAR_FAILURE;
 		}
-		dropbear_exit("Error reading: %s", strerror(errno));
+		dropbear_exit("Error reading:");
 	}
 
 	buf_incrwritepos(ses.readbuf, slen);

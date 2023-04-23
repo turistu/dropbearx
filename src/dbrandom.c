@@ -178,7 +178,7 @@ static int process_getrandom(hash_state *hs) {
 			return DROPBEAR_FAILURE;
 		}
 		/* Other errors fall through to blocking getrandom() */
-		TRACE(("first getrandom() failed: %d %s", errno, strerror(errno)))
+		TRACE(("first getrandom() failed:"))
 		if (errno == EAGAIN) {
 			dropbear_log(LOG_WARNING, "Waiting for kernel randomness to be initialised...");
 		}
@@ -203,7 +203,7 @@ static int process_getrandom(hash_state *hs) {
 		}
 
 		/* Unexpected problem, fall back to /dev/urandom */
-		TRACE(("2nd getrandom() failed: %d %s", errno, strerror(errno)))
+		TRACE(("2nd getrandom() failed:"))
 		break;
 	}
 

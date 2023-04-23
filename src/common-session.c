@@ -389,7 +389,7 @@ static void read_session_identification() {
 	}
 
 	if (!done) {
-		TRACE(("error reading remote ident: %s\n", strerror(errno)))
+		TRACE(("error reading remote ident:"));
 		ses.remoteclosed();
 	} else {
 		/* linebuf is already null terminated */
@@ -438,7 +438,7 @@ static int ident_readln(int fd, char* buf, int count) {
 			if (errno == EINTR) {
 				continue;
 			}
-			TRACE(("leave ident_readln: select error"))
+			TRACE(("leave ident_readln: select error:"))
 			return -1;
 		}
 
@@ -456,7 +456,7 @@ static int ident_readln(int fd, char* buf, int count) {
 				if (errno == EINTR) {
 					continue; /* not a real error */
 				}
-				TRACE(("leave ident_readln: read error"))
+				TRACE(("leave ident_readln: read error:"))
 				return -1;
 			}
 			if (num == 0) {

@@ -282,13 +282,11 @@ static void cli_sessionloop() {
 				   is confusing, though stdout/stderr could be useful. */
 				devnull = open(DROPBEAR_PATH_DEVNULL, O_RDONLY);
 				if (devnull < 0) {
-					dropbear_exit("Opening /dev/null: %d %s",
-							errno, strerror(errno));
+					dropbear_exit("Opening /dev/null:");
 				}
 				dup2(devnull, STDIN_FILENO);
 				if (daemon(0, 1) < 0) {
-					dropbear_exit("Backgrounding failed: %d %s", 
-							errno, strerror(errno));
+					dropbear_exit("Backgrounding failed:");
 				}
 			}
 			
@@ -428,24 +426,19 @@ static void recv_msg_global_request_cli(void) {
 	}
 }
 
-void cli_dropbear_exit(int exitcode, const char* format, va_list param) {
-	char exitmsg[150];
+void cli_dropbear_exit(int exitcode, const char *msg) {
 	char fullmsg[300];
 
-	/* Note that exit message must be rendered before session cleanup */
-
-	/* Render the formatted exit message */
-	vsnprintf(exitmsg, sizeof(exitmsg), format, param);
-	TRACE(("Exited, cleaning up: %s", exitmsg))
+	TRACE(("Exited, cleaning up: %s", msg))
 
 	/* Add the prefix depending on session/auth state */
 	if (!ses.init_done) {
-		snprintf(fullmsg, sizeof(fullmsg), "Exited: %s", exitmsg);
+		snprintf(fullmsg, sizeof fullmsg, "Exited: %s", msg);
 	} else {
-		snprintf(fullmsg, sizeof(fullmsg), 
+		snprintf(fullmsg, sizeof fullmsg, 
 				"Connection to %s@%s:%s exited: %s", 
 				cli_opts.username, cli_opts.remotehost, 
-				cli_opts.remoteport, exitmsg);
+				cli_opts.remoteport, msg);
 	}
 
 	/* Do the cleanup first, since then the terminal will be reset */
@@ -456,18 +449,13 @@ void cli_dropbear_exit(int exitcode, const char* format, va_list param) {
         longjmp(fuzz.jmp, 1);
     }
 #endif
-
-	/* Avoid printing onwards from terminal cruft */
-	fprintf(stderr, "\n");
-
-	dropbear_log(LOG_INFO, "%s", fullmsg);
+	cli_dropbear_log(LOG_INFO, fullmsg);
 
 	exit(exitcode);
 }
 
-void cli_dropbear_log(int priority, const char* format, va_list param) {
+void cli_dropbear_log(int priority, const char *msg) {
 
-	char printbuf[1024];
 	const char *name;
 
 	name = cli_opts.progname;
@@ -475,16 +463,14 @@ void cli_dropbear_log(int priority, const char* format, va_list param) {
 		name = "dbclient";
 	}
 
-	vsnprintf(printbuf, sizeof(printbuf), format, param);
-
 #ifndef DISABLE_SYSLOG
 	if (opts.usingsyslog) {
-		syslog(priority, "%s", printbuf);
+		syslog(priority, "%s", msg);
 		return;
 	}
 #endif
 
-	fprintf(stderr, "%s: %s\n", name, printbuf);
+	fprintf(stderr, "%s: %s\n", name, msg);
 	fflush(stderr);
 }
 

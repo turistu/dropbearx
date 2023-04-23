@@ -133,7 +133,7 @@ static buffer * agent_request(unsigned char type, const buffer *data) {
 
 	ret = atomicio(vwrite, fd, buf_getptr(payload, payload->len), payload->len);
 	if ((size_t)ret != payload->len) {
-		TRACE(("write failed fd %d for agent_request, %s", fd, strerror(errno)))
+		TRACE(("write failed fd %d for agent_request:", fd))
 		goto out;
 	}
 

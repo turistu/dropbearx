@@ -39,13 +39,13 @@ pty_allocate(int *ptyfd, int *ttyfd, char **nameptr)
 #ifdef HAVE_POSIX_OPENPT
 	*ptyfd = posix_openpt(O_RDWR|O_NOCTTY);
 	if(*ptyfd == -1){
-		dropbear_log(LOG_WARNING, "posix_openpt: %s", strerror(errno));
+		dropbear_log(LOG_WARNING, "posix_openpt:");
 		return 0;
 	}
 #else
 	*ptyfd = open("/dev/ptmx", O_RDWR|O_NOCTTY);
 	if(*ptyfd == -1){
-		dropbear_log(LOG_WARNING, "open /dev/ptmx: %s", strerror(errno));
+		dropbear_log(LOG_WARNING, "open /dev/ptmx:");
 		return 0;
 	}
 #endif
@@ -62,7 +62,7 @@ pty_allocate(int *ptyfd, int *ttyfd, char **nameptr)
 	*ttyfd = open(*nameptr, O_RDWR|O_NOCTTY);
 	if(*ttyfd != -1)
 		return 1;
-	dropbear_log(LOG_WARNING, "open %s: %s", *nameptr, strerror(errno));
+	dropbear_log(LOG_WARNING, "open %s:", *nameptr);
 	return 0;
 }
 
@@ -123,8 +123,8 @@ pty_setowner(struct passwd *pw, int ttyfd)
 	 * tty is owned by root.
 	 */
 	if (fstat(ttyfd, &st)) {
-		dropbear_exit("pty_setowner: stat(%.101s) failed: %.100s",
-				ttyname(ttyfd), strerror(errno));
+		dropbear_exit("pty_setowner: stat(%.101s) failed:",
+				ttyname(ttyfd));
 	}
 
 	/* Allow either "tty" gid or user's own gid. On Linux with openpty()
@@ -134,22 +134,20 @@ pty_setowner(struct passwd *pw, int ttyfd)
 			if (errno == EROFS &&
 			    (st.st_uid == pw->pw_uid || st.st_uid == 0)) {
 				dropbear_log(LOG_ERR,
-					"fchown(%.100s, %u, %u) failed: %.100s",
+					"fchown(%.100s, %u, %u) failed:",
 						ttyname(ttyfd),
-						(unsigned int)pw->pw_uid, (unsigned int)gid,
-						strerror(errno));
+						(unsigned int)pw->pw_uid, (unsigned int)gid);
 			} else {
-				dropbear_exit("chown(%.100s, %u, %u) failed: %.100s",
-				    ttyname(ttyfd), (unsigned int)pw->pw_uid, (unsigned int)gid,
-				    strerror(errno));
+				dropbear_exit("chown(%.100s, %u, %u) failed:",
+				    ttyname(ttyfd), (unsigned int)pw->pw_uid, (unsigned int)gid);
 			}
 		}
 	}
 
 	if ((st.st_mode & (S_IRWXU|S_IRWXG|S_IRWXO)) != mode) {
 		if (fchmod(ttyfd, mode) < 0) {
-			dropbear_exit("fchmod(%d %.100s, 0%o -> 0%o) failed: %.100s",
-				ttyfd, ttyname(ttyfd), st.st_mode, mode, strerror(errno));
+			dropbear_exit("fchmod(%d %.100s, 0%o -> 0%o) failed",
+				ttyfd, ttyname(ttyfd), st.st_mode, mode);
 		}
 	}
 }

@@ -98,8 +98,9 @@ static void connect_try_next(struct dropbear_progress_connection *c) {
 				/* failure */
 				int keep_errno = errno;
 				m_free(c->errstring);
-				c->errstring = m_asprintf("Error binding local address '%s' (port %s). %s",
-						c->bind_address, c->bind_port, strerror(keep_errno));
+				c->errstring = m_asprintf("Error binding local address '%s' (port %s): %s",
+						c->bind_address, c->bind_port,
+						strerror(keep_errno));
 				close(c->sock);
 				c->sock = -1;
 				continue;
@@ -132,7 +133,7 @@ static void connect_try_next(struct dropbear_progress_connection *c) {
 					c->errstring = m_strdup(strerror(errno));
 					/* Not entirely sure which kind of errors are normal - 2.6.32 seems to 
 					return EPIPE for any (nonblocking?) sendmsg(). just fall back */
-					TRACE(("sendmsg tcp_fastopen failed, falling back. %s", strerror(errno)));
+					TRACE(("sendmsg tcp_fastopen failed, falling back:"));
 					/* No kernel MSG_FASTOPEN support. Fall back below */
 					fastopen = 0;
 					/* Set to NULL to avoid trying again */
@@ -264,7 +265,7 @@ void handle_connect_fds(const fd_set *writefd) {
 		TRACE(("handling %s port %s socket %d", c->remotehost, c->remoteport, c->sock));
 
 		if (getsockopt(c->sock, SOL_SOCKET, SO_ERROR, &val, &vallen) != 0) {
-			TRACE(("handle_connect_fds getsockopt(%d) SO_ERROR failed: %s", c->sock, strerror(errno)))
+			TRACE(("handle_connect_fds getsockopt(%d) SO_ERROR failed:", c->sock))
 			/* This isn't expected to happen - Unix has surprises though, continue gracefully. */
 			m_close(c->sock);
 			c->sock = -1;
@@ -351,7 +352,7 @@ void set_sock_nodelay(int sock) {
 void set_listen_fast_open(int sock) {
 	int qlen = MAX(MAX_UNAUTH_PER_IP, 5);
 	if (setsockopt(sock, SOL_TCP, TCP_FASTOPEN, &qlen, sizeof(qlen)) != 0) {
-		TRACE(("set_listen_fast_open failed for socket %d: %s", sock, strerror(errno)))
+		TRACE(("set_listen_fast_open failed for socket %d:", sock))
 	}
 }
 
@@ -396,12 +397,12 @@ void set_sock_priority(int sock, enum dropbear_prio prio) {
 #if defined(IPPROTO_IPV6) && defined(IPV6_TCLASS)
 	rc = setsockopt(sock, IPPROTO_IPV6, IPV6_TCLASS, (void*)&val, sizeof(val));
 	if (rc < 0 && errno != ENOTSOCK) {
-		TRACE(("Couldn't set IPV6_TCLASS (%s)", strerror(errno)));
+		TRACE(("Couldn't set IPV6_TCLASS:"));
 	}
 #endif
 	rc = setsockopt(sock, IPPROTO_IP, IP_TOS, (void*)&val, sizeof(val));
 	if (rc < 0 && errno != ENOTSOCK) {
-		TRACE(("Couldn't set IP_TOS (%s)", strerror(errno)));
+		TRACE(("Couldn't set IP_TOS:"));
 	}
 #endif /* IP_TOS */
 	}
@@ -416,7 +417,7 @@ void set_sock_priority(int sock, enum dropbear_prio prio) {
 	/* linux specific, sets QoS class. see tc-prio(8) */
 	rc = setsockopt(sock, SOL_SOCKET, SO_PRIORITY, (void*) &val, sizeof(val));
 	if (rc < 0 && errno != ENOTSOCK) {
-		TRACE(("Couldn't set SO_PRIORITY (%s)", strerror(errno)))
+		TRACE(("Couldn't set SO_PRIORITY:"))
     }
 #endif
 
@@ -585,14 +586,14 @@ void get_socket_address(int fd, char **local_host, char **local_port,
 	if (local_host || local_port) {
 		addrlen = sizeof(addr);
 		if (getsockname(fd, (struct sockaddr*)&addr, &addrlen) < 0) {
-			dropbear_exit("Failed socket address: %s", strerror(errno));
+			dropbear_exit("Failed local socket address:");
 		}
 		getaddrstring(&addr, local_host, local_port, host_lookup);		
 	}
 	if (remote_host || remote_port) {
 		addrlen = sizeof(addr);
 		if (getpeername(fd, (struct sockaddr*)&addr, &addrlen) < 0) {
-			dropbear_exit("Failed socket address: %s", strerror(errno));
+			dropbear_exit("Failed remote socket address:");
 		}
 		getaddrstring(&addr, remote_host, remote_port, host_lookup);		
 	}

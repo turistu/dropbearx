@@ -59,23 +59,6 @@ static const struct ChanType cli_chan_tcplocal = {
 };
 #endif
 
-#if DROPBEAR_CLI_ANYTCPFWD
-static void fwd_failed(const char* format, ...) ATTRIB_PRINTF(1,2);
-static void fwd_failed(const char* format, ...)
-{
-	va_list param;
-	va_start(param, format);
-
-	if (cli_opts.exit_on_fwd_failure) {
-		_dropbear_exit(EXIT_FAILURE, format, param);
-	} else {
-		_dropbear_log(LOG_WARNING, format, param);
-	}
-
-	va_end(param);
-}
-#endif
-
 #if DROPBEAR_CLI_LOCALTCPFWD
 void setup_localtcp() {
 	m_list_elem *iter;
@@ -91,7 +74,8 @@ void setup_localtcp() {
 				fwd->connectaddr,
 				fwd->connectport);
 		if (ret == DROPBEAR_FAILURE) {
-			fwd_failed("Failed local port forward %s:%d:%s:%d",
+			dropbear_exit_if(cli_opts.exit_on_fwd_failure,
+				"Failed local port forward %s:%d:%s:%d",
 					fwd->listenaddr,
 					fwd->listenport,
 					fwd->connectaddr,
@@ -203,7 +187,8 @@ void cli_recv_msg_request_failure() {
 		struct TCPFwdEntry *fwd = (struct TCPFwdEntry*)iter->item;
 		if (!fwd->have_reply) {
 			fwd->have_reply = 1;
-			fwd_failed("Remote TCP forward request failed (port %d -> %s:%d)",
+			dropbear_exit_if(cli_opts.exit_on_fwd_failure,
+				"Remote TCP forward request failed (port %d -> %s:%d)",
 					fwd->listenport,
 					fwd->connectaddr,
 					fwd->connectport);

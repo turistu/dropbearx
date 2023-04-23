@@ -356,7 +356,7 @@ char* getpass_or_cancel(const char* prompt)
 #endif
 
 	if ((td = open(_PATH_TTY, O_RDWR|O_NOCTTY)) == -1) {
-		dropbear_exit("open %s, rw: %s", _PATH_TTY, strerror(errno));
+		dropbear_exit("open %s, rw:", _PATH_TTY);
 	}
 	tcflush(td, TCIOFLUSH);
 	tcgetattr(td, &ts);
@@ -376,13 +376,12 @@ char* getpass_or_cancel(const char* prompt)
 	}
 	if (write(td, prompt, strlen(prompt)) == -1) {
 		tcsetattr(td, TCSANOW, &sts);
-		dropbear_exit("write >%s: %s", _PATH_TTY, strerror(errno));
+		dropbear_exit("write >%s:", _PATH_TTY);
 	}
 	while ((l = read(td, buf, sizeof buf - 1)) == -1) {
 		if (errno != EINTR) {
 			tcsetattr(td, TCSANOW, &sts);
-			dropbear_exit("read <%s: %s",
-				_PATH_TTY, strerror(errno));
+			dropbear_exit("read <%s:", _PATH_TTY);
 		}
 	}
 	if (tcsetattr(td, TCSANOW, &sts) || tcgetattr(td, &nts) ||

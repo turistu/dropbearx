@@ -179,7 +179,7 @@ static void main_noinetd(int argc, char ** argv, const char* multipath) {
 		}
 		if (execfd < 0) {
 			/* Just fallback to straight fork */
-			TRACE(("Couldn't open own binary %s, disabling re-exec: %s", argv[0], strerror(errno)))
+			TRACE(("Couldn't open own binary %s, disabling re-exec:", argv[0]))
 		}
 	}
 #endif
@@ -193,7 +193,7 @@ static void main_noinetd(int argc, char ** argv, const char* multipath) {
 		}
 #endif
 		if (daemon(0, closefds) < 0) {
-			dropbear_exit("Failed to daemonize: %s", strerror(errno));
+			dropbear_exit("Failed to daemonize:");
 		}
 	}
 
@@ -321,7 +321,7 @@ static void main_noinetd(int argc, char ** argv, const char* multipath) {
 			fork_ret = fork();
 #endif
 			if (fork_ret < 0) {
-				dropbear_log(LOG_WARNING, "Error forking: %s", strerror(errno));
+				dropbear_log(LOG_WARNING, "fork:");
 				goto out;
 			}
 
@@ -345,7 +345,7 @@ static void main_noinetd(int argc, char ** argv, const char* multipath) {
 
 #if !DEBUG_NOFORK
 				if (setsid() < 0) {
-					dropbear_exit("setsid: %s", strerror(errno));
+					dropbear_exit("setsid:");
 				}
 #endif
 
@@ -377,10 +377,10 @@ static void main_noinetd(int argc, char ** argv, const char* multipath) {
 					new_argv[new_argc] = NULL;
 
 					if ((dup2(childsock, STDIN_FILENO) < 0)) {
-						dropbear_exit("dup2 failed: %s", strerror(errno));
+						dropbear_exit("dup2:");
 					}
 					if (fcntl(childsock, F_SETFD, FD_CLOEXEC) < 0) {
-						TRACE(("cloexec for childsock %d failed: %s", childsock, strerror(errno)))
+						TRACE(("cloexec for childsock %d failed:", childsock))
 					}
 					/* Re-execute ourself */
 					fexecve(execfd, new_argv, environ);
@@ -388,7 +388,7 @@ static void main_noinetd(int argc, char ** argv, const char* multipath) {
 
 					/* Fall back on plain fork otherwise.
 					 * To be removed in future once re-exec has been well tested */
-					dropbear_log(LOG_WARNING, "fexecve failed, disabling re-exec: %s", strerror(errno));
+					dropbear_log(LOG_WARNING, "fexecve failed, disabling re-exec:");
 					m_close(STDIN_FILENO);
 					m_free(new_argv);
 				}

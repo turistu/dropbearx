@@ -58,14 +58,14 @@ void fill_passwd(const char* username);
 
 /* Server */
 void svr_session(int sock, int childpipe) ATTRIB_NORETURN;
-void svr_dropbear_exit(int exitcode, const char* format, va_list param) ATTRIB_NORETURN;
-void svr_dropbear_log(int priority, const char* format, va_list param);
+void svr_dropbear_exit(int exitcode, const char *msg) ATTRIB_NORETURN;
+void svr_dropbear_log(int priority, const char *msg);
 
 /* Client */
 void cli_session(int sock_in, int sock_out, struct dropbear_progress_connection *progress, pid_t proxy_cmd_pid) ATTRIB_NORETURN;
 void cli_connected(int result, int sock, void* userdata, const char *errstring);
-void cli_dropbear_exit(int exitcode, const char* format, va_list param) ATTRIB_NORETURN;
-void cli_dropbear_log(int priority, const char* format, va_list param);
+void cli_dropbear_exit(int exitcode, const char *msg) ATTRIB_NORETURN;
+void cli_dropbear_log(int priority, const char *msg);
 void cleantext(char* dirtytext);
 void kill_proxy_command(void);
 

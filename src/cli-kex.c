@@ -257,9 +257,8 @@ static FILE* open_known_hosts_file(int * readonly)
 		if (mkdir(filename, S_IRWXU) != 0) {
 			if (errno != EEXIST) {
 				dropbear_log(LOG_INFO,
-					"Warning: failed creating %s: %s",
-						filename, strerror(errno));
-				TRACE(("mkdir didn't work: %s", strerror(errno)))
+					"Warning: failed creating %s:", filename);
+				TRACE(("mkdir didn't work:"))
 				goto out;
 			}
 		}
@@ -272,13 +271,13 @@ static FILE* open_known_hosts_file(int * readonly)
 	} else {
 		/* We mightn't have been able to open it if it was read-only */
 		if (errno == EACCES || errno == EROFS) {
-			TRACE(("trying readonly: %s", strerror(errno)))
+			TRACE(("trying readonly:"))
 			*readonly = 1;
 			hostsfile = fopen(filename, "r");
 		}
 	}
 	if (hostsfile == NULL) {
-		TRACE(("hostsfile didn't open: %s", strerror(errno)))
+		TRACE(("hostsfile didn't open:"))
 		dropbear_log(LOG_WARNING, "Failed to open %s", filename);
 	}	
 out:

@@ -11,10 +11,12 @@ This is a fork of [Matt Johnston's dropbear](https://matt.ucc.asn.au/dropbear/dr
         remote user's `~/.ssh/authorized_keys`.
 - use of a unix domain socket instead of a pair of pipes for the stdin/out
         of the spawned command in non-interactive mode.
-- a better password-reading function which doesn't depend on the deprecated
-	`getpass()`.
+- a better password-reading function which doesn't depend on `getpass()`
+	(which is deprecated and not available on android)
 	
 some incompatible changes:
+- dbclient will exit with an error instead of hanging when the server wasn't
+	able to allocate a pty and start a shell ([721554d][7215]).
 - allow `-t` (force pty) to work even when the stdin of the client is not
   a tty ([57f9cc9][57f9]); this simplifies implementing simple command line
   emulators. Unlike in openssh, a single `-t` should suffice.
@@ -23,6 +25,8 @@ some incompatible changes:
   scripts using background processes, and allows for passing the stdin/out fd
   to kernel modules (like nbd or usbib) or to other processes via `SCM_RIGHTS`.
 - allow `-i` (inetd mode) of the server to be combined with `-E`.
+- send an empty string instead of `vt100` for `TERM` if it wasn't set in
+	the environment
 
 and some fixes for:
 - cross-compiling for and using it on android
@@ -37,6 +41,7 @@ make -j
 ```
 [e48d]: https://github.com/turistu/dropbearx/commit/e48d1b0fb55a939e623124f3edd257ebdc688b8b
 [57f9]: https://github.com/turistu/dropbearx/commit/57f9cc95140c71dfb835a84327e3b65c0e4b0f8c
+[7215]: https://github.com/turistu/dropbearx/commit/721554dadceefeb4176ae665ef8d308fb283991c
 
 ## Original README.md
 ## Dropbear SSH

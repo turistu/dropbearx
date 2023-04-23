@@ -206,8 +206,7 @@ void svr_session(int sock, int childpipe) {
 }
 
 /* cleanup and exit - format must be <= 100 chars */
-void svr_dropbear_exit(int exitcode, const char* format, va_list param) {
-	char exitmsg[150];
+void svr_dropbear_exit(int exitcode, const char *msg) {
 	char fullmsg[300];
 	char fromaddr[60];
 	int i;
@@ -222,9 +221,6 @@ void svr_dropbear_exit(int exitcode, const char* format, va_list param) {
 	m_free(svr_opts.pubkey_plugin);
 #endif
 
-	/* Render the formatted exit message */
-	vsnprintf(exitmsg, sizeof(exitmsg), format, param);
-
 	/* svr_ses.addrstring may not be set for some early exits, or for
 	the listener process */
 	fromaddr[0] = '\0';
@@ -235,21 +231,21 @@ void svr_dropbear_exit(int exitcode, const char* format, va_list param) {
 	/* Add the prefix depending on session/auth state */
 	if (!ses.init_done) {
 		/* before session init */
-		snprintf(fullmsg, sizeof(fullmsg), "Early exit%s: %s", fromaddr, exitmsg);
+		snprintf(fullmsg, sizeof(fullmsg), "Early exit%s: %s", fromaddr, msg);
 	} else if (ses.authstate.authdone) {
 		/* user has authenticated */
 		snprintf(fullmsg, sizeof(fullmsg),
 				"Exit (%s)%s: %s", 
-				ses.authstate.pw_name, fromaddr, exitmsg);
+				ses.authstate.pw_name, fromaddr, msg);
 	} else if (ses.authstate.pw_name) {
 		/* we have a potential user */
 		snprintf(fullmsg, sizeof(fullmsg), 
 				"Exit before auth%s: (user '%s', %u fails): %s",
-				fromaddr, ses.authstate.pw_name, ses.authstate.failcount, exitmsg);
+				fromaddr, ses.authstate.pw_name, ses.authstate.failcount, msg);
 		add_delay = 1;
 	} else {
 		/* before userauth */
-		snprintf(fullmsg, sizeof(fullmsg), "Exit before auth%s: %s", fromaddr, exitmsg);
+		snprintf(fullmsg, sizeof(fullmsg), "Exit before auth%s: %s", fromaddr, msg);
 		add_delay = 1;
 	}
 
@@ -305,18 +301,15 @@ void svr_dropbear_exit(int exitcode, const char* format, va_list param) {
 }
 
 /* priority is priority as with syslog() */
-void svr_dropbear_log(int priority, const char* format, va_list param) {
+void svr_dropbear_log(int priority, const char *msg) {
 
-	char printbuf[1024];
 	char datestr[20];
 	time_t timesec;
 	int havetrace = 0;
 
-	vsnprintf(printbuf, sizeof(printbuf), format, param);
-
 #ifndef DISABLE_SYSLOG
 	if (opts.usingsyslog) {
-		syslog(priority, "%s", printbuf);
+		syslog(priority, "%s", msg);
 	}
 #endif
 
@@ -337,7 +330,7 @@ void svr_dropbear_log(int priority, const char* format, va_list param) {
 			/* upon failure, just print the epoch-seconds time. */
 			snprintf(datestr, sizeof(datestr), "%d", (int)timesec);
 		}
-		fprintf(stderr, "[%d] %s %s\n", getpid(), datestr, printbuf);
+		fprintf(stderr, "[%d] %s %s\n", getpid(), datestr, msg);
 	}
 }
 

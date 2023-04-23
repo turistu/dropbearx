@@ -69,19 +69,16 @@
 
 #define MAX_FMT 100
 
-static void generic_dropbear_exit(int exitcode, const char* format, 
-		va_list param) ATTRIB_NORETURN;
-static void generic_dropbear_log(int priority, const char* format, 
-		va_list param);
-
-void (*_dropbear_exit)(int exitcode, const char* format, va_list param) ATTRIB_NORETURN
-						= generic_dropbear_exit;
-void (*_dropbear_log)(int priority, const char* format, va_list param)
-						= generic_dropbear_log;
-
 #if DEBUG_TRACE
 int debug_trace = 0;
 #endif
+
+static void generic_dropbear_exit(int exitcode, const char *msg) ATTRIB_NORETURN;
+static void generic_dropbear_log(int priority, const char *msg);
+
+void (*_dropbear_exit)(int exitcode, const char *buf) ATTRIB_NORETURN
+	= generic_dropbear_exit;
+										void (*_dropbear_log)(int priority, const char *buf) = generic_dropbear_log;
 
 #ifndef DISABLE_SYSLOG
 void startsyslog(const char *ident) {
@@ -91,34 +88,58 @@ void startsyslog(const char *ident) {
 }
 #endif /* DISABLE_SYSLOG */
 
-/* the "format" string must be <= 100 characters */
-void dropbear_close(const char* format, ...) {
-
-	va_list param;
-
-	va_start(param, format);
-	_dropbear_exit(EXIT_SUCCESS, format, param);
-	va_end(param);
-
+void msg_format(char *buf, int size, const char *fmt, va_list va) {
+	int l = vsnprintf(buf, size, fmt, va);
+	if (l > 0 && l < size && buf[l - 1] == ':') {
+		snprintf(buf + l, size - l, " %s", strerror(errno));
+	}
 }
 
-void dropbear_exit(const char* format, ...) {
+void dropbear_close(const char* fmt, ...) {
+	char buf[512];
+	va_list va;
 
-	va_list param;
-
-	va_start(param, format);
-	_dropbear_exit(EXIT_FAILURE, format, param);
-	va_end(param);
+	va_start(va, fmt);
+	msg_format(buf, sizeof buf, fmt, va);
+	va_end(va);
+	_dropbear_exit(EXIT_SUCCESS, buf);
 }
 
-static void generic_dropbear_exit(int exitcode, const char* format, 
-		va_list param) {
+void dropbear_exit(const char* fmt, ...) {
+	char buf[512];
+	va_list va;
 
-	char fmtbuf[300];
+	va_start(va, fmt);
+	msg_format(buf, sizeof buf, fmt, va);
+	va_end(va);
+	_dropbear_exit(EXIT_FAILURE, buf);
+}
 
-	snprintf(fmtbuf, sizeof(fmtbuf), "Exited: %s", format);
+/* this is what can be called to write arbitrary log messages */
+void dropbear_log(int priority, const char* fmt, ...) {
+	char buf[512];
+	va_list va;
 
-	_dropbear_log(LOG_INFO, fmtbuf, param);
+	va_start(va, fmt);
+	msg_format(buf, sizeof buf, fmt, va);
+	va_end(va);
+	_dropbear_log(priority, buf);
+}
+
+void dropbear_exit_if(int cond, const char *fmt, ...) {
+	char buf[512];
+	va_list va;
+
+	va_start(va, fmt);
+	msg_format(buf, sizeof buf, fmt, va);
+	va_end(va);
+	if(cond) _dropbear_exit(EXIT_FAILURE, buf);
+	else _dropbear_log(LOG_ERR, buf);
+}
+
+static void generic_dropbear_exit(int exitcode, const char *msg) {
+
+	_dropbear_log(LOG_INFO, msg);
 
 #if DROPBEAR_FUZZ
     if (fuzz.do_jmp) {
@@ -133,26 +154,11 @@ void fail_assert(const char* expr, const char* file, int line) {
 	dropbear_exit("Failed assertion (%s:%d): `%s'", file, line, expr);
 }
 
-static void generic_dropbear_log(int UNUSED(priority), const char* format, 
-		va_list param) {
+static void generic_dropbear_log(int UNUSED(priority), const char *msg) {
 
-	char printbuf[1024];
-
-	vsnprintf(printbuf, sizeof(printbuf), format, param);
-
-	fprintf(stderr, "%s\n", printbuf);
-
+	fprintf(stderr, "%s\n", msg);
 }
 
-/* this is what can be called to write arbitrary log messages */
-void dropbear_log(int priority, const char* format, ...) {
-
-	va_list param;
-
-	va_start(param, format);
-	_dropbear_log(priority, format, param);
-	va_end(param);
-}
 
 
 #if DEBUG_TRACE 
@@ -595,7 +601,7 @@ void m_close(int fd) {
 
 	if (val < 0 && errno != EBADF) {
 		/* Linux says EIO can happen */
-		dropbear_exit("Error closing fd %d, %s", fd, strerror(errno));
+		dropbear_exit("Error closing fd %d:", fd);
 	}
 }
 	
@@ -742,11 +748,11 @@ void fsync_parent_dir(const char* fn) {
 
 	if (dirfd != -1) {
 		if (fsync(dirfd) != 0) {
-			TRACE(("fsync of directory %s failed: %s", dir, strerror(errno)))
+			TRACE(("fsync of directory %s failed:", dir))
 		}
 		m_close(dirfd);
 	} else {
-		TRACE(("error opening directory %s for fsync: %s", dir, strerror(errno)))
+		TRACE(("error opening directory %s for fsync:", dir))
 	}
 
 	m_free(fn_dir);

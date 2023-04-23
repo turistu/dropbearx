@@ -482,7 +482,7 @@ static int checkpubkey(const char* keyalgo, unsigned int keyalgolen,
 	}
 	authfile = check_fopen(filename, "r");
 	if (!authfile) {
-		TRACE(("checkpubkey: failed opening %s: %s", filename, strerror(errno)))
+		TRACE(("checkpubkey: failed opening %s:", filename))
 	}
 #if DROPBEAR_SVR_MULTIUSER
 	if ((seteuid(origuid)) < 0 ||

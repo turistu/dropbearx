@@ -708,8 +708,7 @@ utmp_write_direct(struct logininfo *li, struct utmp *ut)
 
 		(void)lseek(fd, (off_t)(tty * sizeof(struct utmp)), SEEK_SET);
 		if (atomicio(vwrite, fd, ut, sizeof(*ut)) != sizeof(*ut))
-			dropbear_log(LOG_WARNING, "utmp_write_direct: error writing %s: %s",
-			    UTMP_FILE, strerror(errno));
+			dropbear_log(LOG_WARNING, "utmp_write_direct: error writing %s:", UTMP_FILE);
 
 		(void)close(fd);
 		return 1;
@@ -891,15 +890,14 @@ wtmp_write(struct logininfo *li, struct utmp *ut)
 	int fd, ret = 1;
 
 	if ((fd = open(WTMP_FILE, O_WRONLY|O_APPEND, 0)) < 0) {
-		dropbear_log(LOG_WARNING, "wtmp_write: problem writing %s: %s",
-		    WTMP_FILE, strerror(errno));
+		dropbear_log(LOG_WARNING, "wtmp_write: problem writing %s:",
+		    WTMP_FILE);
 		return 0;
 	}
 	if (fstat(fd, &buf) == 0)
 		if (atomicio(vwrite, fd, ut, sizeof(*ut)) != sizeof(*ut)) {
 			ftruncate(fd, buf.st_size);
-			dropbear_log(LOG_WARNING, "wtmp_write: problem writing %s: %s",
-			    WTMP_FILE, strerror(errno));
+			dropbear_log(LOG_WARNING, "wtmp_write: problem writing %s:", WTMP_FILE);
 			ret = 0;
 		}
 	(void)close(fd);
@@ -984,13 +982,13 @@ wtmp_get_entry(struct logininfo *li)
 	li->tv_sec = li->tv_usec = 0;
 
 	if ((fd = open(WTMP_FILE, O_RDONLY)) < 0) {
-		dropbear_log(LOG_WARNING, "wtmp_get_entry: problem opening %s: %s",
-		    WTMP_FILE, strerror(errno));
+		dropbear_log(LOG_WARNING, "wtmp_get_entry: problem opening %s:",
+		    WTMP_FILE);
 		return 0;
 	}
 	if (fstat(fd, &st) != 0) {
-		dropbear_log(LOG_WARNING, "wtmp_get_entry: couldn't stat %s: %s",
-		    WTMP_FILE, strerror(errno));
+		dropbear_log(LOG_WARNING, "wtmp_get_entry: couldn't stat %s:",
+		    WTMP_FILE);
 		close(fd);
 		return 0;
 	}
@@ -1004,8 +1002,8 @@ wtmp_get_entry(struct logininfo *li)
 
 	while (!found) {
 		if (atomicio(read, fd, &ut, sizeof(ut)) != sizeof(ut)) {
-			dropbear_log(LOG_WARNING, "wtmp_get_entry: read of %s failed: %s",
-			    WTMP_FILE, strerror(errno));
+			dropbear_log(LOG_WARNING, "wtmp_get_entry: read of %s failed:",
+			    WTMP_FILE);
 			close (fd);
 			return 0;
 		}
@@ -1057,16 +1055,16 @@ wtmpx_write(struct logininfo *li, struct utmpx *utx)
 	int fd, ret = 1;
 
 	if ((fd = open(WTMPX_FILE, O_WRONLY|O_APPEND, 0)) < 0) {
-		dropbear_log(LOG_WARNING, "wtmpx_write: problem opening %s: %s",
-		    WTMPX_FILE, strerror(errno));
+		dropbear_log(LOG_WARNING, "wtmpx_write: problem opening %s:",
+		    WTMPX_FILE);
 		return 0;
 	}
 
 	if (fstat(fd, &buf) == 0)
 		if (atomicio(vwrite, fd, utx, sizeof(*utx)) != sizeof(*utx)) {
 			ftruncate(fd, buf.st_size);
-			dropbear_log(LOG_WARNING, "wtmpx_write: problem writing %s: %s",
-			    WTMPX_FILE, strerror(errno));
+			dropbear_log(LOG_WARNING, "wtmpx_write: problem writing %s:",
+			    WTMPX_FILE);
 			ret = 0;
 		}
 	(void)close(fd);
@@ -1140,13 +1138,13 @@ wtmpx_get_entry(struct logininfo *li)
 	li->tv_sec = li->tv_usec = 0;
 
 	if ((fd = open(WTMPX_FILE, O_RDONLY)) < 0) {
-		dropbear_log(LOG_WARNING, "wtmpx_get_entry: problem opening %s: %s",
-		    WTMPX_FILE, strerror(errno));
+		dropbear_log(LOG_WARNING, "wtmpx_get_entry: problem opening %s:",
+		    WTMPX_FILE);
 		return 0;
 	}
 	if (fstat(fd, &st) != 0) {
-		dropbear_log(LOG_WARNING, "wtmpx_get_entry: couldn't stat %s: %s",
-		    WTMPX_FILE, strerror(errno));
+		dropbear_log(LOG_WARNING, "wtmpx_get_entry: couldn't stat %s:",
+		    WTMPX_FILE);
 		close(fd);
 		return 0;
 	}
@@ -1160,8 +1158,8 @@ wtmpx_get_entry(struct logininfo *li)
 
 	while (!found) {
 		if (atomicio(read, fd, &utx, sizeof(utx)) != sizeof(utx)) {
-			dropbear_log(LOG_WARNING, "wtmpx_get_entry: read of %s failed: %s",
-			    WTMPX_FILE, strerror(errno));
+			dropbear_log(LOG_WARNING, "wtmpx_get_entry: read of %s failed:",
+			    WTMPX_FILE);
 			close (fd);
 			return 0;
 		}
@@ -1224,7 +1222,7 @@ syslogin_perform_logout(struct logininfo *li)
 	(void)line_stripname(line, li->line, sizeof(line));
 
 	if (!logout(line)) {
-		dropbear_log(LOG_WARNING, "syslogin_perform_logout: logout(%s) returned an error: %s", line, strerror(errno));
+		dropbear_log(LOG_WARNING, "syslogin_perform_logout: logout(%s) returned an error:", line);
 #  ifdef HAVE_LOGWTMP
 	} else {
 		logwtmp(line, "", "");
@@ -1283,8 +1281,7 @@ lastlog_filetype(char *filename)
 	struct stat st;
 
 	if (stat(filename, &st) != 0) {
-		dropbear_log(LOG_WARNING, "lastlog_perform_login: Couldn't stat %s: %s", filename,
-			strerror(errno));
+		dropbear_log(LOG_WARNING, "lastlog_perform_login: Couldn't stat %s:", filename);
 		return 0;
 	}
 	if (S_ISDIR(st.st_mode))
@@ -1321,8 +1318,8 @@ lastlog_openseek(struct logininfo *li, int *fd, int filemode)
 
 	*fd = open(lastlog_file, filemode, 0600);
 	if ( *fd < 0) {
-		dropbear_log(LOG_INFO, "lastlog_openseek: Couldn't open %s: %s",
-		    lastlog_file, strerror(errno));
+		dropbear_log(LOG_INFO, "lastlog_openseek: Couldn't open %s:",
+		    lastlog_file);
 		return 0;
 	}
 
@@ -1331,8 +1328,8 @@ lastlog_openseek(struct logininfo *li, int *fd, int filemode)
 		offset = (off_t) ((long)li->uid * sizeof(struct lastlog));
 
 		if ( lseek(*fd, offset, SEEK_SET) != offset ) {
-			dropbear_log(LOG_WARNING, "lastlog_openseek: %s->lseek(): %s",
-				lastlog_file, strerror(errno));
+			dropbear_log(LOG_WARNING, "lastlog_openseek: %s->lseek():",
+				lastlog_file);
 			m_close(*fd);
 			return 0;
 		}
@@ -1356,8 +1353,8 @@ lastlog_perform_login(struct logininfo *li)
 	/* write the entry */
 	if (atomicio(vwrite, fd, &last, sizeof(last)) != sizeof(last)) {
 		close(fd);
-		dropbear_log(LOG_WARNING, "lastlog_write_filemode: Error writing to %s: %s",
-		    LASTLOG_FILE, strerror(errno));
+		dropbear_log(LOG_WARNING, "lastlog_write_filemode: Error writing to %s:",
+		    LASTLOG_FILE);
 		return 0;
 	}
 

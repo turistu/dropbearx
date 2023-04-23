@@ -20,8 +20,8 @@ static int buf_writefile(buffer * buf, const char * filename, int skip_exist) {
 		if (skip_exist && errno == EEXIST) {
 			ret = DROPBEAR_SUCCESS;
 		} else {
-			dropbear_log(LOG_ERR, "Couldn't create new file %s: %s",
-				filename, strerror(errno));
+			dropbear_log(LOG_ERR, "Couldn't create new file %s:",
+				filename);
 		}
 
 		goto out;
@@ -35,8 +35,8 @@ static int buf_writefile(buffer * buf, const char * filename, int skip_exist) {
 			continue;
 		}
 		if (len <= 0) {
-			dropbear_log(LOG_ERR, "Failed writing file %s: %s",
-				filename, strerror(errno));
+			dropbear_log(LOG_ERR, "Failed writing file %s:",
+				filename);
 			goto out;
 		}
 		buf_incrpos(buf, len);
@@ -47,7 +47,7 @@ static int buf_writefile(buffer * buf, const char * filename, int skip_exist) {
 out:
 	if (fd >= 0) {
 		if (fsync(fd) != 0) {
-			dropbear_log(LOG_ERR, "fsync of %s failed: %s", filename, strerror(errno));
+			dropbear_log(LOG_ERR, "fsync of %s failed:", filename);
 		}
 		m_close(fd);
 	}
@@ -166,8 +166,7 @@ int signkey_generate(enum signkey_type keytype, int bits, const char* filename, 
 				buf_setpos(buf, 0);
 				ret = buf_writefile(buf, filename, skip_exist);
 			} else {
-				dropbear_log(LOG_ERR, "Failed moving key file to %s: %s", filename,
-					strerror(errno));
+				dropbear_log(LOG_ERR, "Failed moving key file to %s:", filename);
 				ret = DROPBEAR_FAILURE;
 			}
 
