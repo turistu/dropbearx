@@ -361,4 +361,6 @@ be overridden at runtime with -I. 0 disables idle timeouts */
 
 #define AUTHORIZED_KEYS_FILE	"~/.ssh/authorized_keys"
 
+#define KNOWN_HOSTS_FILE	"~/.ssh/known_hosts"
+
 #endif /* DROPBEAR_DEFAULT_OPTIONS_H_ */

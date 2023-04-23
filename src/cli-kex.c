@@ -218,10 +218,11 @@ static void ask_to_confirm(const unsigned char* keyblob, unsigned int keybloblen
 		return;
 	}
 	if (cli_opts.batchmode) {
-		dropbear_exit("Host '%s' is not in the trusted hosts file.\n(%s fingerprint %s)", cli_opts.remotehost, algoname, fp);
+		dropbear_exit("Host '%s' is not in '%s'.\n(%s fingerprint %s)", cli_opts.known_hosts_file, cli_opts.remotehost, algoname, fp);
 	}
-	fprintf(stderr, "\nHost '%s' is not in the trusted hosts file.\n(%s fingerprint %s)\nDo you want to continue connecting? (y/n) ", 
+	fprintf(stderr, "\nHost '%s' is not in '%s'.\n(%s fingerprint %s)\nDo you want to continue connecting? (y/n) ", 
 			cli_opts.remotehost, 
+			cli_opts.known_hosts_file,
 			algoname,
 			fp);
 	m_free(fp);
@@ -247,21 +248,23 @@ static FILE* open_known_hosts_file(int * readonly)
 {
 	FILE * hostsfile = NULL;
 	char * filename = NULL;
-	char * slash;
 	
-	filename = expand_homedir_path("~/.ssh/known_hosts");
+	filename = expand_homedir_path(cli_opts.known_hosts_file);
 	/* Check that ~/.ssh exists - easiest way is just to mkdir */
-	slash = strrchr(filename, '/');
-	*slash = '\0';
-	if (mkdir(filename, S_IRWXU) != 0) {
-		if (errno != EEXIST) {
-			dropbear_log(LOG_INFO, "Warning: failed creating %s: %s",
-					filename, strerror(errno));
-			TRACE(("mkdir didn't work: %s", strerror(errno)))
-			goto out;
+	if(!strncmp("~/.ssh/", cli_opts.known_hosts_file, 7)){
+		char *slash = strrchr(filename, '/');
+		*slash = '\0';
+		if (mkdir(filename, S_IRWXU) != 0) {
+			if (errno != EEXIST) {
+				dropbear_log(LOG_INFO,
+					"Warning: failed creating %s: %s",
+						filename, strerror(errno));
+				TRACE(("mkdir didn't work: %s", strerror(errno)))
+				goto out;
+			}
 		}
+		*slash = '/';
 	}
-	*slash = '/';
 	hostsfile = fopen(filename, "a+");
 	if (hostsfile != NULL) {
 		*readonly = 0;

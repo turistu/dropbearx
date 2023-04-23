@@ -197,6 +197,7 @@ void cli_getopts(int argc, char ** argv) {
 	opts.recv_window = DEFAULT_RECV_WINDOW;
 	opts.keepalive_secs = DEFAULT_KEEPALIVE;
 	opts.idle_timeout_secs = DEFAULT_IDLE_TIMEOUT;
+	cli_opts.known_hosts_file = KNOWN_HOSTS_FILE;
 
 	cli_opts.own_user = get_username();
 
@@ -892,6 +893,7 @@ static void add_extendedopt(const char* origstr) {
 		dropbear_log(LOG_INFO, "Available options:\n"
 			"\tBatchMode\n"
 			"\tConnectTimeout\n"
+			"\tUserKnownHostsFile\n"
 #if DROPBEAR_CLI_ANYTCPFWD
 			"\tExitOnForwardFailure\n"
 #endif
@@ -934,6 +936,10 @@ static void add_extendedopt(const char* origstr) {
 	}
 	if (match_extendedopt(&optstr, "ConnectTimeout") == DROPBEAR_SUCCESS) {
 		opts.conn_timeout = parse_uint_value(optstr, "ConnectTimeout");
+		return;
+	}
+	if (match_extendedopt(&optstr, "UserKnownHostsFile") == DROPBEAR_SUCCESS) {
+		cli_opts.known_hosts_file = optstr;
 		return;
 	}
 
