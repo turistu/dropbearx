@@ -1,12 +1,11 @@
 #! /bin/sh
 api=21
 arch=armv7a
-ndk=/point-me-to-the/android-ndk
-
-src=$(realpath "${0%/*}/..")
+ndk=${ANDROID_NDK:-/k/v/android-ndk*}
+src=${SRC:-.}
+out=${OUT:-/path/to-output-dir}
 
 set -e
-test -e "$src/configure" || autoreconf "$src"
 while :; do
 	case $1 in
 	aarch64|armv7a|i686|x86_64) arch=$1;;
@@ -22,10 +21,17 @@ armv7a) eabi=eabi;;
 *) eabi=;;
 esac
 die(){ echo >&2 "$@"; exit 1; }
+set_first(){ v=$1; shift; ifs=$IFS; IFS=; set -- $@; IFS=$ifs; eval "$v=\$1"; }
+set_first ndk "$ndk"
 test -d "$ndk" || die not a directory: "$ndk"
-tc=$(realpath $ndk/toolchains/llvm/prebuilt/linux-x86_64)
+tc=$ndk/toolchains/llvm/prebuilt/linux-x86_64
 cc=$tc/bin/$arch-linux-android$eabi$api-clang
 test -x "$cc" || die not an executable: "$cc"
 strip=$tc/bin/llvm-strip
 test -x "$strip" || die not an executable: "$strip"
-CC=$cc STRIP=$strip exec "$src/configure" --host="$arch-linux-android$api"
+
+CC=$cc STRIP=$strip "$src/configure" --host="$arch-linux-android$api"
+
+make -j32 everything
+make strip
+cp dbclient scp dropbear* "$out"

@@ -24,6 +24,7 @@ rm key.pub+
 awk '{print "localhost", $1, $2 }' key.pub > known_hosts
 
 port=2222
+
 "$s/dropbear" -p $port -FE -r key -A key.pub 2>>LOG &
 sleep .2
 
@@ -72,6 +73,15 @@ hcheck -p 7777
 hcheck -p 8888
 hcheck -p $remote_port
 hcheck -p $local_port
+
+if unshare -Ucm --keep-caps sh -c "
+	mount -B /dev/null /dev/ptmx
+	$s/dropbear -p 2223 -FE -r key -A key.pub 2>>LOG &
+	sleep .2
+	"
+then
+	hcheck -p 2223
+fi
 
 ##################################################################
 

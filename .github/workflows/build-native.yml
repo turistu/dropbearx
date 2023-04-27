@@ -9,7 +9,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-20.04, macos-11]
+        os: [ubuntu-20.04, macos-11, ubuntu-latest, macos-latest]
     runs-on: ${{matrix.os}}
     steps:
       - uses: actions/checkout@v2
@@ -19,7 +19,7 @@ jobs:
       - name: Build
         id: build
         timeout-minutes: 3
-        run: scripts/build-native ${{matrix.os}}
+        run: .github/build-native ${{matrix.os}}
 
       - name: Save output
         if: success() || failure()

@@ -1,9 +1,0 @@
-#! /bin/sh
-set -e
-out=$1; shift
-mkdir -p "$out"
-exec >$out/BUILD-LOG 2>&1
-scripts/ndk-configure tools/android-ndk-* "$@"
-make -j everything
-make strip
-cp dropbear dropbear[!x]* dbclient scp "$out"

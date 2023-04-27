@@ -1,0 +1,10 @@
+name: Build with the NDK
+on:
+  push:
+  workflow_dispatch:
+jobs:
+  test:
+    uses: turistu/odds-n-ends/.github/workflows/build-with-ndk.yml@main
+    with:
+      reconf: autoreconf
+      build: .github/build-with-ndk
