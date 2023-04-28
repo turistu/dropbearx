@@ -285,7 +285,7 @@ static void send_chansess_pty_req(const struct Channel *channel) {
 	/* Get the terminal */
 	term = getenv("TERM");
 	if (term == NULL) {
-		term = "vt100"; /* Seems a safe default */
+		term = "";
 	}
 	buf_putstring(ses.writepayload, term, strlen(term));
 
