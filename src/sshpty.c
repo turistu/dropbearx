@@ -21,6 +21,7 @@
 #include "dbutil.h"
 #include "errno.h"
 #include "sshpty.h"
+#include "session.h"
 
 #ifndef O_NOCTTY
 #define O_NOCTTY 0
@@ -36,17 +37,22 @@
 int
 pty_allocate(int *ptyfd, int *ttyfd, char **nameptr)
 {
+	int ret = 0;
+	uid_t uid = geteuid();
+	char *name;
+	if(seteuid(ses.authstate.pw_uid))
+		dropbear_exit("seteuid(%d):", ses.authstate.pw_uid);
 #ifdef HAVE_POSIX_OPENPT
 	*ptyfd = posix_openpt(O_RDWR|O_NOCTTY);
 	if(*ptyfd == -1){
-		dropbear_log(LOG_WARNING, "posix_openpt:");
-		return 0;
+		dropbear_log(LOG_ERR, "posix_openpt:");
+		goto done;
 	}
 #else
 	*ptyfd = open("/dev/ptmx", O_RDWR|O_NOCTTY);
 	if(*ptyfd == -1){
-		dropbear_log(LOG_WARNING, "open /dev/ptmx:");
-		return 0;
+		dropbear_log(LOG_ERR, "open /dev/ptmx:");
+		goto done;
 	}
 #endif
 	grantpt(*ptyfd);
@@ -55,33 +61,32 @@ pty_allocate(int *ptyfd, int *ttyfd, char **nameptr)
 	*ttyfd = ioctl(*ptyfd, TIOCGPTPEER, O_RDWR|O_NOCTTY);
 	if(*ttyfd != -1){
 		*nameptr = m_strdup(ttyname(*ttyfd));
-		return 1;
+		ret = 1;
+		goto done;
 	}
 #endif
-	*nameptr = m_strdup(ptsname(*ptyfd));
-	*ttyfd = open(*nameptr, O_RDWR|O_NOCTTY);
-	if(*ttyfd != -1)
-		return 1;
-	dropbear_log(LOG_WARNING, "open %s:", *nameptr);
-	return 0;
+	if(!(name = ptsname(*ptyfd))) {
+		dropbear_log(LOG_ERR, "ptsname:");
+		goto done;
+	}
+	*ttyfd = open(name, O_RDWR|O_NOCTTY);
+	if(*ttyfd != -1) {
+		*nameptr = m_strdup(name);
+		ret = 1;
+		goto done;
+	}
+	dropbear_log(LOG_ERR, "open %s:", *nameptr);
+done:
+	if(seteuid(uid))
+		dropbear_exit("seteuid(%d):", uid);
+	return ret;
 }
 
-/* Releases the tty.  Its ownership is returned to root, and permissions to 0666. */
-
 void
-pty_release(const char *tty_name)
+pty_make_controlling_tty(int ttyfd)
 {
-	(void)tty_name;
-}
-
-/* Makes the tty the processes controlling tty and sets it to sane modes. */
-
-void
-pty_make_controlling_tty(int *ttyfd, const char *tty_name)
-{
-	(void)tty_name;
 	setsid();
-	ioctl(*ttyfd, TIOCSCTTY, 0);
+	ioctl(ttyfd, TIOCSCTTY, 0);
 }
 
 /* Changes the window size associated with the pty. */
@@ -97,57 +102,4 @@ pty_change_window_size(int ptyfd, int row, int col,
 	w.ws_xpixel = xpixel;
 	w.ws_ypixel = ypixel;
 	(void) ioctl(ptyfd, TIOCSWINSZ, &w);
-}
-
-void
-pty_setowner(struct passwd *pw, int ttyfd)
-{
-	struct group *grp;
-	gid_t gid;
-	mode_t mode;
-	struct stat st;
-
-	/* Determine the group to make the owner of the tty. */
-	grp = getgrnam("tty");
-	if (grp) {
-		gid = grp->gr_gid;
-		mode = S_IRUSR | S_IWUSR | S_IWGRP;
-	} else {
-		gid = pw->pw_gid;
-		mode = S_IRUSR | S_IWUSR;
-	}
-
-	/*
-	 * Change owner and mode of the tty as required.
-	 * Warn but continue if filesystem is read-only and the uids match/
-	 * tty is owned by root.
-	 */
-	if (fstat(ttyfd, &st)) {
-		dropbear_exit("pty_setowner: stat(%.101s) failed:",
-				ttyname(ttyfd));
-	}
-
-	/* Allow either "tty" gid or user's own gid. On Linux with openpty()
-	 * this varies depending on the devpts mount options */
-	if (st.st_uid != pw->pw_uid || !(st.st_gid == gid || st.st_gid == pw->pw_gid)) {
-		if (fchown(ttyfd, pw->pw_uid, gid) < 0) {
-			if (errno == EROFS &&
-			    (st.st_uid == pw->pw_uid || st.st_uid == 0)) {
-				dropbear_log(LOG_ERR,
-					"fchown(%.100s, %u, %u) failed:",
-						ttyname(ttyfd),
-						(unsigned int)pw->pw_uid, (unsigned int)gid);
-			} else {
-				dropbear_exit("chown(%.100s, %u, %u) failed:",
-				    ttyname(ttyfd), (unsigned int)pw->pw_uid, (unsigned int)gid);
-			}
-		}
-	}
-
-	if ((st.st_mode & (S_IRWXU|S_IRWXG|S_IRWXO)) != mode) {
-		if (fchmod(ttyfd, mode) < 0) {
-			dropbear_exit("fchmod(%d %.100s, 0%o -> 0%o) failed",
-				ttyfd, ttyname(ttyfd), st.st_mode, mode);
-		}
-	}
 }

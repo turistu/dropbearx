@@ -329,7 +329,6 @@ static void cleanupchansess(const struct Channel *channel) {
 		login_logout(li);
 		login_free_entry(li);
 
-		pty_release(chansess->tty);
 		m_free(chansess->tty);
 	}
 
@@ -605,7 +604,6 @@ static int sessionpty(struct ChanSess * chansess) {
 	pw = getpwnam(ses.authstate.pw_name);
 	if (!pw)
 		dropbear_exit("getpwnam failed after succeeding previously");
-	pty_setowner(pw, chansess->slave);
 
 	/* Set up the rows/col counts */
 	sessionwinchange(chansess);
@@ -837,7 +835,7 @@ static int ptycommand(struct Channel *channel, struct ChanSess *chansess) {
 		/* redirect stdin/stdout/stderr */
 		close(chansess->master);
 
-		pty_make_controlling_tty(&chansess->slave, chansess->tty);
+		pty_make_controlling_tty(chansess->slave);
 		
 		if ((dup2(chansess->slave, STDIN_FILENO) < 0) ||
 			(dup2(chansess->slave, STDOUT_FILENO) < 0)) {
