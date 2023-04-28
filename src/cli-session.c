@@ -46,6 +46,8 @@ static void cli_finished(void) ATTRIB_NORETURN;
 static void recv_msg_service_accept(void);
 static void cli_session_cleanup(void);
 static void recv_msg_global_request_cli(void);
+static void cli_recv_msg_channel_success(void);
+static void cli_recv_msg_channel_failure(void);
 
 struct clientsession cli_ses; /* GLOBAL */
 
@@ -71,8 +73,8 @@ static const packettype cli_packettypes[] = {
 	{SSH_MSG_USERAUTH_BANNER, recv_msg_userauth_banner}, /* client */
 	{SSH_MSG_USERAUTH_SPECIFIC_60, recv_msg_userauth_specific_60}, /* client */
 	{SSH_MSG_GLOBAL_REQUEST, recv_msg_global_request_cli},
-	{SSH_MSG_CHANNEL_SUCCESS, ignore_recv_response},
-	{SSH_MSG_CHANNEL_FAILURE, ignore_recv_response},
+	{SSH_MSG_CHANNEL_SUCCESS, cli_recv_msg_channel_success},
+	{SSH_MSG_CHANNEL_FAILURE, cli_recv_msg_channel_failure},
 #if DROPBEAR_CLI_REMOTETCPFWD
 	{SSH_MSG_REQUEST_SUCCESS, cli_recv_msg_request_success}, /* client */
 	{SSH_MSG_REQUEST_FAILURE, cli_recv_msg_request_failure}, /* client */
@@ -474,3 +476,15 @@ void cli_dropbear_log(int priority, const char *msg) {
 	fflush(stderr);
 }
 
+static void cli_recv_msg_channel_success(void) {
+	cli_ses.replies_expected--;
+}
+static void cli_recv_msg_channel_failure(void) {
+	switch (cli_ses.replies_expected--) {
+	case 2:
+		dropbear_log(LOG_ERR, "PTY allocation request failed");
+		break;
+	case 1:
+		dropbear_exit("shell request failed");
+	}
+}

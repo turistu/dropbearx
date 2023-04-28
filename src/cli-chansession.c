@@ -278,9 +278,8 @@ static void send_chansess_pty_req(const struct Channel *channel) {
 	TRACE(("enter send_chansess_pty_req"))
 
 	start_send_channel_request(channel, "pty-req");
-
-	/* Don't want replies */
-	buf_putbyte(ses.writepayload, 0);
+	buf_putbyte(ses.writepayload, 1); /* want reply */
+	cli_ses.replies_expected++;
 
 	/* Get the terminal */
 	term = getenv("TERM");
@@ -322,8 +321,8 @@ static void send_chansess_shell_req(const struct Channel *channel) {
 
 	start_send_channel_request(channel, reqtype);
 
-	/* XXX TODO */
-	buf_putbyte(ses.writepayload, 0); /* Don't want replies */
+	buf_putbyte(ses.writepayload, 1); /* want reply */
+	cli_ses.replies_expected++;
 	if (cli_opts.cmd) {
 		buf_putstring(ses.writepayload, cli_opts.cmd, strlen(cli_opts.cmd));
 	}

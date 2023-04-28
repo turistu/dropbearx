@@ -336,6 +336,7 @@ struct clientsession {
 #endif
 
 	pid_t proxy_cmd_pid;
+	int replies_expected;
 };
 
 /* Global structs storing the state */
