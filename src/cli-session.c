@@ -458,7 +458,7 @@ void cli_dropbear_exit(int exitcode, const char *msg) {
 
 void cli_dropbear_log(int priority, const char *msg) {
 
-	const char *name;
+	const char *name, *nl;
 
 	name = cli_opts.progname;
 	if (!name) {
@@ -472,7 +472,8 @@ void cli_dropbear_log(int priority, const char *msg) {
 	}
 #endif
 
-	fprintf(stderr, "%s: %s\n", name, msg);
+	nl = isatty(fileno(stderr)) ? "\r\n" : "\n";
+	fprintf(stderr, "%s: %s%s", name, msg, nl);
 	fflush(stderr);
 }
 
