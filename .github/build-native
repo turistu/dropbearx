@@ -26,7 +26,7 @@ onexit(){
 	if [ "$err" = 0 ]; then
 		echo "OK, $bdir done"
 	else
-		tail -n20 "$logfile"; echo FAILED
+		tail -n40 "$logfile"; echo FAILED
 	fi
 }
 trap onexit EXIT
@@ -37,8 +37,7 @@ cd "$bdir"
 case $opt in *n*);;*)	"$srcdir/configure" --prefix="$pdir"; esac
 make -j32 everything
 # make check
-$srcdir/scripts/simple-test
 make strip
 make install-everything
-cd "$pdir"
 tar -C "$pdir" -zcf "$outdir/dropbearx-$os.tgz" .
+$srcdir/scripts/simple-test

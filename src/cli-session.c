@@ -46,7 +46,6 @@ static void cli_finished(void) ATTRIB_NORETURN;
 static void recv_msg_service_accept(void);
 static void cli_session_cleanup(void);
 static void recv_msg_global_request_cli(void);
-static void cli_recv_msg_channel_success(void);
 static void cli_recv_msg_channel_failure(void);
 
 struct clientsession cli_ses; /* GLOBAL */
@@ -477,9 +476,6 @@ void cli_dropbear_log(int priority, const char *msg) {
 	fflush(stderr);
 }
 
-static void cli_recv_msg_channel_success(void) {
-	cli_ses.replies_expected--;
-}
 static void cli_recv_msg_channel_failure(void) {
 	switch (cli_ses.replies_expected--) {
 	case 2:

@@ -125,6 +125,7 @@ void common_recv_msg_channel_data(struct Channel *channel, int fd,
 
 #if DROPBEAR_CLIENT
 extern const struct ChanType clichansess;
+void cli_recv_msg_channel_success(void);
 #endif
 
 #if DROPBEAR_LISTENERS || DROPBEAR_CLIENT

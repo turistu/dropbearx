@@ -367,12 +367,6 @@ static int cli_initchansess(struct Channel *channel) {
 
 	send_chansess_shell_req(channel);
 
-	if (cli_opts.wantpty) {
-		cli_tty_setup();
-		channel->read_mangler = cli_escape_handler;
-		cli_ses.last_char = '\r';
-	}
-
 	return 0; /* Success */
 }
 
@@ -480,5 +474,15 @@ void cli_escape_handler(const struct Channel* UNUSED(channel), const unsigned ch
 
 	if (skip_char) {
 		*len = 0;
+	}
+}
+
+void cli_recv_msg_channel_success(void) {
+	switch (cli_ses.replies_expected--) {
+	case 2:
+		cli_tty_setup();
+		getchannel()->read_mangler = cli_escape_handler;
+		cli_ses.last_char = '\r';
+		break;
 	}
 }

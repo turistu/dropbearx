@@ -1,23 +1,65 @@
 #! /bin/sh
 umask 066
 unset IFS
-err=0
+status=0
+readfile() {
+	t=$(cat "$2"; echo x); t=${t%x}; eval "$1=\$t"
+}
+check(){
+	pat=$(printf "$1"); shift
+	printf '  \033[1m'; printf ' %s' "$@"; printf '\033[m\n'
+	case $# in 1) eval "$1" &&:;; *) "$@" &&:;; esac >out 2>err
+	exit=$?
+	readfile out out
+	readfile err err
+	res=$exit:$out:$err
+	case $res in
+	$pat)	printf '   \033[1;32mOK\033[m\n';;
+	*)	
+		printf '   \033[1;31mFAIL\033[m\n   <%s> !~ <%s>\n\n' \
+			"$(printf %s "$res" | cat -v)" \
+			"$(printf %s "$pat" | cat -v)"
+		status=1;;
+	esac
+}
+if script -qctrue /dev/null 2>/dev/null; then
+	sep=$(printf '\001')
+	pty()(IFS=$sep; SEP=$IFS CMD=$* script -qc 'IFS=$SEP; set -f; exec $CMD' /dev/null)
+elif script -q /dev/null true 2>/dev/null; then
+	pty(){ script -q /dev/null "$@"; }
+fi
+dssh(){ "$s/dbclient" -i key "$@"; }
+dssh_h(){ dssh -o UserKnownHostsFile=known_hosts "$@"; }
+dssh_pty(){ pty "$s/dbclient" -i key -o UserKnownHostsFile=known_hosts "$@"; }
+
+stuff=1
+hcheck(){
+	case $1 in
+	%)	t=hcheck$((stuff=$stuff+1)); p=0:$t: ;;
+	*:*)	p=$1; t=${p#*:}; t=${t%:*};;
+	*)	t=$1; p=0:$t: ;;
+	esac
+	shift
+	check "$p" dssh_h "$@" localhost printf "$t"
+}
+
+##################################################################
 set -e
 tmpdir=$(mktemp -d)
 onexit(){
 	status=$?
 	set +e
 	pkill -g0 "dropbear|dbclient"; wait
-	[ "$status" = 0 ] || { echo '========='; cat LOG >&2; }
+	# [ "$status" = 0 ] || { echo '========='; cat LOG >&2; }
 	rm -fr "$tmpdir"
 }
-trap onexit EXIT INT
+trap onexit EXIT INT TERM
 s=${1:-.}
 case $s in /*);; *) s=$(pwd)/$s;; esac
 
 cd "$tmpdir"
 HOME=$tmpdir
-"$s/dropbearkey" -t ed25519 -f key >>LOG 2>&1
+"$s/dropbearkey" -t ed25519 -f key
 "$s/dropbearkey" -y -f key > key.pub+
 grep ^ssh key.pub+ > key.pub
 rm key.pub+
@@ -25,39 +67,25 @@ awk '{print "localhost", $1, $2 }' key.pub > known_hosts
 
 port=2222
 
-"$s/dropbear" -p $port -FE -r key -A key.pub 2>>LOG &
+"$s/dropbear" -mFE -p $port -r key -A key.pub 2>>LOG &
 sleep .2
-
-check(){
-	pat=$(printf "$1"); shift
-	printf '\n<<<<<<<<'; printf ' %s' "$@"; echo
-	case $# in 1) out=$(eval "$1");; *) out=$("$@"); esac
-	out=$?:$out
-	printf '>>>>>>>> ';
-	case $out in
-	$pat)	printf 'OK\n\n';;
-	*)	
-		out=$(printf %s "$out" | cat -v)
-		printf 'FAIL <%s> !~ <%s>\n\n' "$out" "$pat"; err=1;;
-	esac
-}
-dssh(){
-	"$s/dbclient" -i key "$@"
-}
-dssh_h(){ dssh -o UserKnownHostsFile=known_hosts "$@"; }
-
-stuff=$$
-hcheck(){
-	t=$0$((stuff=stuff+1))
-	check "0:$t" dssh_h "$@" localhost echo "$t"
-}
-
+{ sleep 3; pkill -g0 "dbclient|script"; } &
 ##################################################################
 
-check '0:test' dssh -y -p $port localhost echo test
-hcheck -p $port
-check '0:test\r' dssh_h -t -p $port localhost echo test
-check 0:foobar dssh_h -p $port localhost '{ sleep .5; echo bar; } & printf foo'
+echo ===========
+exec </dev/null
+set -v
+check '0:test:*key accepted unconditionally*' \
+	dssh -y -p $port localhost printf test
+hcheck % -p $port
+check '0:*test\r\n*test\r\n*test\r\n*:' \
+	'echo echo test | dssh_pty -p $port localhost'
+check '0:1\r\ntest\r\n:' \
+	'echo 1 | dssh_pty -p $port localhost echo test'
+check '0:test\r\n:' \
+	dssh_h -t -p $port localhost echo test
+check '0:foobar\n:' \
+	dssh_h -p $port localhost '{ sleep .5; echo bar; } & printf foo'
 
 dssh_h \
 	-R 8888:localhost:$port \
@@ -68,22 +96,31 @@ dssh_h \
 sleep .3
 eval $(awk '/Allocated port [0-9]+ for (local|remote)/{print $6"_port="$4}' stderr)
 
-#hcheck -p $port -o ExitOnForwardFailure=1 -R 8:localhost:$port
-hcheck -p 7777
-hcheck -p 8888
-hcheck -p $remote_port
-hcheck -p $local_port
+hcheck '1::*Remote TCP forward request failed*' \
+	-p $port -o ExitOnForwardFailure=yes -R 8:localhost:$port
+hcheck % -p 7777
+hcheck % -p 8888
+hcheck % -p $remote_port
+hcheck % -p $local_port
 
+
+port=2223
 if unshare -Ucm --keep-caps sh -c "
 	mount -B /dev/null /dev/ptmx
-	$s/dropbear -p 2223 -FE -r key -A key.pub 2>>LOG &
+	$s/dropbear -mFE -p $port -r key -A key.pub 2>>LOG &
 	sleep .2
 	"
 then
-	hcheck -p 2223
+	port=2223
+	check '0:test\n:*PTY allocation request failed*' \
+		dssh_h -t -p $port localhost echo test
+	check '0:test\r\n*PTY allocation request failed*:' \
+		'echo test | dssh_pty -p $port localhost'
+else
+	echo no unshare, skipping the no /dev/ptmx part
 fi
-
+set +v
 ##################################################################
 
-echo STATUS $err
-exit $err
+echo STATUS $status
+exit $status

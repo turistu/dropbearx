@@ -576,7 +576,6 @@ static void get_termmodes(const struct ChanSess *chansess) {
 static int sessionpty(struct ChanSess * chansess) {
 
 	unsigned int termlen;
-	struct passwd * pw = NULL;
 
 	TRACE(("enter sessionpty"))
 
@@ -601,10 +600,6 @@ static int sessionpty(struct ChanSess * chansess) {
 		return DROPBEAR_FAILURE;
 	}
 	
-	pw = getpwnam(ses.authstate.pw_name);
-	if (!pw)
-		dropbear_exit("getpwnam failed after succeeding previously");
-
 	/* Set up the rows/col counts */
 	sessionwinchange(chansess);
 
@@ -727,7 +722,7 @@ static int sessioncommand(struct Channel *channel, struct ChanSess *chansess,
 	make_connection_string(chansess);
 #endif
 
-	if (chansess->term == NULL) {
+	if (chansess->slave == -1) {
 		/* no pty */
 		ret = noptycommand(channel, chansess);
 		if (ret == DROPBEAR_SUCCESS) {
@@ -809,12 +804,6 @@ static int ptycommand(struct Channel *channel, struct ChanSess *chansess) {
 
 	TRACE(("enter ptycommand"))
 
-	/* we need to have a pty allocated */
-	if (chansess->master == -1 || chansess->tty == NULL) {
-		dropbear_log(LOG_WARNING, "No pty was allocated, couldn't execute");
-		return DROPBEAR_FAILURE;
-	}
-	
 #if DROPBEAR_VFORK
 	pid = vfork();
 #else
