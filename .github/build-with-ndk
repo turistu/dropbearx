@@ -10,7 +10,7 @@ while :; do
 	case $1 in
 	aarch64|armv7a|i686|x86_64) arch=$1;;
 	[1-9][0-9]|[1-9])	api=$1;;
-	*/android-ndk-*)	ndk=$1;;
+	*android-ndk-*|*sdk/ndk/*)	ndk=$1;;
 	*=*)	eval "$1";;
 	*) break;;
 	esac

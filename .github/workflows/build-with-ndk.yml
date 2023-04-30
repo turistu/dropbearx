@@ -1,6 +1,9 @@
 name: Build with the NDK
 on:
   push:
+    paths-ignore:
+      - README.md
+      - .gitignore
   workflow_dispatch:
 jobs:
   test:

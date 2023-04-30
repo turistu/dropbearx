@@ -16,22 +16,17 @@ esac
 outdir=$srcdir/OUT
 bdir=$outdir/build-$os
 pdir=$outdir/inst-$os
-logfile=$outdir/dropbearx-$os-BUILD-LOG
 case $opt in *n*);;*)	rm -fr "$bdir" "$pdir"; esac
 mkdir -p "$bdir" "$pdir"
-exec 3>&2
 onexit(){
 	err=$?
-	exec >&3
 	if [ "$err" = 0 ]; then
 		echo "OK, $bdir done"
 	else
-		tail -n40 "$logfile"; echo FAILED
+		echo FAILED
 	fi
 }
 trap onexit EXIT
-case $opt in *o*);;*)	exec >$logfile; esac
-case $opt in *e*);;*)	exec 2>&1; esac
 case $opt in *n*);;*)	autoreconf "$srcdir"; esac
 cd "$bdir"
 case $opt in *n*);;*)	"$srcdir/configure" --prefix="$pdir"; esac
