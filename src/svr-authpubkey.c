@@ -213,7 +213,7 @@ void svr_auth_pubkey(int valid_user) {
 	if (buf_verify(ses.payload, key, sigtype, signbuf) == DROPBEAR_SUCCESS) {
 		if (svr_opts.multiauthmethod && (ses.authstate.authtypes & ~AUTH_TYPE_PUBKEY)) {
 			/* successful pubkey authentication, but extra auth required */
-			dropbear_log(LOG_NOTICE,
+			dropbear_log(LOG_INFO,
 					"Pubkey auth succeeded for '%s' with %s key %s from %s, extra auth required",
 					ses.authstate.pw_name,
 					signkey_name_from_type(keytype, NULL), fp,
@@ -222,7 +222,7 @@ void svr_auth_pubkey(int valid_user) {
 			send_msg_userauth_failure(1, 0); /* Send partial success */
 		} else {
 			/* successful authentication */
-			dropbear_log(LOG_NOTICE,
+			dropbear_log(LOG_INFO,
 					"Pubkey auth succeeded for '%s' with %s key %s from %s",
 					ses.authstate.pw_name,
 					signkey_name_from_type(keytype, NULL), fp,
