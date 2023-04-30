@@ -22,15 +22,9 @@ check(){
 		status=1;;
 	esac
 }
-if script -qctrue /dev/null 2>/dev/null; then
-	sep=$(printf '\001')
-	pty()(IFS=$sep; SEP=$IFS CMD=$* script -qc 'IFS=$SEP; set -f; exec $CMD' /dev/null)
-elif script -q /dev/null true 2>/dev/null; then
-	pty(){ script -q /dev/null "$@"; }
-fi
+dscp_h(){ multi/scp -i key -o UserKnownHostsFile=known_hosts "$@"; }
 dssh(){ "$s/dbclient" -i key "$@"; }
 dssh_h(){ dssh -o UserKnownHostsFile=known_hosts "$@"; }
-dssh_pty(){ pty "$s/dbclient" -i key -o UserKnownHostsFile=known_hosts "$@"; }
 
 stuff=1
 hcheck(){
@@ -47,13 +41,17 @@ hcheck(){
 set -e
 tmpdir=$(mktemp -d)
 onexit(){
-	status=$?
 	set +e
-	pkill -g0 "dropbear|dbclient"; wait
-	[ "$status" = 0 ] || { echo '========='; cat LOG >&2; }
+	for p in dropbear dropbearmulti dbclient sleep env
+		do pkill -s 0 "$p"; done
+	wait
 	rm -fr "$tmpdir"
 }
 trap onexit EXIT INT TERM
+case $1 in
+-s)	do_shell=1; shift;;
+*)	do_shell=0;;
+esac
 s=${1:-.}
 case $s in /*);; *) s=$(pwd)/$s;; esac
 
@@ -63,33 +61,50 @@ HOME=$tmpdir
 "$s/dropbearkey" -y -f key > key.pub+
 grep ^ssh key.pub+ > key.pub
 rm key.pub+
-awk '{print "localhost", $1, $2 }' key.pub > known_hosts
+set $(cat key.pub)
+echo "localhost $1 $2" > known_hosts
 
 port=2222
 
-"$s/dropbear" -mFE -p $port -r key -A key.pub 2>>LOG &
-sleep .2
-{ sleep 20; pkill -g0 "dbclient|script"; } &
-##################################################################
+mkdir multi
+for f in scp dropbear dbclient; do ln -s "$s/dropbearmulti" "multi/$f"; done
 
-echo ===========
+multi/dropbear -mqF -p $port -r key -A key.pub &
+
+if [ $do_shell = 1 ]; then
+	BDIR=$s PORT=$port sh
+	exit
+fi
+
+##################################################################
+sleep .2
+{ env sleep 20; pkill -s 0 dbclient; } &
+
 exec </dev/null
+echo ===========
+
 check '0:test:*key accepted unconditionally*' \
-	dssh -y -p $port localhost printf test
-hcheck % -p $port
+	dssh -y -p "$port" localhost printf test
+check 0:test: \
+	dssh_h -J "$s/dropbear -Fqi -r key -A key.pub" localhost printf test
 check '0:test\r\n:' \
-	dssh_h -t -p $port localhost echo test
+	dssh_h -t -p "$port" localhost echo test
 check '0:foobar\n:' \
-	dssh_h -p $port localhost '{ sleep .5; echo bar; } & printf foo'
+	dssh_h -p "$port" localhost '{ sleep .5; echo bar; } & printf foo'
+
+hcheck % -p "$port"
 
 dssh_h \
 	-R 8888:localhost:$port \
 	-L 7777:localhost:$port \
 	-R 0:localhost:$port \
 	-L 0:localhost:$port \
-	-p $port -N localhost 2>&1 | tee stderr &
-sleep .3
-eval $(awk '/Allocated port [0-9]+ for (local|remote)/{print $6"_port="$4}' stderr)
+	-p "$port" -N localhost 2>&1 | tee stderr &
+sleep .5
+#eval $(awk '/Allocated port [0-9]+ for (local|remote)/{print $6"_port="$4}' stderr)
+# shitty (older) android doesn't even have a working sed or awk
+set -- $(grep 'Allocated port [0-9]* for [lr][oe]' stderr | cut -d" " -f4,6)
+eval "${2}_port=$1; ${4}_port=$3"
 
 hcheck '1::*Remote TCP forward request failed*' \
 	-p $port -o ExitOnForwardFailure=yes -R 8:localhost:$port
@@ -98,19 +113,30 @@ hcheck % -p 8888
 hcheck % -p $remote_port
 hcheck % -p $local_port
 
-case $os in
-Linux)
-	check '0:test\r\n*test\r\n*test\r\n*:' \
+echo first > local.txt
+! "$s/dropbearmulti" scp -i key -o UserKnownHostsFile=known_hosts \
+	-P $port local.txt localhost:$tmpdir/remote.txt
+check 0:: cmp local.txt remote.txt
+
+echo second > local.txt
+! multi/scp -i key -o UserKnownHostsFile=known_hosts \
+	-P $port local.txt localhost:$tmpdir/remote.txt
+check 0:: cmp local.txt remote.txt
+
+if script -qc true /dev/null 2>/dev/null; then
+	dssh_pty(){ script -qc "$s/dbclient -i key -o UserKnownHostsFile=known_hosts $*" /dev/null; }
+	check '0:echo test\r\n*test\r\n*test\r\n*:' \
 		'echo echo test | dssh_pty -p $port localhost'
 	check '0:1\r\ntest\r\n:' \
 		'echo 1 | dssh_pty -p $port localhost echo test'
-	;;
-esac
 
-port=2223
+	port=2223
+else
+	echo fixme: do the local tty tests on "$(uname)"
+fi
 if unshare 2>/dev/null -Ucm --keep-caps sh -c "
 	mount -B /dev/null /dev/ptmx
-	$s/dropbear -mFE -p $port -r key -A key.pub 2>>LOG &
+	$s/dropbear -mqF -p $port -r key -A key.pub &
 	sleep .2
 	"
 then
