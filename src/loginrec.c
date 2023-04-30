@@ -1318,7 +1318,7 @@ lastlog_openseek(struct logininfo *li, int *fd, int filemode)
 
 	*fd = open(lastlog_file, filemode, 0600);
 	if ( *fd < 0) {
-		dropbear_log(LOG_INFO, "lastlog_openseek: Couldn't open %s:",
+		dropbear_log(LOG_WARNING, "lastlog_openseek: Couldn't open %s:",
 		    lastlog_file);
 		return 0;
 	}

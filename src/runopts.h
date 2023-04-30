@@ -41,7 +41,7 @@ typedef struct runopts {
 	unsigned int recv_window;
 	long keepalive_secs; /* Time between sending keepalives. 0 is off */
 	long idle_timeout_secs; /* Exit if no traffic is sent/received in this time */
-	int usingsyslog;
+	int log_level;
 
 #ifndef DISABLE_ZLIB
 	/* TODO: add a commandline flag. Currently this is on by default if compression

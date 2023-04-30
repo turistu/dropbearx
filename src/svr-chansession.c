@@ -565,7 +565,7 @@ static void get_termmodes(const struct ChanSess *chansess) {
 		}
 	}
 	if (tcsetattr(chansess->master, TCSANOW, &termio) < 0) {
-		dropbear_log(LOG_INFO, "Error setting terminal attributes");
+		dropbear_log(LOG_ERR, "Error setting terminal attributes");
 	}
 	TRACE(("leave get_termmodes"))
 }

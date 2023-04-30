@@ -186,13 +186,7 @@ static void main_noinetd(int argc, char ** argv, const char* multipath) {
 
 	/* fork */
 	if (svr_opts.forkbg) {
-		int closefds = 0;
-#if !DEBUG_TRACE
-		if (!opts.usingsyslog) {
-			closefds = 1;
-		}
-#endif
-		if (daemon(0, closefds) < 0) {
+		if (daemon(0, opts.log_level >= 0) < 0) {
 			dropbear_exit("Failed to daemonize:");
 		}
 	}
@@ -453,7 +447,7 @@ static void commonsetup() {
 
 	struct sigaction sa_chld;
 #ifndef DISABLE_SYSLOG
-	if (opts.usingsyslog) {
+	if (opts.log_level < 0) {
 		startsyslog(PROGNAME);
 	}
 #endif

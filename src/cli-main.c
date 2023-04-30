@@ -60,7 +60,7 @@ int main(int argc, char ** argv) {
 	cli_getopts(argc, argv);
 
 #ifndef DISABLE_SYSLOG
-	if (opts.usingsyslog) {
+	if (opts.log_level < 0) {
 		startsyslog("dbclient");
 	}
 #endif

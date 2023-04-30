@@ -139,7 +139,7 @@ void dropbear_exit_if(int cond, const char *fmt, ...) {
 
 static void generic_dropbear_exit(int exitcode, const char *msg) {
 
-	_dropbear_log(LOG_INFO, msg);
+	_dropbear_log(exitcode ? LOG_ERR : LOG_INFO, msg);
 
 #if DROPBEAR_FUZZ
     if (fuzz.do_jmp) {
@@ -154,9 +154,9 @@ void fail_assert(const char* expr, const char* file, int line) {
 	dropbear_exit("Failed assertion (%s:%d): `%s'", file, line, expr);
 }
 
-static void generic_dropbear_log(int UNUSED(priority), const char *msg) {
+static void generic_dropbear_log(int priority, const char *msg) {
 
-	fprintf(stderr, "%s\n", msg);
+	fprintf(stderr, "<%d> %s\n", priority, msg);
 }
 
 

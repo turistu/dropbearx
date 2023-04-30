@@ -188,7 +188,7 @@ void cli_getopts(int argc, char ** argv) {
 	opts.mac_list = NULL;
 #endif
 #ifndef DISABLE_SYSLOG
-	opts.usingsyslog = 0;
+	opts.log_level = LOG_NOTICE;
 #endif
 	/* not yet
 	opts.ipv4 = 1;
@@ -484,14 +484,14 @@ void cli_getopts(int argc, char ** argv) {
 		opts.keepalive_secs = opts.conn_timeout =
 			parse_uint_value(Z_timeout_arg, "-Z timeout");
 #ifndef DISABLE_SYSLOG
-		opts.usingsyslog = 1;
+		opts.log_level = -1;
 #endif
 		cli_opts.batchmode = cli_opts.exit_on_fwd_failure = 1;
 	}
 
 #if DROPBEAR_CLI_NETCAT
 	if (cli_opts.cmd && cli_opts.netcat_host) {
-		dropbear_log(LOG_INFO, "Ignoring command '%s' in netcat mode", cli_opts.cmd);
+		dropbear_log(LOG_WARNING, "Ignoring command '%s' in netcat mode", cli_opts.cmd);
 	}
 #endif
 
@@ -890,7 +890,7 @@ static void add_extendedopt(const char* origstr) {
 	const char *optstr = origstr;
 
 	if (strcmp(origstr, "help") == 0) {
-		dropbear_log(LOG_INFO, "Available options:\n"
+		dropbear_log(0, "Available options:\n"
 			"\tBatchMode\n"
 			"\tConnectTimeout\n"
 			"\tUserKnownHostsFile\n"
@@ -920,7 +920,7 @@ static void add_extendedopt(const char* origstr) {
 
 #ifndef DISABLE_SYSLOG
 	if (match_extendedopt(&optstr, "UseSyslog") == DROPBEAR_SUCCESS) {
-		opts.usingsyslog = parse_flag_value(optstr);
+		if(parse_flag_value(optstr)) opts.log_level = -1;
 		return;
 	}
 #endif

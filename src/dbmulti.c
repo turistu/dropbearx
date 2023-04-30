@@ -55,7 +55,7 @@ static int runprog(const char *multipath,
 #ifdef DBMULTI_scp
 		if (strcmp(progname, "scp") == 0
 				|| strcmp(progname, "dscp") == 0) {
-			return scp_main(argc, argv);
+			return scp_main(argc, argv, multipath);
 		}
 #endif
 	*match = DROPBEAR_FAILURE;

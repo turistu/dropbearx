@@ -308,7 +308,7 @@ void svr_dropbear_log(int priority, const char *msg) {
 	int havetrace = 0;
 
 #ifndef DISABLE_SYSLOG
-	if (opts.usingsyslog) {
+	if (opts.log_level < 0) {
 		syslog(priority, "%s", msg);
 	}
 #endif
@@ -319,7 +319,7 @@ void svr_dropbear_log(int priority, const char *msg) {
 	havetrace = debug_trace;
 #endif
 
-	if (!opts.usingsyslog || havetrace) {
+	if (priority <= opts.log_level || havetrace) {
 		struct tm * local_tm = NULL;
 		timesec = time(NULL);
 		local_tm = localtime(&timesec);

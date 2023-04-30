@@ -65,7 +65,7 @@ pamConvFunc(int num_msg,
 		/* If you're getting here - Dropbear probably can't support your pam
 		 * modules. This whole file is a bit of a hack around lack of
 		 * asynchronocity in PAM anyway. */
-		dropbear_log(LOG_INFO, "pamConvFunc() called with >1 messages: not supported.");
+		dropbear_log(LOG_ERR, "pamConvFunc() called with >1 messages: not supported.");
 		return PAM_CONV_ERR;
 	}
 
@@ -95,7 +95,7 @@ pamConvFunc(int num_msg,
 				   so can't handle it. Add more above as required for
 				   different pam modules/implementations. If you need
 				   to add an entry here please mail the Dropbear developer */
-				dropbear_log(LOG_NOTICE, "PAM unknown prompt '%s' (no echo)",
+				dropbear_log(LOG_ERR, "PAM unknown prompt '%s' (no echo)",
 						compare_message);
 				rc = PAM_CONV_ERR;
 				break;
@@ -125,7 +125,7 @@ pamConvFunc(int num_msg,
 				   so can't handle it. Add more above as required for
 				   different pam modules/implementations. If you need
 				   to add an entry here please mail the Dropbear developer */
-				dropbear_log(LOG_NOTICE, "PAM unknown prompt '%s' (with echo)",
+				dropbear_log(LOG_ERR, "PAM unknown prompt '%s' (with echo)",
 						compare_message);
 				rc = PAM_CONV_ERR;
 				break;
@@ -225,20 +225,20 @@ void svr_auth_pam(int valid_user) {
 
 	/* Init pam */
 	if ((rc = pam_start("sshd", NULL, &pamConv, &pamHandlep)) != PAM_SUCCESS) {
-		dropbear_log(LOG_WARNING, "pam_start() failed, rc=%d, %s", 
+		dropbear_log(LOG_ERR, "pam_start() failed, rc=%d, %s", 
 				rc, pam_strerror(pamHandlep, rc));
 		goto cleanup;
 	}
 
 	/* just to set it to something */
 	if ((rc = pam_set_item(pamHandlep, PAM_TTY, "ssh")) != PAM_SUCCESS) {
-		dropbear_log(LOG_WARNING, "pam_set_item() failed, rc=%d, %s",
+		dropbear_log(LOG_ERR, "pam_set_item() failed, rc=%d, %s",
 				rc, pam_strerror(pamHandlep, rc));
 		goto cleanup;
 	}
 
 	if ((rc = pam_set_item(pamHandlep, PAM_RHOST, svr_ses.remotehost)) != PAM_SUCCESS) {
-		dropbear_log(LOG_WARNING, "pam_set_item() failed, rc=%d, %s",
+		dropbear_log(LOG_ERR, "pam_set_item() failed, rc=%d, %s",
 				rc, pam_strerror(pamHandlep, rc));
 		goto cleanup;
 	}
@@ -251,9 +251,9 @@ void svr_auth_pam(int valid_user) {
 	/* (void) pam_set_item(pamHandlep, PAM_FAIL_DELAY, (void*) pamDelayFunc); */
 
 	if ((rc = pam_authenticate(pamHandlep, 0)) != PAM_SUCCESS) {
-		dropbear_log(LOG_WARNING, "pam_authenticate() failed, rc=%d, %s", 
+		dropbear_log(LOG_ERR, "pam_authenticate() failed, rc=%d, %s", 
 				rc, pam_strerror(pamHandlep, rc));
-		dropbear_log(LOG_WARNING,
+		dropbear_log(LOG_ERR,
 				"Bad PAM password attempt for '%s' from %s",
 				printable_user,
 				svr_ses.addrstring);
@@ -262,9 +262,9 @@ void svr_auth_pam(int valid_user) {
 	}
 
 	if ((rc = pam_acct_mgmt(pamHandlep, 0)) != PAM_SUCCESS) {
-		dropbear_log(LOG_WARNING, "pam_acct_mgmt() failed, rc=%d, %s", 
+		dropbear_log(LOG_ERR, "pam_acct_mgmt() failed, rc=%d, %s", 
 				rc, pam_strerror(pamHandlep, rc));
-		dropbear_log(LOG_WARNING,
+		dropbear_log(LOG_ERR,
 				"Bad PAM password attempt for '%s' from %s",
 				printable_user,
 				svr_ses.addrstring);
@@ -281,7 +281,7 @@ void svr_auth_pam(int valid_user) {
 
 	if (svr_opts.multiauthmethod && (ses.authstate.authtypes & ~AUTH_TYPE_PASSWORD)) {
 			/* successful PAM password authentication, but extra auth required */
-			dropbear_log(LOG_NOTICE,
+			dropbear_log(LOG_INFO,
 					"PAM password auth succeeded for '%s' from %s, extra auth required",
 					ses.authstate.pw_name,
 					svr_ses.addrstring);
@@ -289,7 +289,7 @@ void svr_auth_pam(int valid_user) {
 			send_msg_userauth_failure(1, 0);  /* Send partial success */
 		} else {
 			/* successful authentication */
-			dropbear_log(LOG_NOTICE, "PAM password auth succeeded for '%s' from %s",
+			dropbear_log(LOG_INFO, "PAM password auth succeeded for '%s' from %s",
 				ses.authstate.pw_name,
 				svr_ses.addrstring);
 			send_msg_userauth_success();

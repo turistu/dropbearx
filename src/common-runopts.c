@@ -68,7 +68,7 @@ parse_ciphers_macs() {
 	if (opts.cipher_list) {
 		if (strcmp(opts.cipher_list, "help") == 0) {
 			char *ciphers = algolist_string(sshciphers);
-			dropbear_log(LOG_INFO, "Available ciphers: %s", ciphers);
+			dropbear_log(0, "Available ciphers: %s", ciphers);
 			m_free(ciphers);
 			printed_help = 1;
 		} else {
@@ -81,7 +81,7 @@ parse_ciphers_macs() {
 	if (opts.mac_list) {
 		if (strcmp(opts.mac_list, "help") == 0) {
 			char *macs = algolist_string(sshhashes);
-			dropbear_log(LOG_INFO, "Available MACs: %s", macs);
+			dropbear_log(0, "Available MACs: %s", macs);
 			m_free(macs);
 			printed_help = 1;
 		} else {

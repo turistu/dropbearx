@@ -271,11 +271,7 @@ static void cli_sessionloop() {
 			return;
 
 		case USERAUTH_SUCCESS_RCVD:
-#ifndef DISABLE_SYSLOG
-			if (opts.usingsyslog) {
-				dropbear_log(LOG_INFO, "Authentication succeeded.");
-			}
-#endif
+			dropbear_log(LOG_INFO, "Authentication succeeded.");
 
 			if (cli_opts.backgrounded) {
 				int devnull;
@@ -450,7 +446,7 @@ void cli_dropbear_exit(int exitcode, const char *msg) {
         longjmp(fuzz.jmp, 1);
     }
 #endif
-	cli_dropbear_log(LOG_INFO, fullmsg);
+	cli_dropbear_log(LOG_NOTICE, fullmsg);
 
 	exit(exitcode);
 }
@@ -459,17 +455,19 @@ void cli_dropbear_log(int priority, const char *msg) {
 
 	const char *name, *nl;
 
-	name = cli_opts.progname;
-	if (!name) {
-		name = "dbclient";
-	}
-
 #ifndef DISABLE_SYSLOG
-	if (opts.usingsyslog) {
+	if (opts.log_level < 0) {
 		syslog(priority, "%s", msg);
 		return;
 	}
 #endif
+	if (priority > opts.log_level) {
+		return;
+	}
+	name = cli_opts.progname;
+	if (!name) {
+		name = "dbclient";
+	}
 
 	nl = isatty(fileno(stderr)) ? "\r\n" : "\n";
 	fprintf(stderr, "%s: %s%s", name, msg, nl);
@@ -479,7 +477,7 @@ void cli_dropbear_log(int priority, const char *msg) {
 static void cli_recv_msg_channel_failure(void) {
 	switch (cli_ses.replies_expected--) {
 	case 2:
-		dropbear_log(LOG_ERR, "PTY allocation request failed");
+		dropbear_log(LOG_WARNING, "PTY allocation request failed");
 		break;
 	case 1:
 		dropbear_exit("shell request failed");

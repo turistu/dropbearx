@@ -210,7 +210,7 @@ static void ask_to_confirm(const unsigned char* keyblob, unsigned int keybloblen
 
 	fp = sign_key_fingerprint(keyblob, keybloblen);
 	if (cli_opts.always_accept_key) {
-		dropbear_log(LOG_INFO, "\nHost '%s' key accepted unconditionally.\n(%s fingerprint %s)\n",
+		dropbear_log(LOG_WARNING, "\nHost '%s' key accepted unconditionally.\n(%s fingerprint %s)\n",
 				cli_opts.remotehost,
 				algoname,
 				fp);
@@ -256,7 +256,7 @@ static FILE* open_known_hosts_file(int * readonly)
 		*slash = '\0';
 		if (mkdir(filename, S_IRWXU) != 0) {
 			if (errno != EEXIST) {
-				dropbear_log(LOG_INFO,
+				dropbear_log(LOG_WARNING,
 					"Warning: failed creating %s:", filename);
 				TRACE(("mkdir didn't work:"))
 				goto out;
@@ -297,7 +297,7 @@ static void checkhostkey(const unsigned char* keyblob, unsigned int keybloblen) 
 	int ret;
 
 	if (cli_opts.no_hostkey_check) {
-		dropbear_log(LOG_INFO, "Caution, skipping hostkey check for %s\n", cli_opts.remotehost);
+		dropbear_log(LOG_WARNING, "Caution, skipping hostkey check for %s\n", cli_opts.remotehost);
 		return;
 	}
 

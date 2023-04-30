@@ -203,8 +203,10 @@ void svr_getopts(int argc, char ** argv) {
 #if DO_MOTD
 	svr_opts.domotd = 1;
 #endif
-#ifndef DISABLE_SYSLOG
-	opts.usingsyslog = 1;
+#ifdef DISABLE_SYSLOG
+	opts.syslog_level = LOG_NOTICE;
+#else
+	opts.log_level = -1;
 #endif
 	opts.recv_window = DEFAULT_RECV_WINDOW;
 	opts.keepalive_secs = DEFAULT_KEEPALIVE;
@@ -239,7 +241,7 @@ void svr_getopts(int argc, char ** argv) {
 					break;
 #ifndef DISABLE_SYSLOG
 				case 'E':
-					opts.usingsyslog = 0;
+					opts.log_level = LOG_INFO;
 					break;
 #endif
 				case 'e':
@@ -272,6 +274,9 @@ void svr_getopts(int argc, char ** argv) {
 #endif
 				case 'p':
 					nextisport = 1;
+					break;
+				case 'q':
+					opts.log_level = LOG_NOTICE;
 					break;
 #ifndef DISABLE_PIDFILE
 				case 'P':

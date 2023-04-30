@@ -120,7 +120,7 @@ int listen_tcpfwd(struct TCPListener* tcpinfo, struct Listener **ret_listener) {
 			DROPBEAR_MAX_SOCKS, &errstring, &ses.maxfd,
 			&tcpinfo->listenport);
 	if (nsocks < 0) {
-		dropbear_log(LOG_INFO, "TCP forward failed: %s", errstring);
+		dropbear_log(LOG_WARNING, "TCP forward failed: %s", errstring);
 		m_free(errstring);
 		TRACE(("leave listen_tcpfwd: dropbear_listen failed"))
 		return DROPBEAR_FAILURE;

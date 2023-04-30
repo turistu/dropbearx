@@ -122,7 +122,7 @@ static int cli_localtcp(const char* listenaddr,
 	ret = listen_tcpfwd(tcpinfo, NULL);
 
 	if (listenport == 0) {
-		dropbear_log(LOG_INFO,
+		dropbear_log(LOG_NOTICE,
 			"Allocated port %d for local forward to %s:%d",
 			tcpinfo->listenport, remoteaddr, remoteport);
 	}
@@ -172,7 +172,7 @@ void cli_recv_msg_request_success() {
 				int allocport = buf_getint(ses.payload);
 				if (allocport > 0) {
 					fwd->listenport = allocport;
-					dropbear_log(LOG_INFO, "Allocated port %d for remote forward to %s:%d", 
+					dropbear_log(LOG_NOTICE, "Allocated port %d for remote forward to %s:%d", 
 							allocport, fwd->connectaddr, fwd->connectport);
 				}
 			}
@@ -258,7 +258,7 @@ static int newtcpforwarded(struct Channel * channel) {
 	if (iter == NULL || fwd == NULL) {
 		/* We didn't request forwarding on that port */
 		cleantext(origaddr);
-		dropbear_log(LOG_INFO, "Server sent unrequested forward from \"%s:%d\"", 
+		dropbear_log(LOG_WARNING, "Server sent unrequested forward from \"%s:%d\"", 
                 origaddr, origport);
 		goto out;
 	}
