@@ -75,6 +75,7 @@ pty_allocate(int *ptyfd, int *ttyfd, char **nameptr)
 		ret = 1;
 		goto done;
 	}
+	close(*ptyfd);
 	dropbear_log(LOG_ERR, "open %s:", *nameptr);
 done:
 	if(seteuid(uid))
