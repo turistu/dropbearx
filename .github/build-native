@@ -40,4 +40,4 @@ make -j32 everything
 make strip
 make install-everything
 tar -C "$pdir" -zcf "$outdir/dropbearx-$os.tgz" .
-$srcdir/scripts/simple-test
+$srcdir/util/simple-test
