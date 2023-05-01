@@ -9,6 +9,7 @@ STATIC_LTC=libtomcrypt/libtomcrypt.a
 STATIC_LTM=libtommath/libtommath.a
 
 LIBTOM_LIBS=@LIBTOM_LIBS@
+CPPFLAGS+=@CPPFLAGS@ -I.
 
 ifeq (@BUNDLED_LIBTOM@, 1)
 	LIBTOM_DEPS=$(STATIC_LTC) $(STATIC_LTM)
@@ -18,9 +19,9 @@ ifeq (@BUNDLED_LIBTOM@, 1)
 endif
 
 OPTION_HEADERS = default_options_guard.h $(srcdir)/sysoptions.h
-ifneq ($(wildcard ./localoptions.h),)
-	CPPFLAGS+=-DLOCALOPTIONS_H_EXISTS
-	OPTION_HEADERS += ./localoptions.h
+ifneq ($(wildcard @srcdir@/localoptions.h),)
+	CPPFLAGS+=-DLOCALOPTIONS_H_EXISTS -I@srcdir@
+	OPTION_HEADERS += @srcdir@/localoptions.h
 endif
 
 MAN_DIR=@srcdir@/manpages
@@ -99,7 +100,7 @@ AR=@AR@
 RANLIB=@RANLIB@
 STRIP=@STRIP@
 INSTALL=@INSTALL@
-CPPFLAGS+=@CPPFLAGS@ -I. -I$(srcdir) -I@abs_top_builddir@
+CPPFLAGS+=-I$(srcdir) -I@abs_top_builddir@
 CFLAGS+=@CFLAGS@ @ZLIB_CFLAGS@
 LIBS+=@LIBS@ @ZLIB_LIBS@
 LDFLAGS=@LDFLAGS@
