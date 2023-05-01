@@ -38,7 +38,7 @@ AC_DEFUN([DB_TRYADDCFLAGS],
 # set compile flags prior to other tests
 if test -z "$ORIGCFLAGS" && test "$GCC" = "yes"; then
 	AC_MSG_NOTICE(No \$CFLAGS set... using "-Os -W -Wall" for GCC)
-	CFLAGS="-Os -W -Wall"
+	CFLAGS="-Os -g -W -Wall"
 fi
 
 # LTM_CFLAGS is given to ./configure by the user, 
