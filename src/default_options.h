@@ -363,4 +363,9 @@ be overridden at runtime with -I. 0 disables idle timeouts */
 
 #define KNOWN_HOSTS_FILE	"~/.ssh/known_hosts"
 
+#ifdef __ANDROID__
+#undef DEFAULT_PATH
+#define DEFAULT_PATH "/system/bin:/system/xbin"
+#endif
+
 #endif /* DROPBEAR_DEFAULT_OPTIONS_H_ */
