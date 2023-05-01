@@ -443,7 +443,6 @@ int dropbear_listen(const char* address, const char* portstring,
 	struct addrinfo hints, *res = NULL, *res0 = NULL;
 	int err;
 	unsigned int nsock;
-	struct linger linger;
 	int val;
 	int sock;
 	int port = 0;
@@ -503,9 +502,6 @@ int dropbear_listen(const char* address, const char* portstring,
 		val = 1;
 		/* set to reuse, quick timeout */
 		setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (void*) &val, sizeof(val));
-		linger.l_onoff = 1;
-		linger.l_linger = 5;
-		setsockopt(sock, SOL_SOCKET, SO_LINGER, (void*)&linger, sizeof(linger));
 
 #if defined(IPPROTO_IPV6) && defined(IPV6_V6ONLY)
 		if (res->ai_family == AF_INET6) {
