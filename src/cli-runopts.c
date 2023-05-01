@@ -507,34 +507,30 @@ void cli_getopts(int argc, char ** argv) {
 	/* We don't want to include default id_dropbear as a
 	   -i argument for multihop, so handle it later. */
 #if (DROPBEAR_CLI_PUBKEY_AUTH)
-	{
-		char *expand_path =
-			expand_homedir_path(DROPBEAR_DEFAULT_CLI_AUTHKEY);
-		loadidentityfile(expand_path, 0);
-		m_free(expand_path);
-	}
+	loadidentityfile(DROPBEAR_DEFAULT_CLI_AUTHKEY, 0);
 #endif
-
 }
 
 #if DROPBEAR_CLI_PUBKEY_AUTH
 static void loadidentityfile(const char* filename, int warnfail) {
 	sign_key *key;
+	char *expand_path = expand_homedir_path(filename);
 	enum signkey_type keytype;
 
 	TRACE(("loadidentityfile %s", filename))
 
 	key = new_sign_key();
 	keytype = DROPBEAR_SIGNKEY_ANY;
-	if ( readhostkey(filename, key, &keytype) != DROPBEAR_SUCCESS ) {
+	if ( readhostkey(expand_path, key, &keytype) != DROPBEAR_SUCCESS ) {
 		if (warnfail) {
 			dropbear_log(LOG_WARNING, "Failed loading keyfile '%s'\n", filename);
 		}
 		sign_key_free(key);
+		m_free(expand_path);
 	} else {
 		key->type = keytype;
 		key->source = SIGNKEY_SOURCE_RAW_FILE;
-		key->filename = m_strdup(filename);
+		key->filename = expand_path;
 		list_append(cli_opts.privkeys, key);
 	}
 }
