@@ -1,9 +1,8 @@
-#### see the [original README below](#original-readmemd)
+##### see the [original README](#original-readmemd) from [mjk/dropbear](https://github.com/mkj/dropbear) below
 
 This is a fork of [Matt Johnston's dropbear](https://matt.ucc.asn.au/dropbear/dropbear.html) ssh client/server with some new features like:
-- support for `-o BatchMode=yes` for the client.
-- support for `-o ConnectTimeout=<secs>` for the client.
-- support for `-o UserKnownHostsFile=<path>` for the client.
+- support for `-o BatchMode=yes`, `-o ConnectTimeout=<secs>` and
+  `-o UserKnownHostsFile=<path>` for the client.
 - allow the user to prevent the server from creating pidfiles with `-P none`;
         also allow that misfeature to be configured away at compile time
 	with `--disable-pidfile`.
@@ -18,12 +17,14 @@ some incompatible changes:
 - dbclient will exit with an error instead of hanging when the server wasn't
 	able to allocate a pty and start a shell ([721554d][7215]).
 - allow `-t` (force pty) to work even when the stdin of the client is not
-  a tty ([57f9cc9][57f9]); this simplifies implementing simple command line
-  emulators. Unlike in openssh, a single `-t` should suffice.
+  a tty ([57f9cc9][57f9]); this simplifies using dropbear as a backend for
+  command-line emulators. Unlike in openssh, a single `-t` should suffice.
 - when in non-interactive mode, wait for an eof on the pipe reading from the
-  child ([e48d1b0][e48d]); this brings it in line with openssh, simplifies
-  scripts using background processes, and allows for passing the stdin/out fd
-  to kernel modules (like nbd or usbib) or to other processes via `SCM_RIGHTS`.
+  child ([e48d1b0][e48d]); `ssh dropbear_server '(sleep 1; echo foo) &'`
+  will now print `foo` just as when connecting to an openssh server. This
+  simplifies scripts with background processes, brings it in line with
+  `popen()`-like constructs, and allows for passing the stdin/out fd to kernel
+  modules (like nbd or usbib) or to other processes via `SCM_RIGHTS`.
 - allow `-i` (inetd mode) of the server to be combined with `-E`.
 - send an empty string instead of `vt100` for `TERM` if it wasn't set in
 	the environment
@@ -36,8 +37,16 @@ and some fixes for:
 Build for Android with the NDK with:
 ```
 autoreconf
-scripts/ndk-configure aarch64 /path-to/android-ndk-r25c
+ndk(){
+	arch=$1; api=$2; configure=$3; shift 3
+	ndk=${ANDROID_NDK:?please set the path to the Android NDK}
+	CC=$ndk/toolchains/llvm/prebuilt/linux-x86_64/bin/$arch-linux-android$api-clang \
+	  "$configure" --host="$arch-linux-android$api"
+}
+ndk aarch64 21 ./configure
 make -j
+make strip
+adb push dropbear* dbclient scp ...
 ```
 [e48d]: https://github.com/turistu/dropbearx/commit/e48d1b0fb55a939e623124f3edd257ebdc688b8b
 [57f9]: https://github.com/turistu/dropbearx/commit/57f9cc95140c71dfb835a84327e3b65c0e4b0f8c
