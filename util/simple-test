@@ -86,7 +86,7 @@ echo ===========
 check '0:test:*key accepted unconditionally*' \
 	dssh -y -p "$port" localhost printf test
 check 0:test: \
-	dssh_h -J "$s/dropbear -Fqi -r key -A key.pub" localhost printf test
+	dssh_h -J "$s/dropbear -iFE -r key -A key.pub" localhost printf test
 check '0:test\r\n:' \
 	dssh_h -t -p "$port" localhost echo test
 check '0:foobar\n:' \

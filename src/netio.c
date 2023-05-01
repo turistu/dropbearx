@@ -24,6 +24,13 @@ struct dropbear_progress_connection {
 	enum dropbear_prio prio;
 };
 
+union any_address {
+	struct sockaddr sa;
+	struct sockaddr_un su;
+	struct sockaddr_in si;
+	struct sockaddr_in6 si6;
+};
+
 /* Deallocate a progress connection. Removes from the pending list if iter!=NULL.
 Does not close sockets */
 static void remove_connect(struct dropbear_progress_connection *c, m_list_elem *iter) {
@@ -570,92 +577,110 @@ int dropbear_listen(const char* address, const char* portstring,
 	return nsock;
 }
 
-void get_socket_address(int fd, char **local_host, char **local_port,
-						char **remote_host, char **remote_port, int host_lookup)
-{
-	struct sockaddr_storage addr;
-	socklen_t addrlen;
+void get_socket_address(int fd, char **local_host, int *local_port,
+		char **remote_host, int *remote_port, int opts) {
+	union any_address addr;
+	socklen_t addrlen = sizeof addr;
 
 #if DROPBEAR_FUZZ
 	if (fuzz.fuzzing) {
-		fuzz_get_socket_address(fd, local_host, local_port, remote_host, remote_port, host_lookup);
+		fuzz_get_socket_address(fd, local_host, local_port, remote_host, remote_port, opts);
 		return;
 	}
 #endif
 	
 	if (local_host || local_port) {
-		addrlen = sizeof(addr);
-		if (getsockname(fd, (struct sockaddr*)&addr, &addrlen) < 0) {
+		if (getsockname(fd, &addr.sa, &addrlen) < 0) {
 			dropbear_exit("Failed local socket address:");
 		}
-		getaddrstring(&addr, local_host, local_port, host_lookup);		
+		getaddrstring(&addr.sa, addrlen, local_host, local_port, opts);
 	}
 	if (remote_host || remote_port) {
-		addrlen = sizeof(addr);
-		if (getpeername(fd, (struct sockaddr*)&addr, &addrlen) < 0) {
+		if (getpeername(fd, &addr.sa, &addrlen) < 0) {
 			dropbear_exit("Failed remote socket address:");
 		}
-		getaddrstring(&addr, remote_host, remote_port, host_lookup);		
+		getaddrstring(&addr.sa, addrlen, remote_host, remote_port, opts);
 	}
 }
 
 /* Return a string representation of the socket address passed. The return
  * value is allocated with malloc() */
-void getaddrstring(struct sockaddr_storage* addr, 
-			char **ret_host, char **ret_port,
-			int host_lookup) {
+void getaddrstring(struct sockaddr *addr, socklen_t addrlen,
+		char **hostp, int *portp, int opts) {
 
-	char host[NI_MAXHOST+1], serv[NI_MAXSERV+1];
+	char host[NI_MAXHOST+1];
 	unsigned int len;
-	int ret;
+	int ret, flags, port;
 	
-	int flags = NI_NUMERICSERV | NI_NUMERICHOST;
-
-#if !DO_HOST_LOOKUP
-	host_lookup = 0;
-#endif
-	
-	if (host_lookup) {
-		flags = NI_NUMERICSERV;
+	if (addr->sa_family == AF_UNIX) {
+		unsigned char *s = ((struct sockaddr_un*)addr)->sun_path;
+		int len = addrlen - offsetof(struct sockaddr_un, sun_path);
+		if (len > 0 && (s[0] || ABSTRACT_UNIX_SOCKETS)) {
+			int i, j;
+			char *d = *hostp = m_asprintf("unix:%*s", len * 4, "");
+			for (i = 0, j = 5; i < len; i++) {
+				switch(s[i]){
+				case '\0':
+					d[j++] = '@'; continue;
+				case '\\':
+				case '@':
+				case '<':
+					d[j++] = '\\'; d[j++] = s[i]; continue;
+				}
+				/* assume ascii */
+				if (s[i] < ' ' || s[i] > '~') {
+					snprintf(d + j, 5, "\\%03o", s[i]);
+					j += 4;
+				} else 
+					d[j++] = s[i];
+			}
+			d[j] = '\0';
+		} else
+			*hostp = m_strdup("unix<anonymous>");
+		if(portp) *portp = 0;
+		return;
 	}
 
-	len = sizeof(struct sockaddr_storage);
-	/* Some platforms such as Solaris 8 require that len is the length
-	 * of the specific structure. Some older linux systems (glibc 2.1.3
-	 * such as debian potato) have sockaddr_storage.__ss_family instead
-	 * but we'll ignore them */
-#ifdef HAVE_STRUCT_SOCKADDR_STORAGE_SS_FAMILY
-	if (addr->ss_family == AF_INET) {
+#if DO_HOST_LOOKUP
+	flags = opts & WITH_LOOKUP ? 0 : NI_NUMERICHOST;
+#else
+	flags = 0;
+#endif
+	if (addr->sa_family == AF_INET) {
 		len = sizeof(struct sockaddr_in);
+		port = ntohs(((struct sockaddr_in*)addr)->sin_port);
 	}
 #ifdef AF_INET6
-	if (addr->ss_family == AF_INET6) {
+	else if (addr->sa_family == AF_INET6) {
 		len = sizeof(struct sockaddr_in6);
+		port = ntohs(((struct sockaddr_in6*)addr)->sin6_port);
 	}
 #endif
-#endif
-
-	ret = getnameinfo((struct sockaddr*)addr, len, host, sizeof(host)-1, 
-			serv, sizeof(serv)-1, flags);
-
-	if (ret != 0) {
-		if (host_lookup) {
-			/* On some systems (Darwin does it) we get EINTR from getnameinfo
-			 * somehow. Eew. So we'll just return the IP, since that doesn't seem
-			 * to exhibit that behaviour. */
-			getaddrstring(addr, ret_host, ret_port, 0);
-			return;
-		} else {
-			/* if we can't do a numeric lookup, something's gone terribly wrong */
-			dropbear_exit("Failed lookup: %s", gai_strerror(ret));
-		}
+	else {
+		*hostp = m_asprintf("<unknown socket type %d>", addr->sa_family);
+		if(portp) *portp = 0;
+		return;
 	}
+	ret = getnameinfo(addr, len, host, sizeof host - 1, 
+			NULL, 0, flags);
 
-	if (ret_host) {
-		*ret_host = m_strdup(host);
+	if (ret && flags != NI_NUMERICHOST) {
+		/* On some systems (Darwin does it) we get EINTR from getnameinfo
+		 * somehow. Eew. So we'll just return the IP, since that doesn't seem
+		 * to exhibit that behaviour. */
+		ret = getnameinfo(addr, len, host, sizeof host - 1, 
+			NULL, 0, NI_NUMERICHOST);
 	}
-	if (ret_port) {
-		*ret_port = m_strdup(serv);
+	if (ret) {
+		/* if we can't do a numeric lookup, something's gone terribly wrong */
+		dropbear_exit("Failed lookup: %s", gai_strerror(ret));
 	}
+	if (opts & FULL_ADDRESS) {
+		*hostp = m_asprintf(strchr(host, ':') ? "%s:%d" : "[%s]:%d",
+			host, port);
+	} else if (hostp) {
+		*hostp = m_strdup(host);
+	}
+	if(portp) *portp = port;
 }
 

@@ -103,8 +103,6 @@ svr_session_cleanup(void) {
 }
 
 void svr_session(int sock, int childpipe) {
-	char *host, *port;
-
 	common_session_init(sock, sock);
 
 	/* Initialise server specific parts of the session */
@@ -114,10 +112,8 @@ void svr_session(int sock, int childpipe) {
 #endif
 
 	/* for logging the remote address */
-	get_socket_address(ses.sock_in, NULL, NULL, &host, &port, 0);
-	svr_ses.addrstring = m_asprintf("%s:%s", host, port);
-	m_free(host);
-	m_free(port);
+	get_socket_address(ses.sock_in, NULL, NULL,
+		&svr_ses.addrstring, NULL, FULL_ADDRESS);
 
 #if DROPBEAR_PLUGIN
         /* Initializes the PLUGIN Plugin */
@@ -170,7 +166,7 @@ void svr_session(int sock, int childpipe) {
 	svr_algos_initialise();
 
 	get_socket_address(ses.sock_in, NULL, NULL, 
-			&svr_ses.remotehost, NULL, 1);
+			&svr_ses.remotehost, NULL, LOOKUP_HOST);
 
 	/* set up messages etc */
 	ses.remoteclosed = svr_remoteclosed;

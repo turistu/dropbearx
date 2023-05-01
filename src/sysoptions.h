@@ -392,6 +392,12 @@
 #define DROPBEAR_DSS 1
 #endif
 
+#ifdef __linux__
+#define ABSTRACT_UNIX_SOCKETS	1
+#else
+#define ABSTRACT_UNIX_SOCKETS	0
+#endif
+
 #ifdef __ANDROID__
 #define HAVE_GETUSERSHELL	1
 char *getusershell(void);

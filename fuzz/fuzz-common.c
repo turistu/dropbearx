@@ -200,7 +200,7 @@ void fuzz_kex_fakealgos(void) {
 }
 
 void fuzz_get_socket_address(int UNUSED(fd), char **local_host, char **local_port,
-                        char **remote_host, char **remote_port, int UNUSED(host_lookup)) {
+                        char **remote_host, char **remote_port, int UNUSED(opts)) {
     if (local_host) {
         *local_host = m_strdup("fuzzlocalhost");
     }

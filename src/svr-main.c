@@ -93,8 +93,6 @@ int main(int argc, char ** argv)
 
 #if INETD_MODE || DROPBEAR_DO_REEXEC
 static void main_inetd(int reexec_fd) {
-	char *host, *port = NULL;
-
 	/* Set up handlers, syslog */
 	commonsetup();
 
@@ -102,10 +100,10 @@ static void main_inetd(int reexec_fd) {
 
 	if (reexec_fd < 0) {
 		/* In case our inetd was lax in logging source addresses */
-		get_socket_address(0, NULL, NULL, &host, &port, 0);
-			dropbear_log(LOG_INFO, "Child connection from %s:%s", host, port);
-		m_free(host);
-		m_free(port);
+		char *remote;
+		get_socket_address(0, NULL, NULL, &remote, NULL, FULL_ADDRESS);
+			dropbear_log(LOG_INFO, "Child connection from %s", remote);
+		m_free(remote);
 
 		/* Don't check the return value - it may just fail since inetd has
 		 * already done setsid() after forking (xinetd on Darwin appears to do
@@ -247,7 +245,8 @@ static void main_noinetd(int argc, char ** argv, const char* multipath) {
 		for (i = 0; i < listensockcount; i++) {
 			size_t num_unauthed_for_addr = 0;
 			size_t num_unauthed_total = 0;
-			char *remote_host = NULL, *remote_port = NULL;
+			char *remote_host = NULL;
+			int remote_port = 0;
 			pid_t fork_ret = 0;
 			size_t conn_idx = 0;
 			struct sockaddr_storage remoteaddr;
@@ -266,7 +265,8 @@ static void main_noinetd(int argc, char ** argv, const char* multipath) {
 			}
 
 			/* Limit the number of unauthenticated connections per IP */
-			getaddrstring(&remoteaddr, &remote_host, NULL, 0);
+			getaddrstring((struct sockaddr*)&remoteaddr,
+				remoteaddrlen, &remote_host, &remote_port, 0);
 
 			num_unauthed_for_addr = 0;
 			num_unauthed_total = 0;
@@ -312,15 +312,11 @@ static void main_noinetd(int argc, char ** argv, const char* multipath) {
 				childpipes[conn_idx] = childpipe[0];
 				m_close(childpipe[1]);
 				preauth_addrs[conn_idx] = remote_host;
-				remote_host = NULL;
-
 			} else {
 
 				/* child */
-				getaddrstring(&remoteaddr, NULL, &remote_port, 0);
-				dropbear_log(LOG_INFO, "Child connection from %s:%s", remote_host, remote_port);
+				dropbear_log(LOG_INFO, "Child connection from %s:%d", remote_host, remote_port);
 				m_free(remote_host);
-				m_free(remote_port);
 
 #if !DEBUG_NOFORK
 				if (setsid() < 0) {
@@ -364,9 +360,6 @@ static void main_noinetd(int argc, char ** argv, const char* multipath) {
 out:
 			/* This section is important for the parent too */
 			m_close(childsock);
-			if (remote_host) {
-				m_free(remote_host);
-			}
 		}
 	} /* for(;;) loop */
 

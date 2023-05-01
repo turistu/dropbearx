@@ -612,22 +612,20 @@ static int sessionpty(struct ChanSess * chansess) {
 
 #if !DROPBEAR_VFORK
 static void make_connection_string(struct ChanSess *chansess) {
-	char *local_ip, *local_port, *remote_ip, *remote_port;
+	char *local_ip, *remote_ip; int local_port, remote_port;
 	get_socket_address(ses.sock_in, &local_ip, &local_port, &remote_ip, &remote_port, 0);
 
 	/* "remoteip remoteport localip localport" */
-	chansess->connection_string = m_asprintf("%s %s %s %s",
+	chansess->connection_string = m_asprintf("%s %d %s %d",
 		remote_ip, remote_port, local_ip, local_port);
 
 	/* deprecated but bash only loads .bashrc if SSH_CLIENT is set */ 
 	/* "remoteip remoteport localport" */
-	chansess->client_string = m_asprintf("%s %s %s",
+	chansess->client_string = m_asprintf("%s %d %d",
 		remote_ip, remote_port, local_port);
 
 	m_free(local_ip);
-	m_free(local_port);
 	m_free(remote_ip);
-	m_free(remote_port);
 }
 #endif
 

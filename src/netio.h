@@ -13,10 +13,10 @@ enum dropbear_prio {
 void set_sock_nodelay(int sock);
 void set_sock_priority(int sock, enum dropbear_prio prio);
 
-void get_socket_address(int fd, char **local_host, char **local_port,
-		char **remote_host, char **remote_port, int host_lookup);
-void getaddrstring(struct sockaddr_storage* addr, 
-		char **ret_host, char **ret_port, int host_lookup);
+void get_socket_address(int fd, char **local_host, int *local_port,
+		char **remote_host, int *remote_port, int flags);
+void getaddrstring(struct sockaddr* addr, socklen_t addrlen,
+		char **ret_host, int *ret_port, int flags);
 int dropbear_listen(const char* address, const char* portstring,
 		int *socks, unsigned int sockcount, char **errstring,
 		int *maxfd, unsigned int *portp);
@@ -60,6 +60,9 @@ void set_listen_fast_open(int sock);
 #define MSG_FASTOPEN 0x20000000
 #endif
 #endif
+
+#define LOOKUP_HOST	1
+#define FULL_ADDRESS	2
 
 #endif
 
