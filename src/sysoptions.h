@@ -37,11 +37,8 @@
 	#error "NON_INETD_MODE or INETD_MODE (or both) must be enabled."
 #endif
 
-/* Would probably work on freebsd but hasn't been tested */
-#if defined(HAVE_FEXECVE) && DROPBEAR_REEXEC && defined(__linux__)
+#if DROPBEAR_REEXEC
 #define DROPBEAR_DO_REEXEC 1
-#else
-#define DROPBEAR_DO_REEXEC 0
 #endif
 
 /* A client should try and send an initial key exchange packet guessing

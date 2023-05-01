@@ -81,9 +81,6 @@ typedef struct svr_runopts {
 	char *addresses[DROPBEAR_MAX_PORTS];
 
 	int inetdmode;
-	/* Hidden "-2 childpipe_fd" flag indicates it's re-executing itself,
-	   stores the childpipe preauth file descriptor. Set to -1 otherwise. */
-	int reexec_childpipe;
 
 	/* Flags indicating whether to use ipv4 and ipv6 */
 	/* not used yet

@@ -35,7 +35,7 @@ static size_t listensockets(int *sock, size_t sockcount, int *maxfd);
 static void sigchld_handler(int dummy);
 static void sigsegv_handler(int);
 static void sigintterm_handler(int fish);
-static void main_inetd(void);
+static void main_inetd(int reexec_fd);
 static void main_noinetd(int argc, char ** argv, const char* multipath);
 static void commonsetup(void);
 
@@ -49,6 +49,8 @@ int main(int argc, char ** argv)
 #if !DROPBEAR_MULTI
 	const char* multipath = NULL;
 #endif
+	const char* env;
+	int reexec_fd = -1;
 
 	_dropbear_exit = svr_dropbear_exit;
 	_dropbear_log = svr_dropbear_log;
@@ -59,26 +61,22 @@ int main(int argc, char ** argv)
 		dropbear_exit("Bad argc");
 	}
 
+#ifdef PR_SET_NAME
+	/* Fix the "Name:" in /proc/pid/status
+	   Failure doesn't really matter, it's mostly aesthetic */
+	prctl(PR_SET_NAME, basename(argv[0]), 0, 0);
+#endif
 	/* get commandline options */
 	svr_getopts(argc, argv);
 
-#if INETD_MODE
-	/* service program mode */
-	if (svr_opts.inetdmode) {
-		main_inetd();
-		/* notreached */
+#if DROPBEAR_DO_REEXEC
+	if ((env = getenv("DROPBEAR_REEXEC_FD"))) {
+		m_str_to_uint(env, &reexec_fd);
 	}
 #endif
-
-#if DROPBEAR_DO_REEXEC
-	if (svr_opts.reexec_childpipe >= 0) {
-#ifdef PR_SET_NAME
-		/* Fix the "Name:" in /proc/pid/status, otherwise it's
-		a FD number from fexecve.
-		Failure doesn't really matter, it's mostly aesthetic */
-		prctl(PR_SET_NAME, basename(argv[0]), 0, 0);
-#endif
-		main_inetd();
+#if DROPBEAR_DO_REEXEC || INETD_MODE
+	if (svr_opts.inetdmode || reexec_fd >= 0) {
+		main_inetd(reexec_fd);
 		/* notreached */
 	}
 #endif
@@ -94,7 +92,7 @@ int main(int argc, char ** argv)
 #endif
 
 #if INETD_MODE || DROPBEAR_DO_REEXEC
-static void main_inetd() {
+static void main_inetd(int reexec_fd) {
 	char *host, *port = NULL;
 
 	/* Set up handlers, syslog */
@@ -102,7 +100,7 @@ static void main_inetd() {
 
 	seedrandom();
 
-	if (svr_opts.reexec_childpipe < 0) {
+	if (reexec_fd < 0) {
 		/* In case our inetd was lax in logging source addresses */
 		get_socket_address(0, NULL, NULL, &host, &port, 0);
 			dropbear_log(LOG_INFO, "Child connection from %s:%s", host, port);
@@ -116,7 +114,7 @@ static void main_inetd() {
 	}
 
 	/* -1 for childpipe in the inetd case is discarded */
-	svr_session(0, svr_opts.reexec_childpipe);
+	svr_session(0, reexec_fd);
 
 	/* notreached */
 }
@@ -133,15 +131,12 @@ static void main_noinetd(int argc, char ** argv, const char* multipath) {
 #ifndef DISABLE_PIDFILE
 	FILE *pidfile = NULL;
 #endif
-#if DROPBEAR_DO_REEXEC
-	int execfd = -1;
-#endif
-
 	int childpipes[MAX_UNAUTH_CLIENTS];
 	char * preauth_addrs[MAX_UNAUTH_CLIENTS];
 
 	int childsock;
 	int childpipe[2];
+	int do_reexec = 1; /* try it */
 
 	(void)argc;
 	(void)argv;
@@ -168,21 +163,6 @@ static void main_noinetd(int argc, char ** argv, const char* multipath) {
 	for (i = 0; i < listensockcount; i++) {
 		FD_SET(listensocks[i], &fds);
 	}
-
-#if DROPBEAR_DO_REEXEC
-	execfd = open("/proc/self/exe", O_CLOEXEC|O_RDONLY);
-	if (execfd == -1) {
-		if (multipath) {
-			execfd = open(multipath, O_CLOEXEC|O_RDONLY);
-		} else {
-			execfd = open(argv[0], O_CLOEXEC|O_RDONLY);
-		}
-		if (execfd < 0) {
-			/* Just fallback to straight fork */
-			TRACE(("Couldn't open own binary %s, disabling re-exec:", argv[0]))
-		}
-	}
-#endif
 
 	/* fork */
 	if (svr_opts.forkbg) {
@@ -252,6 +232,11 @@ static void main_noinetd(int argc, char ** argv, const char* multipath) {
 		 * closing the auth sockets on success */
 		for (i = 0; i < MAX_UNAUTH_CLIENTS; i++) {
 			if (childpipes[i] >= 0 && FD_ISSET(childpipes[i], &fds)) {
+				char c;
+				if(read(childpipes[i], &c, 1) > 0){
+					do_reexec = 0;
+					continue;
+				}
 				m_close(childpipes[i]);
 				childpipes[i] = -1;
 				m_free(preauth_addrs[i]);
@@ -351,25 +336,8 @@ static void main_noinetd(int argc, char ** argv, const char* multipath) {
 				m_close(childpipe[0]);
 
 #if DROPBEAR_DO_REEXEC
-				if (execfd >= 0) {
-					/* Add "-2 childpipe[1]" to the args and re-execute ourself. */
-					char **new_argv = m_malloc(sizeof(char*) * (argc+4));
-					char buf[10];
-					int pos0 = 0, new_argc = argc+2;
-
-					/* We need to specially handle "dropbearmulti dropbear". */
-					if (multipath) {
-						new_argv[0] = (char*)multipath;
-						pos0 = 1;
-						new_argc++;
-					}
-
-					memcpy(&new_argv[pos0], argv, sizeof(char*) * argc);
-					new_argv[new_argc-2] = "-2";
-					snprintf(buf, sizeof(buf), "%d", childpipe[1]);
-					new_argv[new_argc-1] = buf;
-					new_argv[new_argc] = NULL;
-
+				if (do_reexec) {
+					putenv(m_asprintf("DROPBEAR_REEXEC_FD=%d", childpipe[1]));
 					if ((dup2(childsock, STDIN_FILENO) < 0)) {
 						dropbear_exit("dup2:");
 					}
@@ -377,14 +345,13 @@ static void main_noinetd(int argc, char ** argv, const char* multipath) {
 						TRACE(("cloexec for childsock %d failed:", childsock))
 					}
 					/* Re-execute ourself */
-					fexecve(execfd, new_argv, environ);
+					execv("/proc/self/exe", argv);
 					/* Not reached on success */
 
 					/* Fall back on plain fork otherwise.
 					 * To be removed in future once re-exec has been well tested */
-					dropbear_log(LOG_WARNING, "fexecve failed, disabling re-exec:");
-					m_close(STDIN_FILENO);
-					m_free(new_argv);
+					dropbear_log(LOG_INFO, "execv /proc/self/exe failed, disabling re-exec:");
+					(void)!write(childpipe[1], "N", 1);
 				}
 #endif /* DROPBEAR_DO_REEXEC */
 

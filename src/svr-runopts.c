@@ -147,7 +147,6 @@ void svr_getopts(int argc, char ** argv) {
 	char* keepalive_arg = NULL;
 	char* idle_timeout_arg = NULL;
 	char* maxauthtries_arg = NULL;
-	char* reexec_fd_arg = NULL;
 	char* keyfile = NULL;
 	char c;
 #if DROPBEAR_PLUGIN
@@ -188,7 +187,6 @@ void svr_getopts(int argc, char ** argv) {
         svr_opts.pubkey_plugin_options = NULL;
 #endif
 	svr_opts.pass_on_env = 0;
-	svr_opts.reexec_childpipe = -1;
 
 	svr_opts.authorized_keys_file = AUTHORIZED_KEYS_FILE;
 
@@ -264,12 +262,6 @@ void svr_getopts(int argc, char ** argv) {
 #if INETD_MODE
 				case 'i':
 					svr_opts.inetdmode = 1;
-					break;
-#endif
-#if DROPBEAR_DO_REEXEC && NON_INETD_MODE
-				/* For internal use by re-exec */
-				case '2':
-					next = &reexec_fd_arg;
 					break;
 #endif
 				case 'p':
@@ -457,13 +449,6 @@ void svr_getopts(int argc, char ** argv) {
 
 	if (svr_opts.forced_command) {
 		dropbear_log(LOG_INFO, "Forced command set to '%s'", svr_opts.forced_command);
-	}
-
-	if (reexec_fd_arg) {
-		if (m_str_to_uint(reexec_fd_arg, &svr_opts.reexec_childpipe) == DROPBEAR_FAILURE
-			|| svr_opts.reexec_childpipe < 0) {
-			dropbear_exit("Bad -2");
-		}
 	}
 
 	if (svr_opts.multiauthmethod && svr_opts.noauthpass) {
