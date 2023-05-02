@@ -133,14 +133,14 @@ ifeq ($(SCPPROGRESS), 1)
 	CPPFLAGS+=-DPROGRESS_METER
 endif
 
+everything: separate multi
+install: install-separate install-multi
+
 separate: $(PROGRAMS)
-install: $(addprefix inst_, $(PROGRAMS))
+install-separate: $(addprefix inst_, $(PROGRAMS))
 
 multi: dropbearmulti
 install-multi: inst_dropbearmulti
-
-everything: separate multi
-install-everything: install install-multi
 
 # for simplicity assume all source depends on all headers
 HEADERS=$(wildcard $(srcdir)/*.h *.h) $(OPTION_HEADERS)

@@ -30,9 +30,9 @@ trap onexit EXIT
 case $opt in *n*);;*)	autoreconf "$srcdir"; esac
 cd "$bdir"
 case $opt in *n*);;*)	"$srcdir/configure" --prefix="$pdir"; esac
-make -j32 everything
+make -j32
 # make check
 make strip
-make install-everything
+make install
 tar -C "$pdir" -zcf "$outdir/dropbearx-$os.tgz" .
 $srcdir/util/simple-test
