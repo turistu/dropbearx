@@ -256,7 +256,7 @@ void svr_getopts(int argc, char ** argv) {
 					svr_opts.noremotetcp = 1;
 					break;
 				case 'a':
-					opts.listen_fwd_all = 1;
+					opts.listen_fwd_all++;
 					break;
 #endif
 #if INETD_MODE

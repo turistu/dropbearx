@@ -27,7 +27,10 @@ some incompatible changes:
   modules (like nbd or usbib) or to other processes via `SCM_RIGHTS`.
 - allow `-i` (inetd mode) of the server to be combined with `-E`.
 - send an empty string instead of `vt100` for `TERM` if it wasn't set in
-	the environment
+	the environment.
+- two `-a` options are needed on the server to allow remote TCP
+  forwarding to listen on all interfaces; a single `-a` will only cause it
+  to accept the bind address specified by the user, if not empty.
 
 and some fixes for:
 - cross-compiling for and using it on android

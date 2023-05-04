@@ -198,13 +198,14 @@ static int svr_remotetcpreq(void) {
 	tcpinfo->tcp_type = forwarded;
 
 	tcpinfo->request_listenaddr = request_addr;
-	if (!opts.listen_fwd_all || (strcmp(request_addr, "localhost") == 0) ) {
-		/* NULL means "localhost only" */
+	if (opts.listen_fwd_all) {
+		if (request_addr[0] || opts.listen_fwd_all > 1) {
+			tcpinfo->listenaddr = m_strdup(request_addr);
+		} else {
+			tcpinfo->listenaddr = NULL;
+		}
+	} else {
 		tcpinfo->listenaddr = NULL;
-	}
-	else
-	{
-		tcpinfo->listenaddr = m_strdup(request_addr);
 	}
 
 	if (listen_tcpfwd(tcpinfo, &listener) == DROPBEAR_FAILURE) {
