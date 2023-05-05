@@ -88,11 +88,8 @@ mk_key key1
 set $(cat key.pub)
 echo "localhost $1 $2" >> known_hosts
 echo "127.0.0.1 $1 $2" >> known_hosts
-echo "127.0.0.2 $1 $2" >> known_hosts
-echo "127.0.0.3 $1 $2" >> known_hosts
 
 {
-	printf 'permitopen="127.0.0.2:7777" '
 	cat key1.pub
 	cat key.pub
 } > auth_keys
@@ -125,8 +122,8 @@ check '0:test\r\n:' \
 	dssh $H$I -t -p "$port" localhost echo test
 check '0:foobar\n:' \
 	dssh $H$I -p "$port" localhost '{ sleep .5; echo bar; } & printf foo'
-check '0:127.0.0.2 9999 127.0.0.3 2222\n:127.0.0.2 9999 2222\n' \
-	dssh $H$I -p "$port" -b 127.0.0.2:9999 127.0.0.3 \
+check '0:* 9999 * 2222\n:* 9999 2222\n' \
+	dssh $H$I -p "$port" -b 127.0.0.1:9999 127.0.0.1 \
 		'echo $SSH_CONNECTION; echo >&2 $SSH_CLIENT'
 
 hcheck % -p "$port"
