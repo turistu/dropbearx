@@ -39,7 +39,7 @@ and some fixes for:
 
 Build for Android with the NDK with:
 ```
-autoreconf
+autoreconf -i
 ndk(){
 	arch=$1; api=$2; configure=$3; shift 3
 	ndk=${ANDROID_NDK:?please set the path to the Android NDK}

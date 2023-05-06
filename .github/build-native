@@ -27,7 +27,7 @@ onexit(){
 	fi
 }
 trap onexit EXIT
-case $opt in *n*);;*)	autoreconf "$srcdir"; esac
+case $opt in *n*);;*)	autoreconf -i "$srcdir"; esac
 cd "$bdir"
 case $opt in *n*);;*)	"$srcdir/configure" --prefix="$pdir"; esac
 make -j32

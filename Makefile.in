@@ -251,19 +251,23 @@ sizes: dropbear
 clean: $(LIBTOM_CLEAN) $(FUZZ_CLEAN) thisclean
 
 thisclean:
-	-rm -f dropbear$(EXEEXT) dbclient$(EXEEXT) dropbearkey$(EXEEXT) \
+	rm -f dropbear$(EXEEXT) dbclient$(EXEEXT) dropbearkey$(EXEEXT) \
 			dropbearconvert$(EXEEXT) scp$(EXEEXT) scp-progress$(EXEEXT) \
 			dropbearmulti$(EXEEXT) *.o *.da *.bb *.bbg *.prof
-	-rm -fr multi-obj sep-obj
+	rm -fr multi-obj sep-obj
 
 distclean: clean tidy
-	-rm -f config.h
-	-rm -f Makefile libtommath/Makefile libtomcrypt/Makefile test/Makefile
-	-rm -f default_options_guard.h
-	-rm -fr config.log config.status autom4te.cache
+	rm -f config.h
+	rm -f Makefile libtommath/Makefile libtomcrypt/Makefile test/Makefile
+	rm -f default_options_guard.h
+	rm -fr config.log config.status autom4te.cache
+
+gitclean: distclean
+	rm -f aclocal.m4 config.h.in configure
+	rm -f config.guess config.sub install[.-]sh
 
 tidy:
-	-rm -f *~ *.gcov */*~
+	rm -f *~ *.gcov */*~
 
 lint:
 	cd $(srcdir); ./dropbear_lint.sh

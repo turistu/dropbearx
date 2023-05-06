@@ -9,5 +9,5 @@ jobs:
   test:
     uses: turistu/odds-n-ends/.github/workflows/build-with-ndk.yml@main
     with:
-      reconf: autoreconf
+      reconf: autoreconf -i
       build: .github/build-with-ndk
