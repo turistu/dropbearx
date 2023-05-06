@@ -27,7 +27,14 @@ onexit(){
 	fi
 }
 trap onexit EXIT
-case $opt in *n*);;*)	autoreconf -i "$srcdir"; esac
+set -x
+case $opt in *n*);;*)
+	autoreconf -i "$srcdir"
+	# wtf
+	if [ ! -f "$srcdir/config.sub" ]; then
+		cp /usr/share/automake*/config.* /usr/share/automake*/install*sh "$srcdir"
+	fi
+esac
 cd "$bdir"
 case $opt in *n*);;*)	"$srcdir/configure" --prefix="$pdir"; esac
 make -j32
