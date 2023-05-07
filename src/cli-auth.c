@@ -339,22 +339,12 @@ done:
 #if DROPBEAR_CLI_PASSWORD_AUTH || DROPBEAR_CLI_INTERACT_AUTH
 /* A getpass()-like functions that exits if the user cancels.
    The returned password is a pointer to a static buffer */
-char* getpass_or_cancel(const char* prompt)
+char* getpass_or_cancel(const char* prompt, int echo)
 {
 	int td; ssize_t l;
 	struct termios ts = {0}, sts, nts;
 	static char buf[DROPBEAR_MAX_CLI_PASS + 1];
 	
-#if DROPBEAR_USE_PASSWORD_ENV
-	/* Password provided in an environment var */
-	char* password = NULL;
-	password = getenv(DROPBEAR_PASSWORD_ENV);
-	if (password)
-	{
-		return password;
-	}
-#endif
-
 	if ((td = open(_PATH_TTY, O_RDWR|O_NOCTTY)) == -1) {
 		dropbear_exit("open %s, rw:", _PATH_TTY);
 	}
@@ -366,7 +356,8 @@ char* getpass_or_cancel(const char* prompt)
 	ts.c_iflag &= ~IUCLC;
 #endif
 	ts.c_iflag |= ICRNL;
-	ts.c_lflag &= ~ECHO;
+	if(echo) ts.c_lflag |= ECHO;
+	else ts.c_lflag &= ~ECHO;
 	ts.c_lflag |= ICANON|ECHOE|ECHOK|ECHONL;
 	ts.c_cc[VEOL] = ts.c_cc[VINTR];
 	ts.c_cc[VINTR] = _POSIX_VDISABLE;

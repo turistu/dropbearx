@@ -78,7 +78,7 @@ void cli_pubkeyfail(void);
 void cli_auth_password(void);
 int cli_auth_pubkey(void);
 void cli_auth_interactive(void);
-char* getpass_or_cancel(const char* prompt);
+char* getpass_or_cancel(const char* prompt, int echo);
 void cli_auth_pubkey_cleanup(void);
 
 

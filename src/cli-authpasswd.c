@@ -135,7 +135,14 @@ void cli_auth_password() {
 	} else
 #endif
 	{
-		password = getpass_or_cancel(prompt);
+#if DROPBEAR_USE_PASSWORD_ENV
+		/* Password provided in an environment var */
+		if (!(password = getenv(DROPBEAR_PASSWORD_ENV))) {
+			password = getpass_or_cancel(prompt, 0);
+		}
+#else
+		password = getpass_or_cancel(prompt, 0);
+#endif
 	}
 
 	buf_putbyte(ses.writepayload, SSH_MSG_USERAUTH_REQUEST);

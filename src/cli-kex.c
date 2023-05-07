@@ -204,9 +204,8 @@ void recv_msg_kexdh_reply() {
 static void ask_to_confirm(const unsigned char* keyblob, unsigned int keybloblen,
 	const char* algoname) {
 
-	char* fp = NULL;
-	FILE *tty = NULL;
-	int response = 'z';
+	char *fp = NULL;
+	char *prompt, *response;
 
 	fp = sign_key_fingerprint(keyblob, keybloblen);
 	if (cli_opts.always_accept_key) {
@@ -220,27 +219,17 @@ static void ask_to_confirm(const unsigned char* keyblob, unsigned int keybloblen
 	if (cli_opts.batchmode) {
 		dropbear_exit("Host '%s' is not in '%s'.\n(%s fingerprint %s)", cli_opts.known_hosts_file, cli_opts.remotehost, algoname, fp);
 	}
-	fprintf(stderr, "\nHost '%s' is not in '%s'.\n(%s fingerprint %s)\nDo you want to continue connecting? (y/n) ", 
+	prompt = m_asprintf("\nHost '%s' is not in '%s'.\n(%s fingerprint %s)\nDo you want to continue connecting? (y/n) ", 
 			cli_opts.remotehost, 
 			cli_opts.known_hosts_file,
 			algoname,
 			fp);
 	m_free(fp);
-
-	tty = fopen(_PATH_TTY, "r");
-	if (tty) {
-		response = getc(tty);
-		fclose(tty);
-	} else {
-		response = getc(stdin);
-		/* flush stdin buffer */
-		while ((getchar()) != '\n');
-	}
-
-	if (response == 'y') {
+	response = getpass_or_cancel(prompt, 1);
+	m_free(prompt);
+	if (*response == 'y') {
 		return;
 	}
-
 	dropbear_exit("Didn't validate host key");
 }
 

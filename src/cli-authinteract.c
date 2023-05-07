@@ -31,39 +31,6 @@
 
 #if DROPBEAR_CLI_INTERACT_AUTH
 
-static char* get_response(char* prompt)
-{
-	FILE* tty = NULL;
-	char* response = NULL;
-	/* not a password, but a reasonable limit */
-	char buf[DROPBEAR_MAX_CLI_PASS];
-	char* ret = NULL;
-
-	fprintf(stderr, "%s", prompt);
-
-	tty = fopen(_PATH_TTY, "r");
-	if (tty) {
-		ret = fgets(buf, sizeof(buf), tty);
-		fclose(tty);
-	} else {
-		ret = fgets(buf, sizeof(buf), stdin);
-	}
-
-	if (ret == NULL) {
-		response = m_strdup("");
-	} else {
-		unsigned int buflen = strlen(buf);
-		/* fgets includes newlines */
-		if (buflen > 0 && buf[buflen-1] == '\n')
-			buf[buflen-1] = '\0';
-		response = m_strdup(buf);
-	}
-
-	m_burn(buf, sizeof(buf));
-
-	return response;
-}
-
 void recv_msg_userauth_info_request() {
 
 	char *name = NULL;
@@ -114,6 +81,7 @@ void recv_msg_userauth_info_request() {
 	m_free(instruction);
 
 	for (i = 0; i < num_prompts; i++) {
+		char *p;
 		unsigned int response_len = 0;
 		cli_ses.is_trivial_auth = 0;
 		prompt = buf_getstring(ses.payload, NULL);
@@ -121,13 +89,9 @@ void recv_msg_userauth_info_request() {
 
 		echo = buf_getbool(ses.payload);
 
-		if (!echo) {
-			char* p = getpass_or_cancel(prompt);
-			response = m_strdup(p);
-			m_burn(p, strlen(p));
-		} else {
-			response = get_response(prompt);
-		}
+		p = getpass_or_cancel(prompt, echo);
+		response = m_strdup(p);
+		m_burn(p, strlen(p));
 
 		response_len = strlen(response);
 		buf_putstring(ses.writepayload, response, response_len);
