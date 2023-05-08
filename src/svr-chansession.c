@@ -535,7 +535,7 @@ static void get_termmodes(const struct ChanSess *chansess) {
 				if (value) {
 					termio.c_iflag |= termcode->mapcode;
 				} else {
-					termio.c_iflag &= ~(termcode->mapcode);
+					termio.c_iflag &= ~termcode->mapcode;
 				}
 				break;
 
@@ -543,7 +543,7 @@ static void get_termmodes(const struct ChanSess *chansess) {
 				if (value) {
 					termio.c_oflag |= termcode->mapcode;
 				} else {
-					termio.c_oflag &= ~(termcode->mapcode);
+					termio.c_oflag &= ~termcode->mapcode;
 				}
 				break;
 
@@ -551,7 +551,7 @@ static void get_termmodes(const struct ChanSess *chansess) {
 				if (value) {
 					termio.c_lflag |= termcode->mapcode;
 				} else {
-					termio.c_lflag &= ~(termcode->mapcode);
+					termio.c_lflag &= ~termcode->mapcode;
 				}
 				break;
 
@@ -559,7 +559,7 @@ static void get_termmodes(const struct ChanSess *chansess) {
 				if (value) {
 					termio.c_cflag |= termcode->mapcode;
 				} else {
-					termio.c_cflag &= ~(termcode->mapcode);
+					termio.c_cflag &= ~termcode->mapcode;
 				}
 				break;
 				
