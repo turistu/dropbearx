@@ -28,7 +28,7 @@ onexit(){
 }
 trap onexit EXIT
 set -x
-case $opt in *n*);;*)
+case $opt in *r*);;*)
 	autoreconf -i "$srcdir"
 	# wtf
 	if [ ! -f "$srcdir/config.sub" ]; then
@@ -36,10 +36,11 @@ case $opt in *n*);;*)
 	fi
 esac
 cd "$bdir"
-case $opt in *n*);;*)	"$srcdir/configure" --prefix="$pdir"; esac
-make -j32
+case $opt in *c*);;*)	"$srcdir/configure" --prefix="$pdir"; esac
+make=${make:-make}
+$make -j32
 # make check
-make strip
-make install
+$make strip
+$make install
 tar -C "$pdir" -zcf "$outdir/dropbearx-$os.tgz" .
 $srcdir/util/simple-test

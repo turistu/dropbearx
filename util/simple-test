@@ -1,132 +1,146 @@
 #! /bin/sh
-umask 066
-unset IFS
 status=0
-readfile() {
-	t=$(cat "$2"; echo x); t=${t%x}; eval "$1=\$t"
-}
-showcmd() {
-	cmd=$1; shift
-	printf '\033[1m%s' "$cmd"; printf ' %s' "$@"; printf '\033[m\n'
-}
-v(){
-	showcmd "$@"; "$@"
-}
-check(){
-	showcmd check "$@"
-	pat=$(printf ":$1:"); shift
-	case $# in 1) eval "$1" &&:;; *) "$@" &&:;; esac >out 2>err
-	exit=$?
-	readfile out out
-	readfile err err
-	res=:$exit:$out:$err:
-	case $res in
-	$pat)	printf '   \033[1;32mOK\033[m\n';;
-	*)	
-		printf '   \033[1;31mFAIL\033[m\n   <%s> !~\n   <%s>\n\n' \
-			"$(printf %s "$res" | cat -v)" \
-			"$(printf %s "$pat" | cat -v)"
-		status=1;;
-	esac
-}
-if [ "$NO_PKILL_G" ]; then
-	xkill(){ pkill -s 0 "$@"; }
-else
-	xkill(){ pkill -g0 "$@"; }
-fi
-dssh(){ "$s/dbclient" "$@"; }
-stuff=1
-hcheck(){
-	case $1 in
-	%)	t=hcheck$((stuff=$stuff+1)); p=0:$t: ;;
-	*:*)	p=$1; t=${p#*:}; t=${t%:*};;
-	*)	t=$1; p=0:$t: ;;
-	esac
-	shift
-	check "$p" dssh $H$I "$@" localhost printf "$t"
-}
-
-##################################################################
+umask 077
+unset IFS
 set -e
-tmpdir=$(mktemp -d)
-onexit(){
-	set +e
-	for p in dropbear dropbearmulti dbclient sleep env
-		do xkill "$p"; done
-	wait
-	if [ "$do_keep" ]; then echo see "$tmpdir"
-	else rm -fr "$tmpdir"
-	fi
-}
-trap onexit EXIT INT TERM
-do_shell=0
-do_keep=
+
+recursive=
 log_opt=-E
+
 while :; do
 	case $1 in
-	-q)	log_opt=$1;;
-	-s)	do_shell=1;;
-	-k)	do_keep=1;;
+	-q|-E)	log_opt=$1;;
+	-r)	recursive=1;;
 	*)	break;;
 	esac
 	shift
 done
-s=${1:-.}
-case $s in /*);; *) s=$(pwd)/$s;; esac
 
-cd "$tmpdir"
-HOME=$tmpdir
+D=${1:-.}
+case $D in /*);; *) D=$(pwd)/$D;; esac
 
 mk_key(){
-	"$s/dropbearkey" -t ed25519 -f "$1" &&
-	"$s/dropbearkey" -y -f "$1" > "$1.pub+" &&
+	"$D/dropbearkey" -t ed25519 -f "$1" &&
+	"$D/dropbearkey" -y -f "$1" > "$1.pub+" &&
 	grep ^ssh "$1.pub+" > "$1.pub"
-	rm "$1".pub+
+	rm "$1.pub+"
 }
-mk_key key
-mk_key key1
-set $(cat key.pub)
-echo "localhost $1 $2" >> known_hosts
-echo "127.0.0.1 $1 $2" >> known_hosts
+init_keys(){
+	mk_key key
+	set $(cat key.pub)
+	echo "localhost $1 $2" >> known_hosts
+	echo "127.0.0.1 $1 $2" >> known_hosts
+	cat key.pub > auth_keys
+}
 
-{
-	cat key1.pub
-	cat key.pub
-} > auth_keys
+if ! [ "$recursive" ]; then
+	tmpdir=$(mktemp -d)
+	trap 'set +e; rm -fr "$tmpdir"' EXIT INT TERM
+
+	cp "$0" "$tmpdir/simple-test"
+	cd "$tmpdir"
+	init_keys
+	"$D/dbclient" -t -i key -o UserKnownHostsFile=known_hosts \
+		-J "$D/dropbear -iF $log_opt -r key -A key.pub" \
+		localhost "$tmpdir/simple-test -r $log_opt $D $tmpdir"
+	exit
+else
+	T=${2:-.}
+	cd "$T"
+fi
+
+######################################################################
+green='\033[1;32m'
+red='\033[1;31m'
+norm='\033[m'
+bold='\033[1m'
+rev='\033[7m'
+
+failed=0
+_check(){
+	pat=$(printf "<$1>"); shift
+	res="<$(
+	  set +e; exec 2>&1
+	  out=$(case $# in (1) eval "$1";; (*) "$@";; esac; echo ":$?")
+	  echo ":$out"
+	)>" && :
+	case $res in
+	$pat)	printf "${green}OK${norm}\n";;
+	*)	printf "${red}FAIL${norm}\n  %-10s%s\n  %-10s%s\n" \
+			output "$res" \
+			expected "$pat"
+			#output "$(printf %s "$res" | cat -v)" \
+			#expected "$(printf %s "$pat" | cat -v)"
+		failed=$((failed + 1))
+		;;
+	esac
+}
+showcmd() {
+	cmd=$1; shift
+	printf "${bold}%s" "$cmd"; printf ' %s' "$@"; printf "${norm}\n"
+}
+v(){ showcmd "$@"; "$@"; }
+check(){ showcmd check "$@"; _check "$@"; }
+
+#check :out:0	printf out
+#check :out:0	printf err
+
+######################################################################
+onexit(){
+	status=$?
+	trap : TERM; trap - EXIT
+	kill -TERM -$$
+	wait
+	case $status:$failed in
+	0:0)	printf "\n$rev${green}EVERYTHING OK$norm\n";;
+	*)	printf "\n$rev${red}STATUS $status, FAILED $failed$norm\n"
+		exit 1
+		;;
+	esac
+}
+trap onexit EXIT
+trap exit INT TERM
 
 port=2222
 I=" -i key"
 P=" -p $port"
 H=" -o UserKnownHostsFile=known_hosts"
+delay='sleep .1 2>/dev/null || sleep 1'
 
+pwd
 mkdir multi
-for f in scp dropbear dbclient; do ln -s "$s/dropbearmulti" "multi/$f"; done
+for f in scp dropbear dbclient; do ln -s "$D/dropbearmulti" "multi/$f"; done
+
 
 v multi/dropbear "$log_opt" -a -mF -p $port -r key -A auth_keys &
+for a in 1st 2nd 3rd; do
+	v multi/dbclient $H$I$P localhost : $a && break
+	eval "$delay"
+done
 
-if [ $do_shell = 1 ]; then
-	BDIR=$s PORT=$port sh
-	exit
-fi
+dssh(){ "$D/dbclient" "$@"; }
+hcheck(){
+	showcmd hcheck "$@"
+	case $1 in
+	'%')	t=hcheck; p=:$t:0 ;;
+	*:*)	p=$1; t=${p#*:}; t=${t%:*};;
+	*)	t=$1; p=:$t:0 ;;
+	esac
+	shift
+	_check "$p" dssh "$@" localhost printf "$t"
+}
 
-##################################################################
-sleep .2
-{ env sleep 20; xkill dbclient; } &
+hcheck % $H$I$P
 
-exec </dev/null
-echo ===========
-
-check '0:test:*key accepted unconditionally*' \
-	dssh $I -y -p "$port" localhost printf test
-check '0:test\r\n:' \
+HOME=. check '*key accepted unconditionally*:test:0' \
+	dssh $I$P -y localhost printf test
+check ':test\r\n:0' \
 	dssh $H$I -t -p "$port" localhost echo test
-check '0:foobar\n:' \
-	dssh $H$I -p "$port" localhost '{ sleep .5; echo bar; } & printf foo'
-check '0:* 9999 * 2222\n:* 9999 2222\n' \
+check ':foobar\n:0' \
+	dssh $H$I -p "$port" localhost "{ $delay; echo bar; } & printf foo"
+check '* 9999 2222\n:* 9999 * 2222\n:0' \
 	dssh $H$I -p "$port" -b 127.0.0.1:9999 127.0.0.1 \
 		'echo $SSH_CONNECTION; echo >&2 $SSH_CLIENT'
-
-hcheck % -p "$port"
 
 v dssh $H$P$I \
 	-R 8888:localhost:$port \
@@ -134,43 +148,46 @@ v dssh $H$P$I \
 	-R 0:localhost:$port \
 	-L 0:localhost:$port \
 	-p "$port" -N localhost 2>&1 | tee stderr &
-sleep .5
-#eval $(awk '/Allocated port [0-9]+ for (local|remote)/{print $6"_port="$4}' stderr)
-# shitty (older) android doesn't even have a working sed or awk
-set -- $(grep 'Allocated port [0-9]* for [lr][oe]' stderr | cut -d" " -f4,6)
-eval "${2}_port=$1; ${4}_port=$3"
+set -- NO
+local_port=no_local_port
+remote_port=no_remote_port
+for a in x x x; do
+	set -- $(grep 'Allocated port [0-9]* for [lr][oe]' stderr | cut -d" " -f4,6) 2>/dev/null
+	[ "$#" -gt 0 ] && { eval "${2}_port=$1; ${4}_port=$3"; break; }
+	eval "$delay"
+done
 
-hcheck '1::*Remote TCP forward request failed*' \
-	-p $port -o ExitOnForwardFailure=yes -R 8:localhost:$port
-hcheck % -p 7777
-hcheck % -p 8888
-hcheck % -p $remote_port
-hcheck % -p $local_port
+check '*Remote TCP forward request failed*::1' \
+	dssh $H$I -p $port -o ExitOnForwardFailure=yes -R 2222:localhost:$port \
+		localhost echo OK
+hcheck % $H$I -p 7777
+hcheck % $H$I -p 8888
+hcheck % $H$I -p $remote_port
+hcheck % $H$I -p $local_port
 
 ##################################################################
 
 echo first > local.txt
-! "$s/dropbearmulti" scp -i key -o UserKnownHostsFile=known_hosts \
-	-P $port local.txt localhost:$tmpdir/remote.txt
-check 0:: cmp local.txt remote.txt
+v "$D/dropbearmulti" scp -i key -o UserKnownHostsFile=known_hosts \
+	-P $port local.txt localhost:$T/remote.txt && :
+check ::0 cmp local.txt remote.txt
 
 echo second > local.txt
-! multi/scp -i key -o UserKnownHostsFile=known_hosts \
-	-P $port local.txt localhost:$tmpdir/remote.txt
-check 0:: cmp local.txt remote.txt
+v multi/scp -i key -o UserKnownHostsFile=known_hosts \
+	-P $port local.txt localhost:$T/remote.txt && :
+check ::0 cmp local.txt remote.txt
 
 ##################################################################
 
-check 0:test: \
-	dssh $H$I -J "$s/dropbear -iFq -r key -A key.pub" localhost printf test
+check :test:0 \
+	dssh $H$I -J "$D/dropbear -iFq -r key -A key.pub" localhost printf test
 dssh_pty(){
-	dssh $H$I -t -J "$s/dropbear -iFq -r key -A key.pub" localhost \
-		"cd $tmpdir && { $s/dbclient -i key -o UserKnownHostsFile=known_hosts $*; }"
+	dssh $H$I -t -J "$D/dropbear -iFq -r key -A key.pub" localhost \
+		"cd $T && { $D/dbclient -i key -o UserKnownHostsFile=known_hosts $*; }"
 }
-
-check '0:1\r\ntest\r\n:' \
+check ':1\r\ntest\r\n:0' \
 	'echo 1 | dssh_pty -p $port localhost echo test'
-check '0:echo test\r\n*test\r\n*test\r\n*:' \
+check ':echo test\r\n*test\r\n*test\r\n*:0' \
 	'{ printf "echo test\rexit\r"; } | dssh_pty -p $port localhost'
 
 ##################################################################
@@ -178,18 +195,14 @@ check '0:echo test\r\n*test\r\n*test\r\n*:' \
 port=2223
 if unshare 2>/dev/null -Ucm --keep-caps sh -c "
 	mount -B /dev/null /dev/ptmx
-	$s/dropbear -mqF -p $port -r key -A key.pub &
-	sleep .2
+	$D/dropbear -mqF -p $port -r key -A key.pub &
+	$delay
 	"
 then
-	check '0:test\n:*PTY allocation request failed*' \
+	check '*PTY allocation request failed*:test\n:0' \
 		dssh $H$I -t -p $port localhost echo test
-	check '0:true\r\n*PTY allocation request failed*:' \
+	check ':true\r\n*PTY allocation request failed*:0' \
 		'printf "true\rexit\r" | dssh_pty -p $port localhost'
 else
 	echo >&2 no unshare, skipping the no /dev/ptmx part
 fi
-##################################################################
-
-echo STATUS $status
-exit $status
