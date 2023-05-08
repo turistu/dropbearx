@@ -75,8 +75,6 @@ static int openssh_write(const char *filename, sign_key *key,
 static int dropbear_write(const char*filename, sign_key * key);
 static sign_key *dropbear_read(const char* filename);
 
-static int toint(unsigned u);
-
 #if 0
 static int sshcom_encrypted(const char *filename, char **comment);
 static struct ssh2_userkey *sshcom_read(const char *filename, char *passphrase);
@@ -282,15 +280,14 @@ static int ber_read_id_len(void *source, int sourcelen,
 		while (n--)
 			len = (len << 8) | (*p++);
 		sourcelen -= n;
-		*length = toint(len);
+		if(len > INT_MAX) {
+			printf("Negative ASN.1 length\n");
+			return -1;
+		}
+		*length = len;
 	} else {
 		*length = *p;
 		p++, sourcelen--;
-	}
-
-	if (*length < 0) {
-		printf("Negative ASN.1 length\n");
-		return -1;
 	}
 
 	return p - (unsigned char *) source;
@@ -469,7 +466,7 @@ static struct openssh_key *load_openssh_key(const char *filename)
 			headers_done = 1;
 			len = strlen(buffer);
 			buf = buf_resize(buf, buf->size + len);
-			buf_putbytes(buf, buffer, len);
+			buf_putbytes(buf, (unsigned char*)buffer, len);
 		}
 	}
 
@@ -1045,7 +1042,7 @@ static int openssh_write(const char *filename, sign_key *key,
 		for (i = 1; len - extrablob->len > 0; i++)
 			buf_putbyte(extrablob, i);
 		buf_setpos(extrablob, 0);
-		buf_putbytes(extrablob, "\0\0\0\0\0\0\0\0", 8);
+		buf_putbytes(extrablob, (unsigned char*)"\0\0\0\0\0\0\0\0", 8);
 		buf_putbufstring(buf, extrablob);
 
 		outlen = len = pos = buf->len;
@@ -1120,28 +1117,4 @@ static int openssh_write(const char *filename, sign_key *key,
 		buf_burn_free(extrablob);
 	}
 	return ret;
-}
-
-/* From PuTTY misc.c */
-static int toint(unsigned u)
-{
-	/*
-	 * Convert an unsigned to an int, without running into the
-	 * undefined behaviour which happens by the strict C standard if
-	 * the value overflows. You'd hope that sensible compilers would
-	 * do the sensible thing in response to a cast, but actually I
-	 * don't trust modern compilers not to do silly things like
-	 * assuming that _obviously_ you wouldn't have caused an overflow
-	 * and so they can elide an 'if (i < 0)' test immediately after
-	 * the cast.
-	 *
-	 * Sensible compilers ought of course to optimise this entire
-	 * function into 'just return the input value'!
-	 */
-	if (u <= (unsigned)INT_MAX)
-		return (int)u;
-	else if (u >= (unsigned)INT_MIN)   /* wrap in cast _to_ unsigned is OK */
-		return INT_MIN + (int)(u - (unsigned)INT_MIN);
-	else
-		return INT_MIN; /* fallback; should never occur on binary machines */
 }
