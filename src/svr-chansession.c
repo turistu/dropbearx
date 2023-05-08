@@ -29,7 +29,6 @@
 #include "dbutil.h"
 #include "channel.h"
 #include "chansession.h"
-#include "sshpty.h"
 #include "termcodes.h"
 #include "ssh.h"
 #include "dbrandom.h"
@@ -37,6 +36,7 @@
 #include "agentfwd.h"
 #include "runopts.h"
 #include "auth.h"
+#include "pty.h"
 
 /* Handles sessions (either shells or programs) requested by the client */
 
@@ -328,8 +328,6 @@ static void cleanupchansess(const struct Channel *channel) {
 		li = chansess_login_alloc(chansess);
 		login_logout(li);
 		login_free_entry(li);
-
-		m_free(chansess->tty);
 	}
 
 #if DROPBEAR_X11FWD
@@ -462,20 +460,22 @@ static int sessionsignal(const struct ChanSess *chansess) {
  * client. Returns DROPBEAR_SUCCESS or DROPBEAR_FAILURE */
 static int sessionwinchange(const struct ChanSess *chansess) {
 
-	int termc, termr, termw, termh;
+	struct winsize w;
 
 	if (chansess->master < 0) {
 		/* haven't got a pty yet */
 		return DROPBEAR_FAILURE;
 	}
 			
-	termc = buf_getint(ses.payload);
-	termr = buf_getint(ses.payload);
-	termw = buf_getint(ses.payload);
-	termh = buf_getint(ses.payload);
+	w.ws_col = buf_getint(ses.payload);
+	w.ws_row = buf_getint(ses.payload);
+	w.ws_xpixel = buf_getint(ses.payload);
+	w.ws_ypixel = buf_getint(ses.payload);
+	if(ioctl(chansess->master, TIOCSWINSZ, &w)) {
+		dropbear_log(LOG_ERR, "tiocswinsz");
+		return DROPBEAR_FAILURE;
+	}
 	
-	pty_change_window_size(chansess->master, termr, termc, termw, termh);
-
 	return DROPBEAR_SUCCESS;
 }
 
@@ -500,7 +500,8 @@ static void get_termmodes(const struct ChanSess *chansess) {
 	TRACE(("term mode str %d p->l %d p->p %d", 
 				len, ses.payload->len , ses.payload->pos));
 	if (len != ses.payload->len - ses.payload->pos) {
-		dropbear_exit("Bad term mode string");
+		dropbear_log(LOG_ERR, "Bad term mode string");
+		return;
 	}
 
 	if (len == 0) {
@@ -575,6 +576,7 @@ static void get_termmodes(const struct ChanSess *chansess) {
  * Returns DROPBEAR_SUCCESS or DROPBEAR_FAILURE */
 static int sessionpty(struct ChanSess * chansess) {
 
+	char *e;
 	unsigned int termlen;
 
 	TRACE(("enter sessionpty"))
@@ -593,10 +595,14 @@ static int sessionpty(struct ChanSess * chansess) {
 
 	/* allocate the pty */
 	if (chansess->master != -1) {
-		dropbear_exit("Multiple pty requests");
+		dropbear_log(LOG_WARNING, "Multiple pty requests");
+		return DROPBEAR_FAILURE;
 	}
-	if (pty_allocate(&chansess->master, &chansess->slave, &chansess->tty) == 0) {
-		TRACE(("leave sessionpty: failed to allocate pty"))
+	setxuid_to(ses.authstate.pw_uid);
+	e = pty_peer(&chansess->master, &chansess->slave, &chansess->tty);
+	setxuid_back();
+	if(e){
+		dropbear_log(LOG_WARNING, "pty_peer: %s:", e);
 		return DROPBEAR_FAILURE;
 	}
 	
@@ -811,25 +817,22 @@ static int ptycommand(struct Channel *channel, struct ChanSess *chansess) {
 		return DROPBEAR_FAILURE;
 
 	if (pid == 0) {
+		char *e;
 		/* child */
 		
 		TRACE(("back to normal sigchld"))
 		/* Revert to normal sigchld handling */
 		if (signal(SIGCHLD, SIG_DFL) == SIG_ERR) {
-			dropbear_exit("signal() error");
+			dropbear_exit("signal:");
 		}
 		
 		/* redirect stdin/stdout/stderr */
 		close(chansess->master);
 
-		pty_make_controlling_tty(chansess->slave);
+		if((e = pty_login(chansess->slave))) {
+			dropbear_exit("pty_login: %s:", e);
+		}
 		
-		if ((dup2(chansess->slave, STDIN_FILENO) < 0) ||
-			(dup2(chansess->slave, STDOUT_FILENO) < 0)) {
-			TRACE(("leave ptycommand: error redirecting filedesc"))
-			return DROPBEAR_FAILURE;
-			}
-
 		/* write the utmp/wtmp login record - must be after changing the
 		 * terminal used for stdout with the dup2 above, otherwise
 		 * the wtmp login will not be recorded */
@@ -839,12 +842,10 @@ static int ptycommand(struct Channel *channel, struct ChanSess *chansess) {
 
 		/* Can now dup2 stderr. Messages from login_login() have gone
 		to the parent stderr */
-		if (dup2(chansess->slave, STDERR_FILENO) < 0) {
-			TRACE(("leave ptycommand: error redirecting filedesc"))
-			return DROPBEAR_FAILURE;
+		if (dup2(1, 2) < 0) {
+			dropbear_exit("dup2:");
 		}
 
-		close(chansess->slave);
 
 #if DO_MOTD
 		if (svr_opts.domotd && !chansess->cmd) {
@@ -966,10 +967,10 @@ static void execchild(const void *user_data) {
 		if ((setgid(ses.authstate.pw_gid) < 0) ||
 			(initgroups(ses.authstate.pw_name, 
 						ses.authstate.pw_gid) < 0)) {
-			dropbear_exit("Error changing user group");
+			dropbear_exit("Error changing user group:");
 		}
 		if (setuid(ses.authstate.pw_uid) < 0) {
-			dropbear_exit("Error changing user");
+			dropbear_exit("setuid(%d):", ses.authstate.pw_uid);
 		}
 	} else {
 		/* ... but if the daemon is the same uid as the requested uid, we don't

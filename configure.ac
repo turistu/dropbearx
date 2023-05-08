@@ -843,7 +843,7 @@ AC_CHECK_FUNCS([getspnam getusershell putenv])
 AC_CHECK_FUNCS([clearenv strlcpy strlcat daemon basename getaddrinfo ])
 AC_CHECK_FUNCS([freeaddrinfo getnameinfo fork writev getgrouplist fexecve])
 
-AC_CHECK_FUNCS([socketpair vasprintf posix_openpt])
+AC_CHECK_FUNCS([socketpair vasprintf posix_openpt setresuid])
 
 AC_SEARCH_LIBS(basename, gen, AC_DEFINE(HAVE_BASENAME))
 
