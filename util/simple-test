@@ -158,7 +158,7 @@ for a in x x x; do
 done
 
 check '*Remote TCP forward request failed*::1' \
-	dssh $H$I -p $port -o ExitOnForwardFailure=yes -R 2222:localhost:$port \
+	dssh $H$I -p $port -o ExitOnForwardFailure=yes -R 8888:localhost:$port \
 		localhost echo OK
 hcheck % $H$I -p 7777
 hcheck % $H$I -p 8888
