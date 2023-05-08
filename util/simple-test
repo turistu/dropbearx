@@ -151,7 +151,7 @@ v dssh $H$P$I \
 set -- NO
 local_port=no_local_port
 remote_port=no_remote_port
-for a in x x x; do
+for a in 1 2 3 4 5; do
 	set -- $(grep 'Allocated port [0-9]* for [lr][oe]' stderr | cut -d" " -f4,6) 2>/dev/null
 	[ "$#" -gt 0 ] && { eval "${2}_port=$1; ${4}_port=$3"; break; }
 	eval "$delay"
