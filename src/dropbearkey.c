@@ -67,6 +67,8 @@ static void printhelp(char * progname);
 static void printpubkey(sign_key * key, int keytype);
 static int printpubfile(const char* filename);
 
+static int quiet;
+
 /* Print a help message */
 static void printhelp(char * progname) {
 
@@ -110,6 +112,7 @@ static void printhelp(char * progname) {
 #if DEBUG_TRACE
 					"-v		verbose\n"
 #endif
+					"-q		quiet\n"
 					,progname);
 }
 
@@ -194,6 +197,9 @@ int main(int argc, char ** argv) {
 					printhelp(argv[0]);
 					exit(EXIT_SUCCESS);
 					break;
+				case 'q':
+					quiet++;
+					break;
 #if DEBUG_TRACE
 				case 'v':
 					debug_trace = DROPBEAR_VERBOSE_LEVEL;
@@ -267,7 +273,9 @@ int main(int argc, char ** argv) {
 	}
 
 	genbits = signkey_generate_get_bits(keytype, bits);
-	fprintf(stderr, "Generating %u bit %s key, this may take a while...\n", genbits, typetext);
+	if (!quiet) {
+		fprintf(stderr, "Generating %u bit %s key, this may take a while...\n", genbits, typetext);
+	}
 	if (signkey_generate(keytype, bits, filename, 0) == DROPBEAR_FAILURE)
 	{
 		dropbear_exit("Failed to generate key.\n");

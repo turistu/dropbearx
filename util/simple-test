@@ -20,7 +20,7 @@ D=${1:-.}
 case $D in /*);; *) D=$(pwd)/$D;; esac
 
 mk_key(){
-	"$D/dropbearkey" -t ed25519 -f "$1" &&
+	"$D/dropbearkey" -q -t ed25519 -f "$1" &&
 	"$D/dropbearkey" -y -f "$1" > "$1.pub+" &&
 	grep ^ssh "$1.pub+" > "$1.pub"
 	rm "$1.pub+"
@@ -93,7 +93,7 @@ onexit(){
 	wait
 	case $status:$failed in
 	0:0)	printf "\n$rev${green}EVERYTHING OK$norm\n";;
-	*)	printf "\n$rev${red}STATUS $status, FAILED $failed$norm\n"
+	*)	printf >&2 "\n$rev${red}STATUS $status, FAILED $failed$norm\n"
 		exit 1
 		;;
 	esac
