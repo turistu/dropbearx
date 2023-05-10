@@ -425,7 +425,8 @@ void cli_getopts(int argc, char ** argv) {
 
 		/* Append all the bits */
 		for(j = i, e = cli_opts.cmd; ;){
-			e = stpcpy(e, argv[j++]);
+			char *s = argv[j++];
+			while(*s) *e++ = *s++;
 			if(j < argc) *e++ = ' ';
 			else{ *e = '\0'; break; }
 		}
