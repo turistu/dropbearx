@@ -337,6 +337,12 @@ done:
 }
 
 #if DROPBEAR_CLI_PASSWORD_AUTH || DROPBEAR_CLI_INTERACT_AUTH
+#if __linux__ && !defined(_POSIX_VDISABLE)
+#define _POSIX_VDISABLE	0
+#endif
+#ifndef IUCLC
+#define IUCLC	0
+#endif
 /* A getpass()-like functions that exits if the user cancels.
    The returned password is a pointer to a static buffer */
 char* getpass_or_cancel(const char* prompt, int echo)
@@ -351,10 +357,7 @@ char* getpass_or_cancel(const char* prompt, int echo)
 	tcflush(td, TCIOFLUSH);
 	tcgetattr(td, &ts);
 	sts = nts = ts;
-	ts.c_iflag &= ~(IXON|IGNCR|ISTRIP|INLCR);
-#ifdef IUCLC
-	ts.c_iflag &= ~IUCLC;
-#endif
+	ts.c_iflag &= ~(IXON|IGNCR|ISTRIP|INLCR|IUCLC);
 	ts.c_iflag |= ICRNL;
 	if(echo) ts.c_lflag |= ECHO;
 	else ts.c_lflag &= ~ECHO;
