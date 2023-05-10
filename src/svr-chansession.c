@@ -36,7 +36,7 @@
 #include "agentfwd.h"
 #include "runopts.h"
 #include "auth.h"
-#include "pty.h"
+#include "pty-util.h"
 
 /* Handles sessions (either shells or programs) requested by the client */
 

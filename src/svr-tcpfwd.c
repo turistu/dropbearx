@@ -34,6 +34,7 @@
 #include "runopts.h"
 #include "auth.h"
 #include "netio.h"
+#include "pty-util.h"	/* for setxuid.h */
 
 #if !DROPBEAR_SVR_REMOTETCPFWD
 
@@ -169,6 +170,7 @@ static int svr_remotetcpreq(void) {
 	struct TCPListener *tcpinfo = NULL;
 	unsigned int port;
 	struct Listener *listener = NULL;
+	int err;
 
 	TRACE(("enter remotetcpreq"))
 
@@ -185,6 +187,7 @@ static int svr_remotetcpreq(void) {
 		goto out;
 	}
 
+	/* XXXXX */
 	if (!ses.allowprivport && port > 0 && port < IPPORT_RESERVED) {
 		TRACE(("can't assign port < 1024 for non-root"))
 		goto out;
@@ -208,7 +211,11 @@ static int svr_remotetcpreq(void) {
 		tcpinfo->listenaddr = NULL;
 	}
 
-	if (listen_tcpfwd(tcpinfo, &listener) == DROPBEAR_FAILURE) {
+	setxuid_to(ses.authstate.pw_uid);
+	err = listen_tcpfwd(tcpinfo, &listener);
+	setxuid_back();
+
+	if (err == DROPBEAR_FAILURE) {
 out:
 		/* we only free it if a listener wasn't created, since the listener
 		 * has to remember it if it's to be cancelled */
