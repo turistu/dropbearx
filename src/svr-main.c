@@ -33,7 +33,6 @@
 
 static size_t listensockets(int *sock, size_t sockcount, int *maxfd);
 static void sigchld_handler(int dummy);
-static void sigsegv_handler(int);
 static void sigintterm_handler(int fish);
 static void main_inetd(int reexec_fd);
 static void main_noinetd(int argc, char ** argv, const char* multipath);
@@ -54,8 +53,6 @@ int main(int argc, char ** argv)
 
 	_dropbear_exit = svr_dropbear_exit;
 	_dropbear_log = svr_dropbear_log;
-
-	disallow_core();
 
 	if (argc < 1) {
 		dropbear_exit("Bad argc");
@@ -385,17 +382,6 @@ static void sigchld_handler(int UNUSED(unused)) {
 	errno = saved_errno;
 }
 
-/* catch any segvs */
-static void sigsegv_handler(int UNUSED(unused)) {
-	int i;
-	const char *msg = "Aiee, segfault! You should probably report "
-			"this as a bug to the developer\n";
-	i = write(STDERR_FILENO, msg, strlen(msg));
-	/* ignore short writes */
-	(void)i;
-	_exit(EXIT_FAILURE);
-}
-
 /* catch ctrl-c or sigterm */
 static void sigintterm_handler(int UNUSED(unused)) {
 
@@ -428,10 +414,6 @@ static void commonsetup() {
 	if (sigaction(SIGCHLD, &sa_chld, NULL) < 0) {
 		dropbear_exit("signal() error");
 	}
-	if (signal(SIGSEGV, sigsegv_handler) == SIG_ERR) {
-		dropbear_exit("signal() error");
-	}
-
 	crypto_init();
 
 	/* Now we can setup the hostkeys - needs to be after logging is on,

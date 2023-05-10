@@ -26,7 +26,6 @@ void fuzz_early_setup(void) {
 }
 
 void fuzz_common_setup(void) {
-	disallow_core();
     fuzz.fuzzing = 1;
     fuzz.wrapfds = 1;
     fuzz.do_jmp = 1;

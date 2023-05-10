@@ -72,7 +72,6 @@ int buf_getline(buffer * line, FILE * authfile);
 
 void m_close(int fd);
 void setnonblocking(int fd);
-void disallow_core(void);
 int m_str_to_uint(const char* str, unsigned int *val);
 /* The same as snprintf() but exits rather than returning negative */
 int m_snprintf(char *str, size_t size, const char *format, ...);
