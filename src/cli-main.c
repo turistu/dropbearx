@@ -52,8 +52,6 @@ int main(int argc, char ** argv) {
 	_dropbear_exit = cli_dropbear_exit;
 	_dropbear_log = cli_dropbear_log;
 
-	disallow_core();
-
 	seedrandom();
 	crypto_init();
 

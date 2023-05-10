@@ -604,17 +604,6 @@ void setnonblocking(int fd) {
 	TRACE(("leave setnonblocking"))
 }
 
-void disallow_core() {
-	struct rlimit lim = {0};
-	if (getrlimit(RLIMIT_CORE, &lim) < 0) {
-		TRACE(("getrlimit(RLIMIT_CORE) failed"));
-	}
-	lim.rlim_cur = 0;
-	if (setrlimit(RLIMIT_CORE, &lim) < 0) {
-		TRACE(("setrlimit(RLIMIT_CORE) failed"));
-	}
-}
-
 /* Returns DROPBEAR_SUCCESS or DROPBEAR_FAILURE, with the result in *val */
 int m_str_to_uint(const char* str, unsigned int *val) {
 	unsigned long l;
