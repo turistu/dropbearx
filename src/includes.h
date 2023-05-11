@@ -177,8 +177,6 @@ typedef u_int32_t uint32_t;
 
 extern char** environ;
 
-#include "fake-rfc2553.h"
-
 #include "fuzz.h"
 
 #ifndef LOG_AUTHPRIV

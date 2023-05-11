@@ -422,7 +422,7 @@ AC_CHECK_TYPE([socklen_t], ,[
 	[#include <sys/types.h>
 	#include <sys/socket.h>])
 
-# for the fake-rfc2553 stuff - straight from OpenSSH
+# straight from OpenSSH
 
 AC_CACHE_CHECK([for struct sockaddr_storage], ac_cv_have_struct_sockaddr_storage, [
 	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
