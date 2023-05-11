@@ -343,12 +343,17 @@ done:
 #ifndef IUCLC
 #define IUCLC	0
 #endif
+static int xtcsetattr(int fd, int how, struct termios *ts) {
+	struct termios nts = {0};
+	return tcsetattr(fd, how, ts) || tcgetattr(fd, &nts) ||
+			memcmp(ts, &nts, sizeof nts);
+}
 /* A getpass()-like functions that exits if the user cancels.
    The returned password is a pointer to a static buffer */
 char* getpass_or_cancel(const char* prompt, int echo)
 {
 	int td; ssize_t l;
-	struct termios ts = {0}, sts, nts;
+	struct termios ts = {0}, sts;
 	static char buf[DROPBEAR_MAX_CLI_PASS + 1];
 	
 	if ((td = open(_PATH_TTY, O_RDWR|O_NOCTTY)) == -1) {
@@ -356,7 +361,7 @@ char* getpass_or_cancel(const char* prompt, int echo)
 	}
 	tcflush(td, TCIOFLUSH);
 	tcgetattr(td, &ts);
-	sts = nts = ts;
+	sts = ts;
 	ts.c_iflag &= ~(IXON|IGNCR|ISTRIP|INLCR|IUCLC);
 	ts.c_iflag |= ICRNL;
 	if(echo) ts.c_lflag |= ECHO;
@@ -364,8 +369,7 @@ char* getpass_or_cancel(const char* prompt, int echo)
 	ts.c_lflag |= ICANON|ECHOE|ECHOK|ECHONL;
 	ts.c_cc[VEOL] = ts.c_cc[VINTR];
 	ts.c_cc[VINTR] = _POSIX_VDISABLE;
-	if (tcsetattr(td, TCSANOW, &ts) || tcgetattr(td, &nts) ||
-			memcmp(&ts, &nts, sizeof ts)) {
+	if (xtcsetattr(td, TCSANOW, &ts)) {
 		dropbear_exit("failed to change terminal attributes");
 	}
 	if (write(td, prompt, strlen(prompt)) == -1) {
@@ -378,12 +382,11 @@ char* getpass_or_cancel(const char* prompt, int echo)
 			dropbear_exit("read <%s:", _PATH_TTY);
 		}
 	}
-	if (tcsetattr(td, TCSANOW, &sts) || tcgetattr(td, &nts) ||
-			memcmp(&sts, &nts, sizeof sts)) {
+	if (xtcsetattr(td, TCSANOW, &sts)) {
 		dropbear_exit("failed to restore terminal attributes");
 	}
 	if (l > 0 && buf[l - 1] == sts.c_cc[VINTR]) {
-		dropbear_close("Interrupted.");
+		kill(getpid(), SIGINT);
 	}
 	if (l > 0 && buf[l - 1] == '\n') {
 		l--;
