@@ -305,6 +305,7 @@ static void gen_new_keys() {
 	hash_process_mp(hash_desc, &hs, ses.dh_K);
 	mp_clear(ses.dh_K);
 	m_free(ses.dh_K);
+	ses.dh_K = NULL;	/* XXXXX nonsense for the session "cleanup" */
 	hash_desc->process(&hs, ses.hash->data, ses.hash->len);
 	buf_burn_free(ses.hash);
 	ses.hash = NULL;

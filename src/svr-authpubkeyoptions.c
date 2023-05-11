@@ -134,9 +134,7 @@ void svr_pubkey_set_forced_command(struct ChanSess *chansess) {
 /* Free potential public key options */
 void svr_pubkey_options_cleanup() {
 	if (ses.authstate.pubkey_options) {
-		if (ses.authstate.pubkey_options->forced_command) {
-			m_free(ses.authstate.pubkey_options->forced_command);
-		}
+		m_free(ses.authstate.pubkey_options->forced_command);
 		if (ses.authstate.pubkey_options->permit_open_destinations) {
 			m_list_elem *iter = ses.authstate.pubkey_options->permit_open_destinations->first;
 			while (iter) {
@@ -148,9 +146,11 @@ void svr_pubkey_options_cleanup() {
 			m_free(ses.authstate.pubkey_options->permit_open_destinations);
 		}
 		m_free(ses.authstate.pubkey_options);
+		ses.authstate.pubkey_options = NULL;
 	}
 	if (ses.authstate.pubkey_info) {
 		m_free(ses.authstate.pubkey_info);
+		ses.authstate.pubkey_info = NULL;
 	}
 }
 

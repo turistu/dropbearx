@@ -346,10 +346,12 @@ void session_cleanup() {
 	cleanup_buf(&ses.writepayload);
 	cleanup_buf(&ses.kexhashbuf);
 	cleanup_buf(&ses.transkexinit);
+	/* XXXXX */
 	if (ses.dh_K) {
+		dropbear_log(LOG_ERR, "dh_K hanging around till session cleanup");
 		mp_clear(ses.dh_K);
+		m_free(ses.dh_K);
 	}
-	m_free(ses.dh_K);
 
 	m_burn(ses.keys, sizeof(struct key_context));
 	m_free(ses.keys);
