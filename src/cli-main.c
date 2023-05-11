@@ -101,19 +101,22 @@ int main(int argc, char ** argv) {
 }
 #endif /* DBMULTI stuff */
 
-static void exec_proxy_cmd(const void *user_data_cmd) {
-	const char *cmd = user_data_cmd;
-	char *usershell;
+static char *usershell(void) {
+	char *s; struct passwd *pw;
+	if((s = getenv("SHELL"))) return s;
+	if((pw = getpwuid(getuid())) && (s = pw->pw_shell) && s[0]) return s;
+	return BIN_SH;
+}
 
-	usershell = m_strdup(get_user_shell());
-	run_shell_command(cmd, ses.maxfd, usershell);
-	dropbear_exit("Failed to run '%s'\n", cmd);
+static void exec_proxy_cmd(const void *cmd) {
+	run_shell_command(cmd, ses.maxfd, usershell());
+	dropbear_exit("Failed to run '%s'\n", (const char*)cmd);
 }
 
 #if DROPBEAR_CLI_PROXYCMD
 static void cli_proxy_cmd(int *sock_in, int *sock_out, pid_t *pid_out) {
-	char * ex_cmd = NULL;
 	int ret;
+	char *ex_cmd;
 
 	/* File descriptor "-j &3" */
 	if (*cli_opts.proxycmd == '&') {
@@ -128,19 +131,15 @@ static void cli_proxy_cmd(int *sock_in, int *sock_out, pid_t *pid_out) {
 	}
 
 	/* Normal proxycommand */
+	ex_cmd = m_asprintf("exec %s", cli_opts.proxycmd);
 
 	/* So that spawn_command knows which shell to run */
 	fill_passwd(cli_opts.own_user);
 
-	ex_cmd = m_asprintf("exec %s", cli_opts.proxycmd);
-
 	ret = spawn_command(exec_proxy_cmd, ex_cmd,
 			sock_out, sock_in, NULL, pid_out);
-	DEBUG1(("cmd: %s  pid=%d", ex_cmd,*pid_out))
-	m_free(ex_cmd);
 	if (ret == DROPBEAR_FAILURE) {
-		dropbear_exit("Failed running proxy command");
-		*sock_in = *sock_out = -1;
+		dropbear_exit("Failed running proxy command: %s", ex_cmd);
 	}
 }
 
