@@ -67,12 +67,10 @@ loginrec.c
 loginrec.h
 atomicio.h
 atomicio.c
-and strlcat() (included in util.c) are from OpenSSH 3.6.1p2, and are licensed
+are from OpenSSH 3.6.1p2, and are licensed
 under the 2 point BSD license.
 
 loginrec is written primarily by Andre Lucas, atomicio.c by Theo de Raadt.
-
-strlcat() is (c) Todd C. Miller
 
 =====
 
