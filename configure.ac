@@ -840,7 +840,7 @@ AC_PROG_GCC_TRADITIONAL
 AC_FUNC_MEMCMP
 AC_FUNC_SELECT_ARGTYPES
 AC_CHECK_FUNCS([getspnam getusershell putenv])
-AC_CHECK_FUNCS([clearenv strlcpy strlcat daemon basename getaddrinfo ])
+AC_CHECK_FUNCS([clearenv daemon basename getaddrinfo])
 AC_CHECK_FUNCS([freeaddrinfo getnameinfo fork writev getgrouplist fexecve])
 
 AC_CHECK_FUNCS([socketpair vasprintf posix_openpt setresuid])

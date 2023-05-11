@@ -22,10 +22,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  *
- * strlcat() is copyright as follows:
- * Copyright (c) 1998 Todd C. Miller <Todd.Miller@courtesan.com>
- * All rights reserved.
- *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -86,71 +82,6 @@
 static char **curshell, **shells, *strings;
 static char **initshells();
 #endif
-
-#ifndef HAVE_STRLCPY
-/* Implemented by matt as specified in freebsd 4.7 manpage.
- * We don't require great speed, is simply for use with sshpty code */
-size_t strlcpy(char *dst, const char *src, size_t size) {
-
-	size_t i;
-
-	/* this is undefined, though size==0 -> return 0 */
-	if (size < 1) {
-		return 0;
-	}
-
-	for (i = 0; i < size-1; i++) {
-		if (src[i] == '\0') {
-			break;
-		} else {
-			dst[i] = src[i];
-		}
-	}
-
-	dst[i] = '\0';
-	return strlen(src);
-
-}
-#endif /* HAVE_STRLCPY */
-
-#ifndef HAVE_STRLCAT
-/* taken from openbsd-compat for OpenSSH 7.2p2 */
-/* "$OpenBSD: strlcat.c,v 1.13 2005/08/08 08:05:37 espie Exp $"
- *
- * Appends src to string dst of size siz (unlike strncat, siz is the
- * full size of dst, not space left).  At most siz-1 characters
- * will be copied.  Always NUL terminates (unless siz <= strlen(dst)).
- * Returns strlen(src) + MIN(siz, strlen(initial dst)).
- * If retval >= siz, truncation occurred.
- */
-size_t
-strlcat(char *dst, const char *src, size_t siz)
-{
-	char *d = dst;
-	const char *s = src;
-	size_t n = siz;
-	size_t dlen;
-
-	/* Find the end of dst and adjust bytes left but don't go past end */
-	while (n-- != 0 && *d != '\0')
-		d++;
-	dlen = d - dst;
-	n = siz - dlen;
-
-	if (n == 0)
-		return(dlen + strlen(s));
-	while (*s != '\0') {
-		if (n != 1) {
-			*d++ = *s;
-			n--;
-		}
-		s++;
-	}
-	*d = '\0';
-
-	return(dlen + (s - src));	/* count does not include NUL */
-}
-#endif /* HAVE_STRLCAT */
 
 #ifndef HAVE_DAEMON
 /* From NetBSD - daemonise a process */

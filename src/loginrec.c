@@ -274,16 +274,16 @@ login_init_entry(struct logininfo *li, int pid, const char *username,
 		line_fullname(li->line, line, sizeof(li->line));
 
 	if (username) {
-		strlcpy(li->username, username, sizeof(li->username));
-		pw = getpwnam(li->username);
+		pw = getpwnam(username);
 		if (pw == NULL)
 			dropbear_exit("login_init_entry: Cannot find user \"%s\"",
-					li->username);
+					username);
 		li->uid = pw->pw_uid;
+		snprintf(li->username, sizeof li->username, "%s", username);
 	}
 
 	if (hostname)
-		strlcpy(li->hostname, hostname, sizeof(li->hostname));
+		snprintf(li->hostname, sizeof li->hostname, "%s", hostname);
 
 	return 1;
 }
@@ -389,13 +389,9 @@ login_utmp_only(struct logininfo *li)
 char *
 line_fullname(char *dst, const char *src, size_t dstsize)
 {
-	memset(dst, '\0', dstsize);
-	if ((strncmp(src, "/dev/", 5) == 0) || (dstsize < (strlen(src) + 5))) {
-		strlcpy(dst, src, dstsize);
-	} else {
-		strlcpy(dst, "/dev/", dstsize);
-		strlcat(dst, src, dstsize);
-	}
+	if(!(strncmp(src, "/dev/", 5))) src += 5;
+	if(snprintf(dst, dstsize, "/dev/%s", src) >= (int)dstsize)
+		snprintf(dst, dstsize, "%s", src);
 	return dst;
 }
 
@@ -403,11 +399,8 @@ line_fullname(char *dst, const char *src, size_t dstsize)
 char *
 line_stripname(char *dst, const char *src, size_t dstsize)
 {
-	memset(dst, '\0', dstsize);
-	if (strncmp(src, "/dev/", 5) == 0)
-		strlcpy(dst, src + 5, dstsize);
-	else
-		strlcpy(dst, src, dstsize);
+	if(!(strncmp(src, "/dev/", 5))) src += 5;
+	snprintf(dst, dstsize, "%s", src);
 	return dst;
 }
 
@@ -415,14 +408,12 @@ line_stripname(char *dst, const char *src, size_t dstsize)
  * form of the line (Just use the last <dstsize> characters of the
  * full name.)
  *
- * NOTE: use strncpy because we do NOT necessarily want zero
- * termination */
+ * NOTE: we do NOT necessarily want zero termination
+ */
 char *
 line_abbrevname(char *dst, const char *src, size_t dstsize)
 {
 	size_t len;
-
-	memset(dst, '\0', dstsize);
 
 	/* Always skip prefix if present */
 	if (strncmp(src, "/dev/", 5) == 0)
@@ -434,15 +425,10 @@ line_abbrevname(char *dst, const char *src, size_t dstsize)
 #endif
 
 	len = strlen(src);
-
-	if (len > 0) {
-		if (((int)len - dstsize) > 0)
-			src +=  ((int)len - dstsize);
-
-		/* note: _don't_ change this to strlcpy */
-		strncpy(dst, src, (size_t)dstsize);
-	}
-
+	if(len < dstsize)
+		memcpy(dst, src, len + 1);
+	else
+		memcpy(dst, src, sizeof *dst);
 	return dst;
 }
 
@@ -1021,8 +1007,8 @@ wtmp_get_entry(struct logininfo *li)
 			line_fullname(li->line, ut.ut_line,
 				      MIN_SIZEOF(li->line, ut.ut_line));
 # ifdef HAVE_STRUCT_UTMP_UT_HOST
-			strlcpy(li->hostname, ut.ut_host,
-				MIN_SIZEOF(li->hostname, ut.ut_host));
+			snprintf(li->hostname, sizeof li->hostname, "%s",
+				ut.ut_host);
 # endif
 			continue;
 		}
@@ -1176,8 +1162,8 @@ wtmpx_get_entry(struct logininfo *li)
 # endif
 			line_fullname(li->line, utx.ut_line, sizeof(li->line));
 # ifdef HAVE_STRUCT_UTMPX_UT_HOST
-			strlcpy(li->hostname, utx.ut_host,
-				MIN_SIZEOF(li->hostname, utx.ut_host));
+			snprintf(li->hostname, sizeof li->hostname,
+				"%s", utx.ut_host);
 # endif
 			continue;
 		}
@@ -1269,8 +1255,7 @@ lastlog_construct(struct logininfo *li, struct lastlog *last)
 	memset(last, '\0', sizeof(*last));
 
 	(void)line_stripname(last->ll_line, li->line, sizeof(last->ll_line));
-	strlcpy(last->ll_host, li->hostname,
-		MIN_SIZEOF(last->ll_host, li->hostname));
+	snprintf(last->ll_host, sizeof last->ll_host, "%s", li->hostname);
 	/* struct lastlog in glibc isn't y2038 safe yet */
 	last->ll_time = li->tv_sec;
 }
@@ -1304,7 +1289,8 @@ lastlog_openseek(struct logininfo *li, int *fd, int filemode)
 	type = lastlog_filetype(LASTLOG_FILE);
 	switch (type) {
 		case LL_FILE:
-			strlcpy(lastlog_file, LASTLOG_FILE, sizeof(lastlog_file));
+			snprintf(lastlog_file, sizeof lastlog_file, "%s",
+				LASTLOG_FILE);
 			break;
 		case LL_DIR:
 			snprintf(lastlog_file, sizeof(lastlog_file), "%s/%s",

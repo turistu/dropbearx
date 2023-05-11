@@ -40,8 +40,8 @@
 static int can_output(void);
 
 /* formats and inserts the specified size into the given buffer */
-static void format_size(char *, int, off_t);
-static void format_rate(char *, int, off_t);
+static int format_size(char *, int, off_t);
+static int format_rate(char *, int, off_t);
 
 /* window resizing */
 static void sig_winch(int);
@@ -73,7 +73,7 @@ can_output(void)
 	return (getpgrp() == tcgetpgrp(STDOUT_FILENO));
 }
 
-static void
+static int
 format_rate(char *buf, int size, off_t bytes)
 {
 	int i;
@@ -85,21 +85,21 @@ format_rate(char *buf, int size, off_t bytes)
 		i++;
 		bytes = (bytes + 512) / 1024;
 	}
-	snprintf(buf, size, "%3lld.%1lld%c%s",
+	return m_snprintf(buf, size, " %3lld.%1lld%c%s/s ",
 	    (long long) (bytes + 5) / 100,
 	    (long long) (bytes + 5) / 10 % 10,
 	    unit[i],
 	    i ? "B" : " ");
 }
 
-static void
+static int
 format_size(char *buf, int size, off_t bytes)
 {
 	int i;
 
 	for (i = 0; bytes >= 10000 && unit[i] != 'T'; i++)
 		bytes = (bytes + 512) / 1024;
-	snprintf(buf, size, "%4lld%c%s",
+	return m_snprintf(buf, size, "%4lld%c%s",
 	    (long long) bytes,
 	    unit[i],
 	    i ? "B" : " ");
@@ -147,17 +147,10 @@ refresh_progress_meter(void)
 		bytes_per_second = cur_speed;
 
 	/* filename */
-	buf[0] = '\0';
 	file_len = win_size - 35;
 	if (file_len > 0) {
-		len = snprintf(buf, file_len + 1, "\r%s", file);
-		if (len < 0)
-			len = 0;
-		if (len >= file_len + 1)
-			len = file_len;
-		for (i = len;  i < file_len; i++ )
-			buf[i] = ' ';
-		buf[file_len] = '\0';
+		len = m_snprintf(buf, sizeof buf, "\r%*.*s",
+			filelen, filelen, file);
 	}
 
 	/* percent of transfer done */
@@ -165,18 +158,13 @@ refresh_progress_meter(void)
 		percent = ((float)cur_pos / end_pos) * 100;
 	else
 		percent = 100;
-	snprintf(buf + strlen(buf), win_size - strlen(buf),
-	    " %3d%% ", percent);
+	len += m_snprintf(buf + len, win_size - len, " %3d%%", percent);
 
 	/* amount transferred */
-	format_size(buf + strlen(buf), win_size - strlen(buf),
-	    cur_pos);
-	strlcat(buf, " ", win_size);
+	len += format_size(buf + len, win_size - len, cur_pos);
 
 	/* bandwidth usage */
-	format_rate(buf + strlen(buf), win_size - strlen(buf),
-	    (off_t)bytes_per_second);
-	strlcat(buf, "/s ", win_size);
+	len += format_rate(buf + len, win_size - len, bytes_per_second);
 
 	/* ETA */
 	if (!transferred)
@@ -185,9 +173,9 @@ refresh_progress_meter(void)
 		stalled = 0;
 
 	if (stalled >= STALL_TIME)
-		strlcat(buf, "- stalled -", win_size);
+		len += m_snprintf(buf + len, win_size - len, "- stalled -");
 	else if (bytes_per_second == 0 && bytes_left)
-		strlcat(buf, "  --:-- ETA", win_size);
+		len += m_snprintf(buf + len, win_size - len, "  --:-- ETA");
 	else {
 		if (bytes_left > 0)
 			seconds = bytes_left / bytes_per_second;
@@ -200,16 +188,15 @@ refresh_progress_meter(void)
 		seconds -= minutes * 60;
 
 		if (hours != 0)
-			snprintf(buf + strlen(buf), win_size - strlen(buf),
+			len += m_snprintf(buf + len, win_size - len,
 			    "%d:%02d:%02d", hours, minutes, seconds);
 		else
-			snprintf(buf + strlen(buf), win_size - strlen(buf),
+			len += m_snprintf(buf + len, win_size - len,
 			    "  %02d:%02d", minutes, seconds);
 
 		if (bytes_left > 0)
-			strlcat(buf, " ETA", win_size);
-		else
-			strlcat(buf, "    ", win_size);
+		m_snprintf(buf + len, win_size - len, 
+			bytes_left > 0 ? " ETA" : "    ");
 	}
 
 	atomicio(vwrite, STDOUT_FILENO, buf, win_size - 1);
