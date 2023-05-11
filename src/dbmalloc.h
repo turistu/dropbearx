@@ -19,11 +19,11 @@ void m_malloc_free_epoch(unsigned int epoch, int dofree);
 
 #else
 /* plain wrapper */
-#define m_free_direct free
+#define m_free_direct	free
+#define m_free		free
 
 #endif
 
-#define m_free(X) do {m_free_direct(X); (X) = NULL;} while (0)
 
 
 #endif /* DBMALLOC_H_ */
