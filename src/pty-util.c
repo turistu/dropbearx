@@ -99,11 +99,13 @@ void setxuid_back(void){
 #else
 void setxuid_to(int uid){
 	euid = geteuid(), ruid = getuid();
-	if(setreuid(uid, -1)) dropbear_exit("setreuid(%d,-1) to:", uid);
+	if(setreuid(uid, euid))
+		dropbear_exit("setreuid(%d, %d) to:", uid, euid);
 	if(seteuid(uid)) dropbear_exit("seteuid(%d)", uid);
 }
 void setxuid_back(void){
 	if(seteuid(euid)) dropbear_exit("seteuid(%d)", euid);
-	if(setreuid(ruid, -1)) dropbear_exit("setreuid(%d,-1) back:", ruid);
+	if(setreuid(ruid, euid))
+		dropbear_exit("setreuid(%d, %d) back:", ruid, euid);
 }
 #endif
