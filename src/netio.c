@@ -31,6 +31,12 @@ union any_address {
 	struct sockaddr_in6 si6;
 };
 
+/* set to reuse, quick timeout */
+static void set_sock_reuseaddr(int sock) {
+	int val = 1;
+	setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &val, sizeof val);
+}
+
 /* Deallocate a progress connection. Removes from the pending list if iter!=NULL.
 Does not close sockets */
 static void remove_connect(struct dropbear_progress_connection *c, m_list_elem *iter) {
@@ -109,6 +115,7 @@ static void connect_try_next(struct dropbear_progress_connection *c) {
 				c->sock = -1;
 				continue;
 			}
+			set_sock_reuseaddr(c->sock);
 			res = bind(c->sock, bindaddr->ai_addr, bindaddr->ai_addrlen);
 			freeaddrinfo(bindaddr);
 			bindaddr = NULL;
@@ -505,7 +512,6 @@ int dropbear_listen(const char* address, const char* portstring,
 	struct addrinfo hints, *res = NULL, *res0 = NULL;
 	int err;
 	unsigned int nsock;
-	int val;
 	int sock;
 	int port = 0;
 	
@@ -561,9 +567,7 @@ int dropbear_listen(const char* address, const char* portstring,
 		}
 
 		/* Various useful socket options */
-		val = 1;
-		/* set to reuse, quick timeout */
-		setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (void*) &val, sizeof(val));
+		set_sock_reuseaddr(sock);
 
 #if defined(IPPROTO_IPV6) && defined(IPV6_V6ONLY)
 		if (res->ai_family == AF_INET6) {
