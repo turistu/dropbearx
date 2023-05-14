@@ -243,7 +243,7 @@ static int newchansess(struct Channel *channel) {
 
 	dropbear_assert(channel->typedata == NULL);
 
-	chansess = (struct ChanSess*)m_malloc(sizeof(struct ChanSess));
+	chansess = m_malloc(sizeof(struct ChanSess));
 	chansess->cmd = NULL;
 	chansess->connection_string = NULL;
 	chansess->client_string = NULL;
@@ -1058,7 +1058,7 @@ void svr_chansessinitialise() {
 	struct sigaction sa_chld;
 
 	/* single child process intially */
-	svr_ses.childpids = (struct ChildPid*)m_malloc(sizeof(struct ChildPid));
+	svr_ses.childpids = m_malloc(sizeof(struct ChildPid));
 	svr_ses.childpids[0].pid = -1; /* unused */
 	svr_ses.childpids[0].chansess = NULL;
 	svr_ses.childpidsize = 1;

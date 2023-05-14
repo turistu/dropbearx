@@ -103,7 +103,7 @@ static void getp(const dropbear_dss_key *key, unsigned int size) {
 		exit(1);
 	}
 	
-	buf = (unsigned char*)m_malloc(size);
+	buf = m_malloc(size);
 
 	result = 0;
 	do {

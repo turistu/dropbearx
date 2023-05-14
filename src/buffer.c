@@ -44,7 +44,7 @@ buffer* buf_new(unsigned int size) {
 		dropbear_exit("buf->size too big");
 	}
 
-	buf = (buffer*)m_malloc(sizeof(buffer)+size);
+	buf = m_malloc(sizeof(buffer)+size);
 	buf->data = (unsigned char*)buf + sizeof(buffer);
 	buf->size = size;
 	return buf;
