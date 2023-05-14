@@ -193,7 +193,7 @@ static int svr_remotetcpreq(void) {
 		goto out;
 	}
 
-	tcpinfo = (struct TCPListener*)m_malloc(sizeof(struct TCPListener));
+	tcpinfo = m_malloc(sizeof(struct TCPListener));
 	tcpinfo->sendaddr = NULL;
 	tcpinfo->sendport = 0;
 	tcpinfo->listenport = port;

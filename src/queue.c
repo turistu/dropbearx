@@ -70,7 +70,7 @@ void enqueue(struct Queue* queue, void* item) {
 
 	struct Link* newlink;
 
-	newlink = (struct Link*)m_malloc(sizeof(struct Link));
+	newlink = m_malloc(sizeof(struct Link));
 
 	newlink->item = item;
 	newlink->link = NULL;

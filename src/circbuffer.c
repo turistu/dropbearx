@@ -36,7 +36,7 @@ circbuffer * cbuf_new(unsigned int size) {
 		dropbear_exit("Bad cbuf size");
 	}
 
-	cbuf = (circbuffer*)m_malloc(sizeof(circbuffer));
+	cbuf = m_malloc(sizeof(circbuffer));
 	/* data is malloced on first write */
 	cbuf->data = NULL;
 	cbuf->used = 0;
@@ -109,7 +109,7 @@ unsigned char* cbuf_writeptr(circbuffer *cbuf, unsigned int len) {
 
 	if (!cbuf->data) {
 		/* lazy allocation */
-		cbuf->data = (unsigned char*)m_malloc(cbuf->size);
+		cbuf->data = m_malloc(cbuf->size);
 	}
 
 	return &cbuf->data[cbuf->writepos];

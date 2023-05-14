@@ -175,7 +175,7 @@ int svr_add_pubkey_options(buffer *options_buf, int line_num, const char* filena
 
 	TRACE(("enter addpubkeyoptions"))
 
-	ses.authstate.pubkey_options = (struct PubKeyOptions*)m_malloc(sizeof( struct PubKeyOptions ));
+	ses.authstate.pubkey_options = m_malloc(sizeof(struct PubKeyOptions));
 
 	buf_setpos(options_buf, 0);
 	while (options_buf->pos < options_buf->len) {
@@ -255,7 +255,7 @@ int svr_add_pubkey_options(buffer *options_buf, int line_num, const char* filena
 					char *portstring = NULL;
 					const int permitopen_len = buf_getptr(options_buf, 0) - permitopen_start;
 					struct PermitTCPFwdEntry *entry =
-							(struct PermitTCPFwdEntry*)m_malloc(sizeof(struct PermitTCPFwdEntry));
+							m_malloc(sizeof(struct PermitTCPFwdEntry));
 
 					list_append(ses.authstate.pubkey_options->permit_open_destinations, entry);
 					spec = m_malloc(permitopen_len);

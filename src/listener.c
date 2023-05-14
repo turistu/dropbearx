@@ -30,7 +30,7 @@
 void listeners_initialise() {
 
 	/* just one slot to start with */
-	ses.listeners = (struct Listener**)m_malloc(sizeof(struct Listener*));
+	ses.listeners = m_malloc(sizeof(struct Listener*));
 	ses.listensize = 1;
 	ses.listeners[0] = NULL;
 
@@ -117,7 +117,7 @@ struct Listener* new_listener(const int socks[], unsigned int nsocks,
 
 	TRACE(("new listener num %d ", i))
 
-	newlisten = (struct Listener*)m_malloc(sizeof(struct Listener));
+	newlisten = m_malloc(sizeof(struct Listener));
 	newlisten->index = i;
 	newlisten->type = type;
 	newlisten->typedata = typedata;

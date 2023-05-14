@@ -95,7 +95,7 @@ static void getrsaprime(mp_int* prime, mp_int *primeminus,
 	int trials;
 	DEF_MP_INT(temp_gcd);
 
-	buf = (unsigned char*)m_malloc(size_bytes);
+	buf = m_malloc(size_bytes);
 
 	m_mp_init(&temp_gcd);
 	do {

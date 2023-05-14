@@ -63,7 +63,7 @@ sign_key * new_sign_key() {
 
 	sign_key * ret;
 
-	ret = (sign_key*)m_malloc(sizeof(sign_key));
+	ret = m_malloc(sizeof(sign_key));
 	ret->type = DROPBEAR_SIGNKEY_NONE;
 	ret->source = SIGNKEY_SOURCE_INVALID;
 	return ret;

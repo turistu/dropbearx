@@ -360,7 +360,7 @@ void gen_random_mpint(const mp_int *max, mp_int *rand) {
 		len += 1;
 	}
 
-	randbuf = (unsigned char*)m_malloc(len);
+	randbuf = m_malloc(len);
 	do {
 		genrandom(randbuf, len);
 		/* Mask out the unrequired bits - mp_read_unsigned_bin expects

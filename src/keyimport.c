@@ -384,7 +384,7 @@ static struct openssh_key *load_openssh_key(const char *filename)
 	int headers_done;
 	unsigned long len;
 
-	ret = (struct openssh_key*)m_malloc(sizeof(struct openssh_key));
+	ret = m_malloc(sizeof *ret);
 	ret->keyblob = NULL;
 	ret->keyblob_len = ret->keyblob_size = 0;
 	ret->encrypted = 0;
@@ -977,7 +977,7 @@ static int openssh_write(const char *filename, sign_key *key,
 		/*
 		 * Now we know how big outblob needs to be. Allocate it.
 		 */
-		outblob = (unsigned char*)m_malloc(outlen);
+		outblob = m_malloc(outlen);
 
 		/*
 		 * And write the data into it.
@@ -1046,7 +1046,7 @@ static int openssh_write(const char *filename, sign_key *key,
 		buf_putbufstring(buf, extrablob);
 
 		outlen = len = pos = buf->len;
-		outblob = (unsigned char*)m_malloc(outlen);
+		outblob = m_malloc(outlen);
 		memcpy(outblob, buf->data, buf->len);
 
 		buf_burn_free(buf);

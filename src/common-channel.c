@@ -70,7 +70,7 @@ static void close_chan_fd(struct Channel *channel, int fd, int how);
 void chaninitialise(const struct ChanType *chantypes[]) {
 
 	/* may as well create space for a single channel */
-	ses.channels = (struct Channel**)m_malloc(sizeof(struct Channel*));
+	ses.channels = m_malloc(sizeof(struct Channel*));
 	ses.chansize = 1;
 	ses.channels[0] = NULL;
 	ses.chancount = 0;
@@ -139,7 +139,7 @@ static struct Channel* newchannel(unsigned int remotechan,
 
 	}
 	
-	newchan = (struct Channel*)m_malloc(sizeof(struct Channel));
+	newchan = m_malloc(sizeof(struct Channel));
 	newchan->type = type;
 	newchan->index = i;
 	newchan->sent_close = newchan->recv_close = 0;
