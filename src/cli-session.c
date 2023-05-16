@@ -424,16 +424,14 @@ static void recv_msg_global_request_cli(void) {
 }
 
 void cli_dropbear_exit(int exitcode, const char *msg) {
-	char fullmsg[300];
-
+	char *fullmsg;
 	TRACE(("Exited, cleaning up: %s", msg))
 
 	/* Add the prefix depending on session/auth state */
 	if (!ses.init_done) {
-		snprintf(fullmsg, sizeof fullmsg, "Exited: %s", msg);
+		fullmsg = m_asprintf("Exited: %s", msg);
 	} else {
-		snprintf(fullmsg, sizeof fullmsg, 
-				"Connection to %s@%s:%s exited: %s", 
+		fullmsg = m_asprintf("Connection to %s@%s:%u exited: %s", 
 				cli_opts.username, cli_opts.remotehost, 
 				cli_opts.remoteport, msg);
 	}

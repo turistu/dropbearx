@@ -356,11 +356,12 @@ static void checkhostkey(const unsigned char* keyblob, unsigned int keybloblen) 
 		dropbear_exit("\n\n%s host key mismatch for %s !\n"
 					"Fingerprint is %s\n"
 					"Expected %s\n"
-					"If you know that the host key is correct you can\nremove the bad entry from ~/.ssh/known_hosts", 
+					"If you know that the host key is correct you can\nremove the bad entry from %s", 
 					algoname,
 					cli_opts.remotehost,
 					sign_key_fingerprint(keyblob, keybloblen),
-					fingerprint ? fingerprint : "UNKNOWN");
+					fingerprint ? fingerprint : "UNKNOWN",
+					cli_opts.known_hosts_file);
 	} while (1); /* keep going 'til something happens */
 
 	/* Key doesn't exist yet */
