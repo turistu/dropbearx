@@ -1,28 +1,29 @@
-name: Native build
+name: Build
 on:
   push:
     branches:
       - fixes
-    paths-ignore:
-      - README.md
-      - .gitignore
   workflow_dispatch:
 jobs:
-  build:
+  autoreconf:
+    uses: turistu/odds-n-ends/.github/workflows/auto.yml@main
+    permissions:
+      contents: write
+  build-native:
+    needs: autoreconf
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-20.04, macos-11, ubuntu-latest, macos-latest]
     runs-on: ${{matrix.os}}
     steps:
-      - uses: actions/checkout@v2
-      - name: Install automake
-        if: runner.os == 'macOS'
-        run: brew install automake
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{github.ref_name}}-auto
       - name: Build
         id: build
         timeout-minutes: 3
-        run: .github/build-native ${{matrix.os}}
+        run: .github/build-native -r ${{matrix.os}}
 
       - name: Save output
         if: success() || failure()
@@ -30,3 +31,9 @@ jobs:
         with:
           name: dropbearx-${{matrix.os}}${{steps.build.conclusion == 'failure' && '-FAILED' || ''}}
           path: OUT/dropbearx-*
+  build-with-ndk:
+    needs: autoreconf
+    uses: turistu/odds-n-ends/.github/workflows/build-with-ndk.yml@main
+    with:
+      build: .github/build-with-ndk
+      ref: ${{github.ref_name}}-auto
