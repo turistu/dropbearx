@@ -47,6 +47,7 @@ static void recv_msg_service_accept(void);
 static void cli_session_cleanup(void);
 static void recv_msg_global_request_cli(void);
 static void cli_recv_msg_channel_failure(void);
+static void cli_algos_initialise(void);
 
 struct clientsession cli_ses; /* GLOBAL */
 
@@ -118,6 +119,7 @@ void cli_session(int sock_in, int sock_out, struct dropbear_progress_connection 
 	}
 
 	chaninitialise(cli_chantypes);
+	cli_algos_initialise();
 
 	/* Set up cli_ses vars */
 	cli_session_init(proxy_cmd_pid);
@@ -481,3 +483,12 @@ static void cli_recv_msg_channel_failure(void) {
 		dropbear_exit("shell request failed");
 	}
 }
+static void cli_algos_initialise(void) {
+	algo_type *algo;
+	for (algo = sshkex; algo->name; algo++) {
+		if (strcmp(algo->name, SSH_STRICT_KEX_S) == 0) {
+			algo->usable = 0;
+		}
+	}
+}
+
