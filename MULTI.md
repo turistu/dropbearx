@@ -1,6 +1,8 @@
 ## Multi-Binary Compilation
 
-To compile for systems without much space (floppy distributions etc), you can create a single binary. This will save disk space by avoiding repeated code between the various parts. If you are familiar with "busybox", it's the same principle.
+To compile for systems without much space (floppy distributions etc), you can create a single binary.
+This will save disk space by avoiding repeated code between the various parts.
+If you are familiar with BusyBox, it's the same principle.
 
 Both the multi-binary (`dropbearmulti`) and the separate executables
 (`dropbear`, `dbclient`) are built by `make` by default; to build just the
@@ -8,7 +10,7 @@ multi-binary, run `make multi`.
 
 To use the binary, symlink it from the desired executable:
 
-```
+```sh
 ln -s dropbearmulti dropbear
 ln -s dropbearmulti dbclient
 ```
