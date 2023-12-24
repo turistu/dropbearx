@@ -913,21 +913,27 @@ static void add_extendedopt(const char* origstr) {
 			"\tBatchMode\n"
 			"\tConnectTimeout\n"
 			"\tUserKnownHostsFile\n"
+			"\tBindAddress\n"
+			"\tDisableTrivialAuth\n"
 #if DROPBEAR_CLI_ANYTCPFWD
 			"\tExitOnForwardFailure\n"
 #endif
-			"\tDisableTrivialAuth\n"
+			"\tPort\n"
+			"\tStrictHostKeyChecking\n"
 #ifndef DISABLE_SYSLOG
 			"\tUseSyslog\n"
 #endif
-			"\tPort\n"
-			"\tStrictHostKeyChecking\n"
 		);
 		exit(EXIT_SUCCESS);
 	}
 	if (match_extendedopt(&optstr, "BatchMode") == DROPBEAR_SUCCESS) {
 		cli_opts.batchmode = parse_flag_value(optstr);
 		opts.keepalive_secs = 300;
+		return;
+	}
+
+	if (match_extendedopt(&optstr, "DisableTrivialAuth") == DROPBEAR_SUCCESS) {
+		cli_opts.disable_trivial_auth = parse_flag_value(optstr);
 		return;
 	}
 
@@ -972,6 +978,13 @@ static void add_extendedopt(const char* origstr) {
 		}
 		return;
 	}
+
+#ifndef DISABLE_SYSLOG
+	if (match_extendedopt(&optstr, "UseSyslog") == DROPBEAR_SUCCESS) {
+		opts.usingsyslog = parse_flag_value(optstr);
+		return;
+	}
+#endif
 
 	dropbear_log(LOG_WARNING, "Ignoring unknown configuration option '%s'", origstr);
 }
