@@ -36,7 +36,7 @@ cli_runopts cli_opts; /* GLOBAL */
 static void printhelp(void);
 static void parse_hostname(const char* orighostarg);
 static void parse_multihop_hostname(const char* orighostarg, const char* argv0);
-static void fill_own_user(void);
+static unsigned int parse_uint_value(const char *value, const char *swtch);
 #if DROPBEAR_CLI_ANYTCPFWD
 static void addforward(const char* str, m_list *fwdlist);
 #endif
@@ -137,7 +137,6 @@ void cli_getopts(int argc, char ** argv) {
 	unsigned int cmdlen;
 
 	char* recv_window_arg = NULL;
-	char* keepalive_arg = NULL;
 	char* idle_timeout_arg = NULL;
 	char *host_arg = NULL;
 	char *Z_timeout_arg = NULL;
@@ -180,8 +179,10 @@ void cli_getopts(int argc, char ** argv) {
 #if DROPBEAR_CLI_PROXYCMD
 	cli_opts.proxycmd = NULL;
 #endif
+	cli_opts.bind_arg = NULL;
 	cli_opts.bind_address = NULL;
 	cli_opts.bind_port = NULL;
+	cli_opts.keepalive_arg = NULL;
 #ifndef DISABLE_ZLIB
 	opts.compress_mode = DROPBEAR_COMPRESS_ON;
 #endif
@@ -293,7 +294,7 @@ void cli_getopts(int argc, char ** argv) {
 					next = &recv_window_arg;
 					break;
 				case 'K':
-					next = &keepalive_arg;
+					next = (char**)&cli_opts.keepalive_arg;
 					break;
 				case 'I':
 					next = &idle_timeout_arg;
@@ -334,7 +335,7 @@ void cli_getopts(int argc, char ** argv) {
 					exit(EXIT_SUCCESS);
 					break;
 				case 'b':
-					next = &bind_arg;
+					next = (char**)&cli_opts.bind_arg;
 					break;
 				case 'z':
 					opts.disable_ip_tos = 1;
@@ -466,8 +467,12 @@ void cli_getopts(int argc, char ** argv) {
 	}
 #endif
 
-	if (bind_arg) {
-		if (split_address_port(bind_arg,
+	if (cli_opts.remoteport == NULL) {
+		cli_opts.remoteport = "22";
+	}
+
+	if (cli_opts.bind_arg) {
+		if (split_address_port(cli_opts.bind_arg,
 			&cli_opts.bind_address, &cli_opts.bind_port)
 				== DROPBEAR_FAILURE) {
 			dropbear_exit("Bad -b argument");
@@ -492,8 +497,8 @@ void cli_getopts(int argc, char ** argv) {
 	if (recv_window_arg) {
 		parse_recv_window(recv_window_arg);
 	}
-	if (keepalive_arg) {
-		opts.keepalive_secs = parse_uint_value(keepalive_arg, "keepalive");
+	if (cli_opts.keepalive_arg) {
+		opts.keepalive_secs = parse_uint_value(cli_opts.keepalive_arg, "keepalive");
 	}
 
 	if (idle_timeout_arg) {
@@ -918,7 +923,20 @@ static void add_extendedopt(const char* origstr) {
 #if DROPBEAR_CLI_ANYTCPFWD
 			"\tExitOnForwardFailure\n"
 #endif
+#if DROPBEAR_CLI_AGENTFWD
+			"\tForwardAgent\n"
+#endif
+#if DROPBEAR_CLI_LOCALTCPFWD
+			"\tGatewayPorts\n"
+#endif
+#if DROPBEAR_CLI_PUBKEY_AUTH
+			"\tIdentityFile\n"
+#endif
 			"\tPort\n"
+#if DROPBEAR_CLI_PROXYCMD
+			"\tProxyCommand\n"
+#endif
+			"\tServerAliveInterval\n"
 			"\tStrictHostKeyChecking\n"
 #ifndef DISABLE_SYSLOG
 			"\tUseSyslog\n"
@@ -929,6 +947,11 @@ static void add_extendedopt(const char* origstr) {
 	if (match_extendedopt(&optstr, "BatchMode") == DROPBEAR_SUCCESS) {
 		cli_opts.batchmode = parse_flag_value(optstr);
 		opts.keepalive_secs = 300;
+		return;
+	}
+
+	if (match_extendedopt(&optstr, "BindAddress") == DROPBEAR_SUCCESS) {
+		cli_opts.bind_arg = optstr;
 		return;
 	}
 
@@ -947,6 +970,25 @@ static void add_extendedopt(const char* origstr) {
 #ifndef DISABLE_SYSLOG
 	if (match_extendedopt(&optstr, "UseSyslog") == DROPBEAR_SUCCESS) {
 		if(parse_flag_value(optstr)) opts.log_level = -1;
+	}
+#endif
+#if DROPBEAR_CLI_AGENTFWD
+	if (match_extendedopt(&optstr, "ForwardAgent") == DROPBEAR_SUCCESS) {
+		cli_opts.agent_fwd = parse_flag_value(optstr);
+		return;
+	}
+#endif
+
+#if DROPBEAR_CLI_LOCALTCPFWD
+	if (match_extendedopt(&optstr, "GatewayPorts") == DROPBEAR_SUCCESS) {
+		opts.listen_fwd_all = 1;
+		return;
+	}
+#endif
+
+#if DROPBEAR_CLI_PUBKEY_AUTH
+	if (match_extendedopt(&optstr, "IdentityFile") == DROPBEAR_SUCCESS) {
+		loadidentityfile(optstr, 1);
 		return;
 	}
 #endif
@@ -969,6 +1011,18 @@ static void add_extendedopt(const char* origstr) {
 		return;
 	}
 
+#if DROPBEAR_CLI_PROXYCMD
+	if (match_extendedopt(&optstr, "ProxyCommand") == DROPBEAR_SUCCESS) {
+		cli_opts.proxycmd = (char*)optstr;
+		return;
+	}
+#endif
+
+	if (match_extendedopt(&optstr, "ServerAliveInterval") == DROPBEAR_SUCCESS) {
+		cli_opts.keepalive_arg = optstr;
+		return;
+	}
+
 	if (match_extendedopt(&optstr, "StrictHostKeyChecking") == DROPBEAR_SUCCESS) {
 		if (strcmp(optstr, "accept-new") == 0) {
 			cli_opts.always_accept_key = 1;
@@ -978,13 +1032,6 @@ static void add_extendedopt(const char* origstr) {
 		}
 		return;
 	}
-
-#ifndef DISABLE_SYSLOG
-	if (match_extendedopt(&optstr, "UseSyslog") == DROPBEAR_SUCCESS) {
-		opts.usingsyslog = parse_flag_value(optstr);
-		return;
-	}
-#endif
 
 	dropbear_log(LOG_WARNING, "Ignoring unknown configuration option '%s'", origstr);
 }
