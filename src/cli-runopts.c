@@ -537,13 +537,14 @@ void loadidentityfile(const char* filename, int warnfail) {
 	char *expand_path = expand_homedir_path(filename);
 	enum signkey_type keytype;
 
-	TRACE(("loadidentityfile %s", filename))
+	char *id_key_path = expand_homedir_path(filename);
+	TRACE(("loadidentityfile %s", id_key_path))
 
 	key = new_sign_key();
 	keytype = DROPBEAR_SIGNKEY_ANY;
 	if ( readhostkey(expand_path, key, &keytype) != DROPBEAR_SUCCESS ) {
 		if (warnfail) {
-			dropbear_log(LOG_WARNING, "Failed loading keyfile '%s'\n", filename);
+			dropbear_log(LOG_WARNING, "Failed loading keyfile '%s'\n", id_key_path);
 		}
 		sign_key_free(key);
 		m_free(expand_path);
