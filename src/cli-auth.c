@@ -314,7 +314,7 @@ int cli_auth_try() {
 #endif
 
 #if DROPBEAR_CLI_PASSWORD_AUTH
-	if (!finished && !cli_opts.batch_mode && cli_opts.password_authentication && (ses.authstate.authtypes & AUTH_TYPE_PASSWORD)) {
+	if (!finished && cli_opts.password_authentication && (ses.authstate.authtypes & AUTH_TYPE_PASSWORD)) {
 		if (ses.keys->trans.algo_crypt->cipherdesc == NULL) {
 			fprintf(stderr, "Sorry, I won't let you use password auth unencrypted.\n");
 		} else {
