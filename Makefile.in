@@ -23,6 +23,9 @@ ifneq ($(wildcard @srcdir@/localoptions.h),)
 	CPPFLAGS+=-DLOCALOPTIONS_H_EXISTS -I@srcdir@
 	OPTION_HEADERS += @srcdir@/localoptions.h
 endif
+ifneq ($(wildcard $(srcdir)/distrooptions.h),)
+	CPPFLAGS+=-DDISTROOPTIONS_H_EXISTS
+endif
 
 MAN_DIR=@srcdir@/manpages
 
@@ -143,7 +146,7 @@ multi: dropbearmulti
 install-multi: inst_dropbearmulti
 
 # for simplicity assume all source depends on all headers
-HEADERS=$(wildcard $(srcdir)/*.h *.h) $(OPTION_HEADERS)
+HEADERS=$(wildcard $(srcdir)/*.h *.h) default_options_guard.h
 
 MULTI_CPPFLAGS = $(addprefix -DDBMULTI_, $(PROGRAMS)) -DDROPBEAR_MULTI
 
@@ -231,10 +234,10 @@ scp: $(HEADERS) Makefile
 dropbearmulti$(EXEEXT): $(HEADERS) $(multi_objs) $(LIBTOM_DEPS) Makefile
 	$(CC) $(LDFLAGS) -o $@ $(multi_objs) $(LIBTOM_LIBS) $(LIBS) @CRYPTLIB@
 
-$(STATIC_LTC): $(OPTION_HEADERS)
+$(STATIC_LTC): $(HEADERS)
 	$(MAKE) -C libtomcrypt
 
-$(STATIC_LTM): $(OPTION_HEADERS)
+$(STATIC_LTM): $(HEADERS)
 	$(MAKE) -C libtommath
 
 .PHONY : clean sizes thisclean distclean tidy ltc-clean ltm-clean lint check
