@@ -115,8 +115,8 @@ static void printhelp() {
 }
 
 void cli_getopts(int argc, char ** argv) {
-	int i, j;
-	char ** next = NULL;
+	unsigned int i, j;
+	const char ** next = NULL;
 	enum {
 		OPT_EXTENDED_OPTIONS,
 #if DROPBEAR_CLI_PUBKEY_AUTH
@@ -136,11 +136,11 @@ void cli_getopts(int argc, char ** argv) {
 	} opt;
 	unsigned int cmdlen;
 
-	char* recv_window_arg = NULL;
-	char* idle_timeout_arg = NULL;
-	char *host_arg = NULL;
-	char *Z_timeout_arg = NULL;
-	char *bind_arg = NULL;
+	const char* recv_window_arg = NULL;
+	const char* idle_timeout_arg = NULL;
+	const char *host_arg = NULL;
+	const char *proxycmd_arg = NULL;
+	const char *Z_timeout_arg = NULL;
 	char c;
 
 	/* see printhelp() for options */
@@ -234,7 +234,7 @@ void cli_getopts(int argc, char ** argv) {
 					cli_opts.quiet = 1;
 					break;
 				case 'p': /* remoteport */
-					next = (char**)&cli_opts.remoteport;
+					next = &cli_opts.remoteport;
 					break;
 #if DROPBEAR_CLI_PUBKEY_AUTH
 				case 'i': /* an identityfile */
@@ -279,7 +279,7 @@ void cli_getopts(int argc, char ** argv) {
 #endif
 #if DROPBEAR_CLI_PROXYCMD
 				case 'J':
-					next = &cli_opts.proxycmd;
+					next = &proxycmd_arg;
 					break;
 #endif
 				case 'l':
@@ -296,7 +296,7 @@ void cli_getopts(int argc, char ** argv) {
 					next = &recv_window_arg;
 					break;
 				case 'K':
-					next = (char**)&cli_opts.keepalive_arg;
+					next = &cli_opts.keepalive_arg;
 					break;
 				case 'I':
 					next = &idle_timeout_arg;
@@ -337,7 +337,7 @@ void cli_getopts(int argc, char ** argv) {
 					exit(EXIT_SUCCESS);
 					break;
 				case 'b':
-					next = (char**)&cli_opts.bind_arg;
+					next = &cli_opts.bind_arg;
 					break;
 				case 'z':
 					opts.disable_ip_tos = 1;
@@ -463,9 +463,9 @@ void cli_getopts(int argc, char ** argv) {
 	/* And now a few sanity checks and setup */
 
 #if DROPBEAR_CLI_PROXYCMD
-	if (cli_opts.proxycmd) {
+	if (proxycmd_arg) {
 		/* To match the common path of m_freeing it */
-		cli_opts.proxycmd = m_strdup(cli_opts.proxycmd);
+		cli_opts.proxycmd = m_strdup(proxycmd_arg);
 	}
 #endif
 
@@ -1028,7 +1028,7 @@ static void add_extendedopt(const char* origstr) {
 
 #if DROPBEAR_CLI_PROXYCMD
 	if (match_extendedopt(&optstr, "ProxyCommand") == DROPBEAR_SUCCESS) {
-		cli_opts.proxycmd = (char*)optstr;
+		cli_opts.proxycmd = m_strdup(optstr);
 		return;
 	}
 #endif
