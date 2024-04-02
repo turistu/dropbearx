@@ -399,7 +399,13 @@
 #undef DROPBEAR_DSS
 #endif
 #define DROPBEAR_DSS 1
+
+#if defined(DROPBEAR_USE_SSH_CONFIG)
+#undef DROPBEAR_USE_SSH_CONFIG
 #endif
+#define DROPBEAR_USE_SSH_CONFIG 1
+
+#endif /* DROPBEAR_FUZZ */
 
 #ifdef __linux__
 #define ABSTRACT_UNIX_SOCKETS	1
