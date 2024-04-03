@@ -413,10 +413,12 @@ void cli_getopts(int argc, char ** argv) {
 
 	/* Apply needed defaults if missing from command line or config file. */
 	if (cli_opts.remoteport == NULL) {
-		cli_opts.remoteport = "22";
+		cli_opts.remoteport = m_strdup("22");
 	}
 
-	if (cli_opts.username == NULL) {
+	if (cli_opts.username) {
+		cli_opts.username = m_strdup(cli_opts.username);
+	} else {
 		cli_opts.username = m_strdup(cli_opts.own_user);
 	}
 
@@ -694,7 +696,7 @@ static void parse_hostname(const char* orighostarg) {
 	} else {
 		remotehost[0] = '\0'; /* Split the user/host */
 		remotehost++;
-		cli_opts.username = userhostarg;
+		cli_opts.username = m_strdup(userhostarg);
 	}
 
 	port = strchr(remotehost, '^');
@@ -704,7 +706,7 @@ static void parse_hostname(const char* orighostarg) {
 	}
 	if (port) {
 		*port = '\0';
-		cli_opts.remoteport = port+1;
+		cli_opts.remoteport = m_strdup(port+1);
 	}
 
 	if (remotehost[0] == '\0') {
@@ -712,8 +714,9 @@ static void parse_hostname(const char* orighostarg) {
 	}
 
 	if (!cli_opts.remotehostfixed) {
-		cli_opts.remotehost = remotehost;
+		cli_opts.remotehost = m_strdup(remotehost);
 	}
+	m_free(userhostarg);
 }
 
 #if DROPBEAR_CLI_NETCAT
@@ -941,7 +944,7 @@ static void add_extendedopt(const char* origstr) {
 #endif
 
 	if (match_extendedopt(&optstr, "Port") == DROPBEAR_SUCCESS) {
-		cli_opts.remoteport = optstr;
+		cli_opts.remoteport = m_strdup(optstr);
 		return;
 	}
 
@@ -975,7 +978,7 @@ void apply_config_settings(char* cli_host_arg) {
 			read_config_file(config_path, f, &cli_opts);
 			fclose(f);
 		}
-		free(config_path);
+		m_free(config_path);
 	}
 }
 #endif

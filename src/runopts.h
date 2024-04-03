@@ -147,9 +147,11 @@ void loadhostkeys(void);
 typedef struct cli_runopts {
 
 	char *progname;
+	/* malloced */
 	char *remotehost;
 	int remotehostfixed;
-	const char *remoteport;
+	/* malloced */
+	char *remoteport;
 
 	const char *own_user;
 	char *username;
