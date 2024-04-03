@@ -111,7 +111,7 @@ typedef struct svr_runopts {
 #if DROPBEAR_SVR_REMOTETCPFWD
 	int noremotetcp;
 #endif
-#if DROPBEAR_SVR_LOCALTCPFWD
+#if DROPBEAR_SVR_LOCALANYFWD
 	int nolocaltcp;
 #endif
 

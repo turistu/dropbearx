@@ -86,7 +86,7 @@ static void printhelp(const char * progname) {
 					"-t		Enable two-factor authentication (both password and public key required)\n"
 #endif
 					"-T		Maximum authentication tries (default %d)\n"
-#if DROPBEAR_SVR_LOCALTCPFWD
+#if DROPBEAR_SVR_LOCALANYFWD
 					"-j		Disable local port forwarding\n"
 #endif
 #if DROPBEAR_SVR_REMOTETCPFWD
@@ -175,9 +175,9 @@ void svr_getopts(int argc, char ** argv) {
 	svr_opts.hostkey = NULL;
 	svr_opts.delay_hostkey = 0;
 #ifndef DISABLE_PIDFILE
-	svr_opts.pidfile = DROPBEAR_PIDFILE;
+	svr_opts.pidfile = expand_homedir_path(DROPBEAR_PIDFILE);
 #endif
-#if DROPBEAR_SVR_LOCALTCPFWD
+#if DROPBEAR_SVR_LOCALANYFWD
 	svr_opts.nolocaltcp = 0;
 #endif
 #if DROPBEAR_SVR_REMOTETCPFWD
@@ -247,7 +247,7 @@ void svr_getopts(int argc, char ** argv) {
 					svr_opts.pass_on_env = 1;
 					break;
 
-#if DROPBEAR_SVR_LOCALTCPFWD
+#if DROPBEAR_SVR_LOCALANYFWD
 				case 'j':
 					svr_opts.nolocaltcp = 1;
 					break;
