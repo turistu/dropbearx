@@ -145,12 +145,11 @@ void svr_getopts(int argc, char ** argv);
 void loadhostkeys(void);
 
 typedef struct cli_runopts {
+	/* All non-const strings are malloced */
 
-	char *progname;
-	/* malloced */
+	const char *progname;
 	char *remotehost;
 	int remotehostfixed;
-	/* malloced */
 	char *remoteport;
 
 	const char *own_user;

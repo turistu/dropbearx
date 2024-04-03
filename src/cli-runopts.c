@@ -141,6 +141,8 @@ void cli_getopts(int argc, char ** argv) {
 	const char *host_arg = NULL;
 	const char *proxycmd_arg = NULL;
 	const char *Z_timeout_arg = NULL;
+	const char *remoteport_arg = NULL;
+	const char *username_arg = NULL;
 	char c;
 
 	/* see printhelp() for options */
@@ -238,7 +240,7 @@ void cli_getopts(int argc, char ** argv) {
 					cli_opts.quiet = 1;
 					break;
 				case 'p': /* remoteport */
-					next = &cli_opts.remoteport;
+					next = &remoteport_arg;
 					break;
 #if DROPBEAR_CLI_PUBKEY_AUTH
 				case 'i': /* an identityfile */
@@ -287,7 +289,7 @@ void cli_getopts(int argc, char ** argv) {
 					break;
 #endif
 				case 'l':
-					next = &cli_opts.username;
+					next = &username_arg;
 					break;
 				case 'h':
 					printhelp();
@@ -419,13 +421,17 @@ void cli_getopts(int argc, char ** argv) {
 #endif
 
 	/* Apply needed defaults if missing from command line or config file. */
-	if (cli_opts.remoteport == NULL) {
+	if (remoteport_arg) {
+		m_free(cli_opts.remoteport);
+		cli_opts.remoteport = m_strdup(remoteport_arg);
+	} else if (!cli_opts.remoteport) {
 		cli_opts.remoteport = m_strdup("22");
 	}
 
-	if (cli_opts.username) {
-		cli_opts.username = m_strdup(cli_opts.username);
-	} else {
+	if (username_arg) {
+		m_free(cli_opts.username);
+		cli_opts.username = m_strdup(username_arg);
+	} else if(!cli_opts.username) {
 		cli_opts.username = m_strdup(cli_opts.own_user);
 	}
 
