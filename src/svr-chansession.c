@@ -142,8 +142,6 @@ static void sesssigchild_handler(int UNUSED(dummy)) {
 
 	const int saved_errno = errno;
 
-	TRACE(("enter sigchld handler"))
-
 	/* Make sure that the main select() loop wakes up */
 	while (1) {
 		/* isserver is just a random byte to write. We can't do anything
@@ -158,7 +156,6 @@ static void sesssigchild_handler(int UNUSED(dummy)) {
 	sa_chld.sa_flags = SA_NOCLDSTOP;
 	sigemptyset(&sa_chld.sa_mask);
 	sigaction(SIGCHLD, &sa_chld, NULL);
-	TRACE(("leave sigchld handler"))
 
 	errno = saved_errno;
 }
