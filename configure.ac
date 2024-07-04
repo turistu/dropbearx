@@ -65,7 +65,7 @@ AC_DEFINE([_GNU_SOURCE], [], [Use GNU extensions if glibc])
 
 STATIC=0
 AC_ARG_ENABLE(static,
-	[  --enable-static         Build static binaries],
+	[AS_HELP_STRING([--enable-static], [Build static binaries])],
 	[
 		if test "x$enableval" = "xyes"; then
 			STATIC=1
@@ -76,7 +76,7 @@ AC_SUBST(STATIC)
 
 hardenbuild=1
 AC_ARG_ENABLE(harden,
-	[  --disable-harden        Don't set hardened build flags],
+	[AS_HELP_STRING([--disable-harden], [Don't set hardened build flags])],
 	[
 		if test "x$enableval" = "xno"; then
 			hardenbuild=0
@@ -141,7 +141,7 @@ if test "$hardenbuild" -eq 1; then
 fi
 
 AC_ARG_ENABLE(werror,
-	[  --enable-werror         Set -Werror when building],
+	[AS_HELP_STRING([--enable-werror], [Set -Werror when building])],
 	[
 		if test "x$enableval" = "xyes"; then
 			# -Werror shouldn't be set when configure runs tests.
@@ -225,7 +225,7 @@ fi
 
 # Check if zlib is needed
 AC_ARG_WITH(zlib,
-	[  --with-zlib=PATH        Use zlib in PATH],
+	[AS_HELP_STRING([--with-zlib=PATH], [Use zlib in PATH])],
 	[
 		# option is given
 		if test -d "$withval/lib"; then
@@ -242,7 +242,7 @@ AC_ARG_WITH(zlib,
 )
 
 AC_ARG_ENABLE(zlib,
-	[  --disable-zlib          Don't include zlib support],
+	[AS_HELP_STRING([--disable-zlib], [Don't include zlib support])],
 	[
 		if test "x$enableval" = "xno"; then
 			AC_DEFINE(DISABLE_ZLIB,1,Use zlib)
@@ -262,7 +262,7 @@ AC_ARG_ENABLE(zlib,
 
 # Check if pam is needed
 AC_ARG_WITH(pam,
-	[  --with-pam=PATH        Use pam in PATH],
+	[AS_HELP_STRING([--with-pam=PATH], [Use pam in PATH])],
 	[
 		# option is given
 		if test -d "$withval/lib"; then
@@ -280,7 +280,7 @@ AC_ARG_WITH(pam,
 
 
 AC_ARG_ENABLE(pam,
-	[  --enable-pam            Try to include PAM support],
+	[AS_HELP_STRING([--enable-pam], [Try to include PAM support])],
 	[
 		if test "x$enableval" = "xyes"; then
 			AC_CHECK_LIB(pam, pam_authenticate, , AC_MSG_ERROR([*** PAM missing - install first or check config.log ***]))
@@ -299,7 +299,7 @@ AC_ARG_ENABLE(pam,
 )
 
 AC_ARG_ENABLE(syslog,
-	[  --disable-syslog        Don't include syslog support],
+	[AS_HELP_STRING([--disable-syslog], [Don't include syslog support])],
 	[
 		if test "x$enableval" = "xno"; then
 			AC_DEFINE(DISABLE_SYSLOG,1,Using syslog)
@@ -314,7 +314,7 @@ AC_ARG_ENABLE(syslog,
 )
 
 AC_ARG_ENABLE(shadow,
-	[  --disable-shadow        Don't use shadow passwords (if available)],
+	[AS_HELP_STRING([--disable-shadow], [Don't use shadow passwords (if available)])],
 	[
 		if test "x$enableval" = "xno"; then
 			AC_MSG_NOTICE(Not using shadow passwords)
@@ -330,7 +330,7 @@ AC_ARG_ENABLE(shadow,
 )
 
 AC_ARG_ENABLE(plugin,
-	[  --enable-plugin         Enable support for External Public Key Authentication plug-in],
+	[AS_HELP_STRING([--enable-plugin], [Enable support for External Public Key Authentication plug-in])],
 	[
 		AC_DEFINE(DROPBEAR_PLUGIN, 1, External Public Key Authentication)
 		AC_MSG_NOTICE(Enabling support for External Public Key Authentication)
@@ -345,7 +345,7 @@ AC_ARG_ENABLE(plugin,
 AC_SUBST(DROPBEAR_PLUGIN)
 
 AC_ARG_ENABLE(fuzz,
-	[  --enable-fuzz           Build fuzzing. Not recommended for deployment.],
+	[AS_HELP_STRING([--enable-fuzz], [Build fuzzing. Not recommended for deployment.])],
 	[
 		if test "x$enableval" = "xyes"; then
             AC_DEFINE(DROPBEAR_FUZZ, 1, Fuzzing)
@@ -535,10 +535,11 @@ AC_CHECK_FUNCS(mach_absolute_time)
 AC_CHECK_FUNCS(explicit_bzero memset_s getrandom)
 
 AC_ARG_ENABLE(bundled-libtom,
-[  --enable-bundled-libtom       Force using bundled libtomcrypt/libtommath even if a system version exists.
-  --disable-bundled-libtom      Force using system libtomcrypt/libtommath, fail if it does not exist.
-                                Default is to use system if available, otherwise bundled.
-                                Dropbear requires system libtommath >= 1.2.0 and libtomcrypt >= 1.18.0],
+	[AS_HELP_STRING([--enable-bundled-libtom],
+		[Force using bundled libtomcrypt/libtommath even if a system version exists.
+		Use --disable-bundled-libtom to force not using bundled even if system version doesn't exist.
+		Default is to use system if available, otherwise bundled.
+		Dropbear requires system libtommath >= 1.2.0 and libtomcrypt >= 1.18.0.])],
 	[
 		if test "x$enableval" = "xyes"; then
 			BUNDLED_LIBTOM=1
@@ -569,7 +570,7 @@ dnl Added from OpenSSH 3.6.1p2's configure.ac
 
 dnl allow user to disable some login recording features
 AC_ARG_ENABLE(lastlog,
-	[  --disable-lastlog       Disable use of lastlog even if detected [no]],
+	[AS_HELP_STRING([--disable-lastlog], [Disable use of lastlog even if detected [no]])],
 	[
 		if test "x$enableval" = "xno" ; then
 			AC_DEFINE(DISABLE_LASTLOG,1,Disable use of lastlog())
@@ -577,7 +578,7 @@ AC_ARG_ENABLE(lastlog,
 	]
 )
 AC_ARG_ENABLE(utmp,
-	[  --disable-utmp          Disable use of utmp even if detected [no]],
+	[AS_HELP_STRING([--disable-utmp], [Disable use of utmp even if detected [no]])],
 	[
 		if test "x$enableval" = "xno" ; then
 			AC_DEFINE(DISABLE_UTMP,1,Disable use of utmp)
@@ -585,7 +586,7 @@ AC_ARG_ENABLE(utmp,
 	]
 )
 AC_ARG_ENABLE(utmpx,
-	[  --disable-utmpx         Disable use of utmpx even if detected [no]],
+	[AS_HELP_STRING([--disable-utmpx], [Disable use of utmpx even if detected [no]])],
 	[
 		if test "x$enableval" = "xno" ; then
 			AC_DEFINE(DISABLE_UTMPX,1,Disable use of utmpx)
@@ -593,7 +594,7 @@ AC_ARG_ENABLE(utmpx,
 	]
 )
 AC_ARG_ENABLE(wtmp,
-	[  --disable-wtmp          Disable use of wtmp even if detected [no]],
+	[AS_HELP_STRING([--disable-wtmp], [Disable use of wtmp even if detected [no]])],
 	[
 		if test "x$enableval" = "xno" ; then
 			AC_DEFINE(DISABLE_WTMP,1,Disable use of wtmp)
@@ -601,7 +602,7 @@ AC_ARG_ENABLE(wtmp,
 	]
 )
 AC_ARG_ENABLE(wtmpx,
-	[  --disable-wtmpx         Disable use of wtmpx even if detected [no]],
+	[AS_HELP_STRING([--disable-wtmpx], [Disable use of wtmpx even if detected [no]])],
 	[
 		if test "x$enableval" = "xno" ; then
 			AC_DEFINE(DISABLE_WTMPX,1,Disable use of wtmpx)
@@ -609,12 +610,12 @@ AC_ARG_ENABLE(wtmpx,
 	]
 )
 AC_ARG_ENABLE(loginfunc,
-	[  --disable-loginfunc     Disable use of login() etc. [no]],
+	[AS_HELP_STRING([--disable-loginfunc], [Disable use of login() etc. [no]])],
 	[ no_loginfunc_check=1
 	AC_MSG_NOTICE([Not using login() etc]) ]
 )
 AC_ARG_ENABLE(pututline,
-	[  --disable-pututline     Disable use of pututline() etc. ([uw]tmp) [no]],
+	[AS_HELP_STRING([--disable-pututline], [Disable use of pututline() etc. ([uw]tmp) [no]])],
 	[
 		if test "x$enableval" = "xno" ; then
 			AC_DEFINE(DISABLE_PUTUTLINE,1,Disable use of pututline())
@@ -622,7 +623,7 @@ AC_ARG_ENABLE(pututline,
 	]
 )
 AC_ARG_ENABLE(pututxline,
-	[  --disable-pututxline    Disable use of pututxline() etc. ([uw]tmpx) [no]],
+	[AS_HELP_STRING([--disable-pututxline], [Disable use of pututxline() etc. ([uw]tmpx) [no]])],
 	[
 		if test "x$enableval" = "xno" ; then
 			AC_DEFINE(DISABLE_PUTUTXLINE,1,Disable use of pututxline())
@@ -630,7 +631,7 @@ AC_ARG_ENABLE(pututxline,
 	]
 )
 AC_ARG_WITH(lastlog,
-  [  --with-lastlog=FILE|DIR specify lastlog location [common locations]],
+	[AS_HELP_STRING([--with-lastlog=FILE|DIR], [Specify lastlog location [common locations]])],
 	[
 		if test "x$withval" = "xno" ; then
 			AC_DEFINE(DISABLE_LASTLOG)
