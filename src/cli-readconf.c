@@ -69,7 +69,8 @@ void read_config_file(char* filename, FILE* config_file, cli_runopts* options) {
 	while (buf_getline(buf, config_file) == DROPBEAR_SUCCESS) {
 		char* commentStart = NULL;
 		cfg_option cfg_opt;
-		int found, i;
+		int found;
+		size_t i;
 		/* Update line number counter. */
 		linenum++;
 
