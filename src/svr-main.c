@@ -208,7 +208,7 @@ static void main_noinetd(int argc, char ** argv, const char* multipath) {
 #ifndef DISABLE_PIDFILE
 			unlink(svr_opts.pidfile);
 #endif
-			dropbear_exit("Terminated by signal");
+			dropbear_close("Terminated by signal");
 		}
 
 		if (val == 0) {
