@@ -14,10 +14,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-20.04, macos-11, ubuntu-latest, macos-latest]
+        os: [ubuntu-20.04, macos-12, ubuntu-latest, macos-latest]
     runs-on: ${{matrix.os}}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: ${{github.ref_name}}-auto
       - name: Build
@@ -27,7 +27,7 @@ jobs:
 
       - name: Save output
         if: success() || failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: dropbearx-${{matrix.os}}${{steps.build.conclusion == 'failure' && '-FAILED' || ''}}
           path: OUT/dropbearx-*
