@@ -431,7 +431,7 @@ void cli_dropbear_exit(int exitcode, const char *msg) {
 	if (!ses.init_done) {
 		fullmsg = m_asprintf("Exited: %s", msg);
 	} else {
-		fullmsg = m_asprintf("Connection to %s@%s:%u exited: %s", 
+		fullmsg = m_asprintf("Connection to %s@%s:%s exited: %s", 
 				cli_opts.username, cli_opts.remotehost, 
 				cli_opts.remoteport, msg);
 	}

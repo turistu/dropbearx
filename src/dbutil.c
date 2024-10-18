@@ -65,7 +65,7 @@ void startsyslog(const char *ident) {
 
 void msg_format(char *buf, int size, const char *fmt, va_list va) {
 	int l = vsnprintf(buf, size, fmt, va);
-	if (l > 0 && l < size && buf[l - 1] == ':') {
+	if (l > 0 && l < size - 10 && buf[l - 1] == ':') {
 		snprintf(buf + l, size - l, " %s", strerror(errno));
 	}
 }
@@ -596,9 +596,7 @@ void setnonblocking(int fd) {
 			 * can't be set to non-blocking */
 			TRACE(("ignoring ENODEV for setnonblocking"))
 		} else {
-		{
 			dropbear_exit("Couldn't set nonblocking");
-		}
 		}
 	}
 	TRACE(("leave setnonblocking"))
