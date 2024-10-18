@@ -109,7 +109,7 @@ static char *usershell(void) {
 static void exec_proxy_cmd(const void *vcmd) {
 	const char *cmd = vcmd;
 	run_shell_command(cmd, ses.maxfd, usershell());
-	dropbear_exit("Failed to run '%s'\n", (const char*)cmd);
+	dropbear_exit("Failed to run '%s'\n", cmd);
 }
 
 #if DROPBEAR_CLI_PROXYCMD
