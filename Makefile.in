@@ -258,7 +258,7 @@ thisclean:
 
 distclean: clean tidy
 	rm -f config.h
-	rm -f Makefile libtommath/Makefile libtomcrypt/Makefile test/Makefile
+	rm -f Makefile libtommath/Makefile libtomcrypt/Makefile
 	rm -f default_options_guard.h
 	rm -fr config.log config.status autom4te.cache
 
