@@ -836,7 +836,6 @@ else
 fi
 
 # Checks for library functions.
-AC_PROG_GCC_TRADITIONAL
 AC_FUNC_MEMCMP
 AC_FUNC_SELECT_ARGTYPES
 AC_CHECK_FUNCS([getspnam getusershell putenv])
