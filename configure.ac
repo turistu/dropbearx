@@ -863,6 +863,32 @@ AC_CHECK_FUNCS([socketpair vasprintf posix_openpt setresuid])
 
 AC_SEARCH_LIBS(basename, gen, AC_DEFINE(HAVE_BASENAME))
 
+AC_CACHE_CHECK([for static_assert], ac_cv_have_static_assert, [
+	AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+#include <assert.h>
+		]],
+		[[ static_assert(1 == 1, "bad ram?"); ]])],
+		[ ac_cv_have_static_assert="yes" ],
+		[ ac_cv_have_static_assert="no" ]
+	)
+])
+if test "$ac_cv_have_static_assert" = "yes" ; then
+	AC_DEFINE(HAVE_STATIC_ASSERT,1,Have static_assert)
+fi
+
+AC_CACHE_CHECK([for _Static_assert], ac_cv_have_underscore_static_assert, [
+	AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+#include <assert.h>
+		]],
+		[[ _Static_assert(1 == 1, "cosmic rays?"); ]])],
+		[ ac_cv_have_underscore_static_assert="yes" ],
+		[ ac_cv_have_underscore_static_assert="no" ]
+	)
+])
+if test "$ac_cv_have_underscore_static_assert" = "yes" ; then
+	AC_DEFINE(HAVE_UNDERSCORE_STATIC_ASSERT,1,Have _Static_assert)
+fi
+
 AC_EXEEXT
 
 if test $BUNDLED_LIBTOM = 1 ; then
