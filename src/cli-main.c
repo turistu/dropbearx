@@ -75,9 +75,8 @@ int main(int argc, char ** argv) {
 	}
 
 #if DROPBEAR_CLI_PROXYCMD
-	if (cli_opts.proxycmd) {
+	if (cli_opts.proxycmd || cli_opts.proxyexec) {
 		cli_proxy_cmd(&sock_in, &sock_out, &proxy_cmd_pid);
-		m_free(cli_opts.proxycmd);
 		if (signal(SIGINT, kill_proxy_sighandler) == SIG_ERR ||
 			signal(SIGTERM, kill_proxy_sighandler) == SIG_ERR ||
 			signal(SIGHUP, kill_proxy_sighandler) == SIG_ERR) {
@@ -105,40 +104,66 @@ static char *usershell(void) {
 	if((pw = getpwuid(getuid())) && (s = pw->pw_shell) && s[0]) return s;
 	return BIN_SH;
 }
+#if DROPBEAR_CLI_PROXYCMD
+static void shell_proxy_cmd(const void *user_data_cmd) {
+	const char *cmd = user_data_cmd;
 
-static void exec_proxy_cmd(const void *vcmd) {
-	const char *cmd = vcmd;
 	run_shell_command(cmd, ses.maxfd, usershell());
 	dropbear_exit("Failed to run '%s'\n", cmd);
 }
 
-#if DROPBEAR_CLI_PROXYCMD
+static void exec_proxy_cmd(const void *unused) {
+	(void)unused;
+	run_command(cli_opts.proxyexec[0], cli_opts.proxyexec, ses.maxfd);
+	dropbear_exit("Failed to run '%s'\n", cli_opts.proxyexec[0]);
+}
+
 static void cli_proxy_cmd(int *sock_in, int *sock_out, pid_t *pid_out) {
+	char * cmd_arg = NULL;
+	void (*exec_fn)(const void *user_data) = NULL;
 	int ret;
-	char *ex_cmd;
+
+	/* exactly one of cli_opts.proxycmd or cli_opts.proxyexec should be set */
 
 	/* File descriptor "-j &3" */
-	if (*cli_opts.proxycmd == '&') {
+	if (cli_opts.proxycmd && *cli_opts.proxycmd == '&') {
 		char *p = cli_opts.proxycmd + 1;
 		int sock = strtoul(p, &p, 10);
 		/* must be a single number, and not stdin/stdout/stderr */
 		if (sock > 2 && sock < 1024 && *p == '\0') {
 			*sock_in = sock;
 			*sock_out = sock;
-			return;
+			goto cleanup;
 		}
 	}
 
-	/* Normal proxycommand */
-	ex_cmd = m_asprintf("exec %s", cli_opts.proxycmd);
+	if (cli_opts.proxycmd) {
+		/* Normal proxycommand */
+		/* So that spawn_command knows which shell to run */
+		fill_passwd(cli_opts.own_user);
 
-	/* So that spawn_command knows which shell to run */
-	fill_passwd(cli_opts.own_user);
+		cmd_arg = m_asprintf("exec %s", cli_opts.proxycmd);
+		exec_fn = shell_proxy_cmd;
+	} else {
+		/* No shell */
+		exec_fn = exec_proxy_cmd;
+	}
 
-	ret = spawn_command(exec_proxy_cmd, ex_cmd,
-			sock_out, sock_in, NULL, pid_out);
+	ret = spawn_command(exec_fn, cmd_arg, sock_out, sock_in, NULL, pid_out);
 	if (ret == DROPBEAR_FAILURE) {
-		dropbear_exit("Failed running proxy command: %s", ex_cmd);
+		dropbear_exit("Failed running proxy command: %s", cmd_arg);
+		*sock_in = *sock_out = -1;
+	}
+
+cleanup:
+	m_free(cli_opts.proxycmd);
+	m_free(cmd_arg);
+	if (cli_opts.proxyexec) {
+		char **a = NULL;
+		for (a = cli_opts.proxyexec; *a; a++) {
+			m_free_direct(*a);
+		}
+		m_free(cli_opts.proxyexec);
 	}
 }
 
