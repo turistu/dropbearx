@@ -75,7 +75,11 @@ int main(int argc, char ** argv) {
 	}
 
 #if DROPBEAR_CLI_PROXYCMD
-	if (cli_opts.proxycmd || cli_opts.proxyexec) {
+	if (cli_opts.proxycmd
+#if DROPBEAR_CLI_MULTIHOP
+		|| cli_opts.proxyexec
+#endif
+	) {
 		cli_proxy_cmd(&sock_in, &sock_out, &proxy_cmd_pid);
 		if (signal(SIGINT, kill_proxy_sighandler) == SIG_ERR ||
 			signal(SIGTERM, kill_proxy_sighandler) == SIG_ERR ||
@@ -112,11 +116,13 @@ static void shell_proxy_cmd(const void *user_data_cmd) {
 	dropbear_exit("Failed to run '%s'\n", cmd);
 }
 
+#if DROPBEAR_CLI_MULTIHOP
 static void exec_proxy_cmd(const void *unused) {
 	(void)unused;
 	run_command(cli_opts.proxyexec[0], cli_opts.proxyexec, ses.maxfd);
 	dropbear_exit("Failed to run '%s'\n", cli_opts.proxyexec[0]);
 }
+#endif
 
 static void cli_proxy_cmd(int *sock_in, int *sock_out, pid_t *pid_out) {
 	char * cmd_arg = NULL;
@@ -144,9 +150,11 @@ static void cli_proxy_cmd(int *sock_in, int *sock_out, pid_t *pid_out) {
 
 		cmd_arg = m_asprintf("exec %s", cli_opts.proxycmd);
 		exec_fn = shell_proxy_cmd;
+#if DROPBEAR_CLI_MULTIHOP
 	} else {
 		/* No shell */
 		exec_fn = exec_proxy_cmd;
+#endif
 	}
 
 	ret = spawn_command(exec_fn, cmd_arg, sock_out, sock_in, NULL, pid_out);
@@ -158,6 +166,7 @@ static void cli_proxy_cmd(int *sock_in, int *sock_out, pid_t *pid_out) {
 cleanup:
 	m_free(cli_opts.proxycmd);
 	m_free(cmd_arg);
+#if DROPBEAR_CLI_MULTIHOP
 	if (cli_opts.proxyexec) {
 		char **a = NULL;
 		for (a = cli_opts.proxyexec; *a; a++) {
@@ -165,6 +174,7 @@ cleanup:
 		}
 		m_free(cli_opts.proxyexec);
 	}
+#endif
 }
 
 static void kill_proxy_sighandler(int UNUSED(signo)) {
