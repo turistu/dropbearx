@@ -329,7 +329,7 @@
 
 /* PAM requires ./configure --enable-pam */
 #if !defined(HAVE_LIBPAM) && DROPBEAR_SVR_PAM_AUTH
-#error "DROPBEAR_SVR_PATM_AUTH requires PAM headers. Perhaps ./configure --enable-pam ?"
+#error "DROPBEAR_SVR_PAM_AUTH requires PAM headers. Perhaps ./configure --enable-pam ?"
 #endif
 
 #if DROPBEAR_SVR_PASSWORD_AUTH && !defined(HAVE_CRYPT)
