@@ -275,12 +275,21 @@ static int newchansess(struct Channel *channel) {
 
 }
 
-static struct logininfo* 
-chansess_login_alloc(const struct ChanSess *chansess) {
-	struct logininfo * li;
+static void
+chansess_rec_login(const struct ChanSess *chansess, int type) {
+	struct logininfo * li; gid_t cur_gid = getegid();
+	if (svr_ses.utmp_gid == (gid_t)-1) return;
+	if (setegid(svr_ses.utmp_gid)) {
+		dropbear_log(LOG_ERR, "setegid: %s", strerror(errno));
+		return;
+	}
 	li = login_alloc_entry(chansess->pid, ses.authstate.username,
 			svr_ses.remotehost, chansess->tty);
-	return li;
+	li->type = type;
+	login_write(li);
+	login_free_entry(li);
+	if (setegid(cur_gid))
+		dropbear_log(LOG_ERR, "setegid: %s", strerror(errno));
 }
 
 /* send exit status message before the channel is closed */
@@ -305,7 +314,6 @@ static void cleanupchansess(const struct Channel *channel) {
 
 	struct ChanSess *chansess;
 	unsigned int i;
-	struct logininfo *li;
 
 	TRACE(("enter closechansess"))
 
@@ -322,9 +330,7 @@ static void cleanupchansess(const struct Channel *channel) {
 
 	if (chansess->tty) {
 		/* write the utmp/wtmp login record */
-		li = chansess_login_alloc(chansess);
-		login_logout(li);
-		login_free_entry(li);
+		chansess_rec_login(chansess, LTYPE_LOGOUT);
 	}
 
 #if DROPBEAR_X11FWD
@@ -595,9 +601,7 @@ static int sessionpty(struct ChanSess * chansess) {
 		dropbear_log(LOG_WARNING, "Multiple pty requests");
 		return DROPBEAR_FAILURE;
 	}
-	setxuid_to(ses.authstate.pw_uid);
 	e = pty_peer(&chansess->master, &chansess->slave, &chansess->tty);
-	setxuid_back();
 	if(e){
 		dropbear_log(LOG_WARNING, "pty_peer: %s:", e);
 		return DROPBEAR_FAILURE;
@@ -795,7 +799,6 @@ static int noptycommand(struct Channel *channel, struct ChanSess *chansess) {
 static int ptycommand(struct Channel *channel, struct ChanSess *chansess) {
 
 	pid_t pid;
-	struct logininfo *li = NULL;
 #if DO_MOTD
 	buffer * motdbuf = NULL;
 	int len;
@@ -833,11 +836,9 @@ static int ptycommand(struct Channel *channel, struct ChanSess *chansess) {
 		/* write the utmp/wtmp login record - must be after changing the
 		 * terminal used for stdout with the dup2 above, otherwise
 		 * the wtmp login will not be recorded */
-		li = chansess_login_alloc(chansess);
-		login_login(li);
-		login_free_entry(li);
+		chansess_rec_login(chansess, LTYPE_LOGIN);
 
-		/* Can now dup2 stderr. Messages from login_login() have gone
+		/* Can now dup2 stderr. Messages from login_write() have gone
 		to the parent stderr */
 		if (dup2(1, 2) < 0) {
 			dropbear_exit("dup2:");
@@ -958,32 +959,6 @@ static void execchild(const void *user_data) {
 #endif /* HAVE_CLEARENV */
 #endif /* DEBUG_VALGRIND */
 	}
-
-#if DROPBEAR_SVR_MULTIUSER
-	/* We can only change uid/gid as root ... */
-	if (getuid() == 0) {
-
-		if ((setgid(ses.authstate.pw_gid) < 0) ||
-			(initgroups(ses.authstate.pw_name, 
-						ses.authstate.pw_gid) < 0)) {
-			dropbear_exit("Error changing user group:");
-		}
-		if (setuid(ses.authstate.pw_uid) < 0) {
-			dropbear_exit("setuid(%d):", ses.authstate.pw_uid);
-		}
-	} else {
-		/* ... but if the daemon is the same uid as the requested uid, we don't
-		 * need to */
-
-		/* XXX - there is a minor issue here, in that if there are multiple
-		 * usernames with the same uid, but differing groups, then the
-		 * differing groups won't be set (as with initgroups()). The solution
-		 * is for the sysadmin not to give out the UID twice */
-		if (getuid() != ses.authstate.pw_uid) {
-			dropbear_exit("Couldn't	change user as non-root");
-		}
-	}
-#endif
 
 	/* set env vars */
 	addnewvar("USER", ses.authstate.pw_name);

@@ -312,12 +312,6 @@ login_set_current_time(struct logininfo *li)
 int
 login_write (struct logininfo *li)
 {
-#ifndef HAVE_CYGWIN
-	if ((int)geteuid() != 0) {
-	  return 1;
-	}
-#endif
-
 	/* set the timestamp */
 	login_set_current_time(li);
 #ifdef USE_LOGIN

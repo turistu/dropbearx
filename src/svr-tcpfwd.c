@@ -212,9 +212,7 @@ static int svr_remotetcpreq(void) {
 		tcpinfo->listenaddr = NULL;
 	}
 
-	setxuid_to(ses.authstate.pw_uid);
 	err = listen_tcpfwd(tcpinfo, &listener);
-	setxuid_back();
 
 	if (err == DROPBEAR_FAILURE) {
 out:

@@ -276,6 +276,8 @@ struct serversession {
 	/* The instance created by the plugin_new function */
 	struct PluginInstance *plugin_instance;
 #endif
+	uid_t orig_uid;
+	gid_t utmp_gid;
 };
 
 typedef enum {

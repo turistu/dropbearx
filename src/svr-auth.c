@@ -35,6 +35,7 @@
 #include "auth.h"
 #include "runopts.h"
 #include "dbrandom.h"
+#include "svr-util.h"
 
 static int checkusername(const char *username, unsigned int userlen);
 
@@ -110,7 +111,11 @@ void recv_msg_userauth_request() {
 		dropbear_exit("unknown service in auth");
 	}
 
-	/* check username is good before continuing. 
+	/* check username is good before continuing, and if yes,
+	 * immediately switch to it, with the possibily of keeping
+	 * the current uid in the saved set-user-ID so we can switch
+	 * back to it with seteuid() if needed
+	 *
 	 * the 'incrfail' varies depending on the auth method to
 	 * avoid giving away which users exist on the system through
 	 * the time delay. */
@@ -337,6 +342,26 @@ goodshell:
 	endusershell();
 	TRACE(("matching shell"))
 
+	/* set both the real and effective uids with setxuid().
+	   possibly set the saved set-group-ID to the utmp gid so we can
+	   switch to it with setegid() when writing the login records */
+	if (geteuid() != ses.authstate.pw_uid) {
+		struct group *gr;
+		gid_t gid = (gr = getgrnam("utmp")) ?
+			svr_ses.utmp_gid = gr->gr_gid : ses.authstate.pw_gid;
+		/* change the next statement to
+			uid_t suid = svr_ses.orig_uid = geteuid()
+		   in order to set the saved set-user-ID to the current uid */
+		uid_t suid = ses.authstate.pw_uid;
+		/* svr_ses.orig_uid = geteuid(); */
+		if (initgroups(ses.authstate.pw_name, ses.authstate.pw_gid) ||
+		    setxgid(ses.authstate.pw_gid, gid) ||
+		    setxuid(ses.authstate.pw_uid, suid)) {
+			dropbear_log(LOG_WARNING, "Couldn't switch to user '%s', rejected", ses.authstate.pw_name);
+			return DROPBEAR_FAILURE;
+		}
+	}
+
 	TRACE(("uid = %d", ses.authstate.pw_uid))
 	TRACE(("leave checkusername"))
 	return DROPBEAR_SUCCESS;
@@ -459,6 +484,9 @@ void send_msg_userauth_success() {
 	ses.authstate.authdone = 1;
 	ses.connect_time = 0;
 
+	/* drop any privileged saved-set-uid */
+	if (svr_ses.orig_uid != (uid_t)-1)
+		drop_saved_uid(svr_ses.orig_uid);
 
 	if (ses.authstate.pw_uid == 0) {
 		ses.allowprivport = 1;

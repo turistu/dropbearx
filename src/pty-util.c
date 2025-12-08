@@ -73,39 +73,3 @@ char *pty_login(int st){
 	close(st);
 	return 0;
 }
-
-/*
- * When opening the master pty, Linux is using the *effective* user id
- * of the calling process to determine the permissions of the slave.
- *
- * BSD and Solaris are using the *real* user id for that.
- *
- * Set both the ruid and the euid with setresuid(2) --if available--,
- * or with setreuid(2) --assuming a standard-compliant setreuid()
- * which clobbers the saved uid with the current euid, not with the
- * new ruid
- */
-static uid_t euid, ruid;
-#if __linux__ || __FreeBSD__ || __OpenBSD__ || HAVE_SETRESUID
-void setxuid_to(int uid){
-	euid = geteuid(), ruid = getuid();
-	if(setresuid(uid, uid, -1))
-		dropbear_exit("setresuid(%d, %d, -1) to:", uid, uid);
-}
-void setxuid_back(void){
-	if(setresuid(ruid, euid, -1))
-		dropbear_exit("setresuid(%d, %d, -1) back:", ruid, euid);
-}
-#else
-void setxuid_to(int uid){
-	euid = geteuid(), ruid = getuid();
-	if(setreuid(uid, euid))
-		dropbear_exit("setreuid(%d, %d) to:", uid, euid);
-	if(seteuid(uid)) dropbear_exit("seteuid(%d)", uid);
-}
-void setxuid_back(void){
-	if(seteuid(euid)) dropbear_exit("seteuid(%d)", euid);
-	if(setreuid(ruid, euid))
-		dropbear_exit("setreuid(%d, %d) back:", ruid, euid);
-}
-#endif

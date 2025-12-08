@@ -461,20 +461,9 @@ static int checkpubkey(const char* keyalgo, unsigned int keyalgolen,
 	buffer * line = NULL;
 	char * filename;
 	int line_num;
-	uid_t origuid;
-	gid_t origgid;
 
 	TRACE(("enter checkpubkey"))
 
-#if DROPBEAR_SVR_MULTIUSER
-	/* access the file as the authenticating user. */
-	origuid = getuid();
-	origgid = getgid();
-	if ((setegid(ses.authstate.pw_gid)) < 0 ||
-		(seteuid(ses.authstate.pw_uid)) < 0) {
-		dropbear_exit("Failed to set euid");
-	}
-#endif
 	filename = svr_opts.authorized_keys_file;
 	if (!strncmp(svr_opts.authorized_keys_file, "~/", 2)) {
 		filename = m_asprintf("%s%s", ses.authstate.pw_dir,
@@ -486,12 +475,6 @@ static int checkpubkey(const char* keyalgo, unsigned int keyalgolen,
 	if (!authfile) {
 		TRACE(("checkpubkey: failed opening %s:", filename))
 	}
-#if DROPBEAR_SVR_MULTIUSER
-	if ((seteuid(origuid)) < 0 ||
-		(setegid(origgid)) < 0) {
-		dropbear_exit("Failed to revert euid");
-	}
-#endif
 
 	if (authfile == NULL) {
 		goto out;

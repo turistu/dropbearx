@@ -135,8 +135,6 @@ void svr_agentset(const struct ChanSess * chansess) {
 void svr_agentcleanup(struct ChanSess * chansess) {
 
 	char *path = NULL;
-	uid_t uid;
-	gid_t gid;
 
 	if (chansess->agentlistener != NULL) {
 		remove_listener(chansess->agentlistener);
@@ -144,31 +142,11 @@ void svr_agentcleanup(struct ChanSess * chansess) {
 	}
 
 	if (chansess->agentfile != NULL && chansess->agentdir != NULL) {
-
-#if DROPBEAR_SVR_MULTIUSER
-		/* Remove the dir as the user. That way they can't cause problems except
-		 * for themselves */
-		uid = getuid();
-		gid = getgid();
-		if ((setegid(ses.authstate.pw_gid)) < 0 ||
-			(seteuid(ses.authstate.pw_uid)) < 0) {
-			dropbear_exit("Failed to set euid");
-		}
-#endif
-
 		path = m_asprintf("%s/%s", chansess->agentdir, chansess->agentfile);
 		unlink(path);
 		m_free(path);
 
 		rmdir(chansess->agentdir);
-
-#if DROPBEAR_SVR_MULTIUSER
-		if ((seteuid(uid)) < 0 ||
-			(setegid(gid)) < 0) {
-			dropbear_exit("Failed to revert euid");
-		}
-#endif
-
 		m_free(chansess->agentfile);
 		m_free(chansess->agentdir);
 	}
@@ -205,19 +183,7 @@ static int bindagent(int fd, struct ChanSess * chansess) {
 	char path[(sizeof(addr.sun_path)-1)/2], sockfile[(sizeof(addr.sun_path)-1)/2];
 	mode_t mode;
 	int i;
-	uid_t uid;
-	gid_t gid;
 	int ret = DROPBEAR_FAILURE;
-
-#if DROPBEAR_SVR_MULTIUSER
-	/* drop to user privs to make the dir/file */
-	uid = getuid();
-	gid = getgid();
-	if ((setegid(ses.authstate.pw_gid)) < 0 ||
-		(seteuid(ses.authstate.pw_uid)) < 0) {
-		dropbear_exit("Failed to set euid");
-	}
-#endif
 
 	memset((void*)&addr, 0x0, sizeof(addr));
 	addr.sun_family = AF_UNIX;
@@ -257,12 +223,6 @@ bindsocket:
 
 
 out:
-#if DROPBEAR_SVR_MULTIUSER
-	if ((seteuid(uid)) < 0 ||
-		(setegid(gid)) < 0) {
-		dropbear_exit("Failed to revert euid");
-	}
-#endif
 	return ret;
 }
 

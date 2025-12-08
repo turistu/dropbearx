@@ -108,6 +108,9 @@ svr_session_cleanup(void) {
 void svr_session(int sock, int childpipe) {
 	common_session_init(sock, sock);
 
+	svr_ses.orig_uid = -1;
+	svr_ses.utmp_gid = -1;
+
 	/* Initialise server specific parts of the session */
 	svr_ses.childpipe = childpipe;
 #if DROPBEAR_VFORK
