@@ -115,7 +115,7 @@ static void printhelp() {
 }
 
 void cli_getopts(int argc, char ** argv) {
-	unsigned int i, j;
+	int i, j;
 	const char ** next = NULL;
 	enum {
 		OPT_EXTENDED_OPTIONS,
