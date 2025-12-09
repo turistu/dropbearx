@@ -581,7 +581,7 @@ void loadidentityfile(const char* filename, int warnfail) {
 static char** multihop_args(const char* argv0, const char* prior_hops) {
 	/* null terminated array */
 	char **args = NULL;
-	size_t max_args = 14, pos = 0, len;
+	size_t max_args = 14, pos = 0;
 #if DROPBEAR_CLI_PUBKEY_AUTH
 	m_list_elem *iter;
 #endif
@@ -632,8 +632,7 @@ static char** multihop_args(const char* argv0, const char* prior_hops) {
 	if (opts.recv_window != DEFAULT_RECV_WINDOW) {
 		args[pos] = m_strdup("-W");
 		pos++;
-		args[pos] = m_malloc(11);
-		m_snprintf(args[pos], 11, "%u", opts.recv_window);
+		args[pos] = m_asprintf(args[pos], 11, "%u", opts.recv_window);
 		pos++;
 	}
 
@@ -651,9 +650,7 @@ static char** multihop_args(const char* argv0, const char* prior_hops) {
 	/* last hop */
 	args[pos] = m_strdup("-B");
 	pos++;
-	len = strlen(cli_opts.remotehost) + strlen(cli_opts.remoteport) + 2;
-	args[pos] = m_malloc(len);
-	snprintf(args[pos], len, "%s:%s", cli_opts.remotehost, cli_opts.remoteport);
+	args[pos] = m_asprintf("%s:%s", cli_opts.remotehost, cli_opts.remoteport);
 	pos++;
 
 	/* hostnames of prior hops */
