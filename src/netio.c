@@ -262,12 +262,6 @@ struct dropbear_progress_connection *connect_streamlocal(const char* localpath,
 	}
 #endif
 
-	if (strlen(localpath) >= sizeof(sunaddr->sun_path)) {
-		c->errstring = m_strdup("Stream path too long");
-		TRACE(("localpath: %s is too long", localpath));
-		return c;
-	}
-
 	/*
 	 * Fake up a struct addrinfo for AF_UNIX connections.
 	 * remove_connect() must check ai_family
@@ -281,7 +275,12 @@ struct dropbear_progress_connection *connect_streamlocal(const char* localpath,
 	c->res->ai_protocol = PF_UNSPEC;
 	sunaddr = (struct sockaddr_un *)c->res->ai_addr;
 	sunaddr->sun_family = AF_UNIX;
-	strlcpy(sunaddr->sun_path, localpath, sizeof(sunaddr->sun_path));
+	if (snprintf(sunaddr->sun_path, sizeof sunaddr->sun_path, "%s", localpath) >= (int)sizeof sunaddr->sun_path) {
+		c->errstring = m_strdup("Stream path too long");
+		TRACE(("localpath: %s is too long", localpath));
+		return c;
+
+	}
 
 	/* Copy to target iter */ 
 	c->res_iter = c->res;
