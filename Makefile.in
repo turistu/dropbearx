@@ -48,7 +48,6 @@ CLIOBJS=cli-main.o cli-auth.o cli-authpasswd.o cli-kex.o \
 		cli-session.o cli-runopts.o cli-chansession.o \
 		cli-authpubkey.o cli-tcpfwd.o cli-channel.o cli-authinteract.o \
 		cli-agentfwd.o cli-readconf.o
-CLIOBJS = $(patsubst %,$(OBJ_DIR)/%,$(_CLIOBJS))
 
 CLISVROBJS=common-session.o packet.o common-algo.o common-kex.o \
 		common-channel.o common-chansession.o termcodes.o loginrec.o \
@@ -56,7 +55,6 @@ CLISVROBJS=common-session.o packet.o common-algo.o common-kex.o \
 		common-runopts.o circbuffer.o list.o netio.o chachapoly.o gcm.o \
 		kex-x25519.o kex-dh.o kex-ecdh.o kex-pqhybrid.o \
 		sntrup761.o mlkem768.o
-CLISVROBJS = $(patsubst %,$(OBJ_DIR)/%,$(_CLISVROBJS))
 
 KEYOBJS=dropbearkey.o
 
@@ -150,7 +148,7 @@ multi: dropbearmulti
 install-multi: inst_dropbearmulti
 
 # for simplicity assume all source depends on all headers
-HEADERS=$(wildcard $(srcdir)/*.h *.h) default_options_guard.h
+HEADERS=$(wildcard $(srcdir)/*.h *.h) $(OPTION_HEADERS)
 
 MULTI_CPPFLAGS = $(addprefix -DDBMULTI_, $(PROGRAMS)) -DDROPBEAR_MULTI
 
@@ -238,10 +236,10 @@ scp: $(HEADERS) Makefile
 dropbearmulti$(EXEEXT): $(HEADERS) $(multi_objs) $(LIBTOM_DEPS) Makefile
 	$(CC) $(LDFLAGS) -o $@ $(multi_objs) $(LIBTOM_LIBS) $(LIBS) @CRYPTLIB@
 
-$(STATIC_LTC): $(HEADERS)
+$(STATIC_LTC): $(OPTION_HEADERS)
 	$(MAKE) -C libtomcrypt
 
-$(STATIC_LTM): $(HEADERS)
+$(STATIC_LTM): $(OPTION_HEADERS)
 	$(MAKE) -C libtommath
 
 .PHONY : clean sizes thisclean distclean tidy ltc-clean ltm-clean lint check
