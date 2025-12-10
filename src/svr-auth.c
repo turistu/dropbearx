@@ -237,7 +237,8 @@ static int checkusername(const char *username, unsigned int userlen) {
 
 	char* listshell = NULL;
 	char* usershell = NULL;
-	uid_t uid;
+	struct group *gr;
+	gid_t gid;
 
 	TRACE(("enter checkusername"))
 	if (userlen > MAX_USERNAME_LEN) {
@@ -271,18 +272,6 @@ static int checkusername(const char *username, unsigned int userlen) {
 		TRACE(("leave checkusername: user '%s' doesn't exist", username))
 		dropbear_log(LOG_WARNING,
 				"Login attempt for nonexistent user from %s",
-				svr_ses.addrstring);
-		ses.authstate.checkusername_failed = 1;
-		return DROPBEAR_FAILURE;
-	}
-
-	/* check if we are running as non-root, and login user is different from the server */
-	uid = geteuid();
-	if (!(DROPBEAR_SVR_MULTIUSER && uid == 0) && uid != ses.authstate.pw_uid) {
-		TRACE(("running as nonroot, only server uid is allowed"))
-		dropbear_log(LOG_WARNING,
-				"Login attempt with wrong user %s from %s",
-				ses.authstate.pw_name,
 				svr_ses.addrstring);
 		ses.authstate.checkusername_failed = 1;
 		return DROPBEAR_FAILURE;
@@ -345,15 +334,13 @@ goodshell:
 	/* set both the real and effective uids with setxuid().
 	   possibly set the saved set-group-ID to the utmp gid so we can
 	   switch to it with setegid() when writing the login records */
+	gid = (gr = getgrnam("utmp")) ?
+		svr_ses.utmp_gid = gr->gr_gid : ses.authstate.pw_gid;
 	if (geteuid() != ses.authstate.pw_uid) {
-		struct group *gr;
-		gid_t gid = (gr = getgrnam("utmp")) ?
-			svr_ses.utmp_gid = gr->gr_gid : ses.authstate.pw_gid;
 		/* change the next statement to
 			uid_t suid = svr_ses.orig_uid = geteuid()
 		   in order to set the saved set-user-ID to the current uid */
 		uid_t suid = ses.authstate.pw_uid;
-		/* svr_ses.orig_uid = geteuid(); */
 		if (initgroups(ses.authstate.pw_name, ses.authstate.pw_gid) ||
 		    setxgid(ses.authstate.pw_gid, gid) ||
 		    setxuid(ses.authstate.pw_uid, suid)) {

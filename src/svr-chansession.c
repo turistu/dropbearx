@@ -279,17 +279,15 @@ static void
 chansess_rec_login(const struct ChanSess *chansess, int type) {
 	struct logininfo * li; gid_t cur_gid = getegid();
 	if (svr_ses.utmp_gid == (gid_t)-1) return;
-	if (setegid(svr_ses.utmp_gid)) {
-		dropbear_log(LOG_ERR, "setegid: %s", strerror(errno));
+	if (setegid(svr_ses.utmp_gid))
 		return;
-	}
 	li = login_alloc_entry(chansess->pid, ses.authstate.username,
 			svr_ses.remotehost, chansess->tty);
 	li->type = type;
 	login_write(li);
 	login_free_entry(li);
 	if (setegid(cur_gid))
-		dropbear_log(LOG_ERR, "setegid: %s", strerror(errno));
+		dropbear_log(LOG_ERR, "setegid back from utmp:");
 }
 
 /* send exit status message before the channel is closed */
