@@ -632,7 +632,7 @@ static char** multihop_args(const char* argv0, const char* prior_hops) {
 	if (opts.recv_window != DEFAULT_RECV_WINDOW) {
 		args[pos] = m_strdup("-W");
 		pos++;
-		args[pos] = m_asprintf(args[pos], 11, "%u", opts.recv_window);
+		args[pos] = m_asprintf("%u", opts.recv_window);
 		pos++;
 	}
 
