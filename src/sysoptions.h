@@ -7,12 +7,14 @@
 #define DROPBEAR_VERSION "2025.88"
 #endif
 
-/* IDENT_VERSION_PART is the optional part after "SSH-2.0-dropbear". Refer to RFC4253 for requirements. */
-#ifndef IDENT_VERSION_PART
-#define IDENT_VERSION_PART "_" DROPBEAR_VERSION
+#ifndef IDENT_NAME
+#define IDENT_NAME "dropbear"
 #endif
-#define LOCAL_IDENT "SSH-2.0-dropbear" IDENT_VERSION_PART
-#define PROGNAME "dropbear"
+/* IDENT_VERSION_PART is the optional part after "SSH-2.0-dropbear". Refer to RFC4253 for requirements. */
+#ifndef IDENT_VERSION
+#define IDENT_VERSION "_" DROPBEAR_VERSION
+#endif
+#define LOCAL_IDENT "SSH-2.0-dropbear" IDENT_VERSION
 
 #ifndef DROPBEAR_CLIENT
 #define DROPBEAR_CLIENT 0
