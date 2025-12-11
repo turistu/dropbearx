@@ -392,11 +392,6 @@ static void sigintterm_handler(int UNUSED(unused)) {
 static void commonsetup() {
 
 	struct sigaction sa_chld;
-#ifndef DISABLE_SYSLOG
-	if (opts.log_level < 0) {
-		startsyslog(PROGNAME);
-	}
-#endif
 
 	/* set up cleanup handler */
 	if (signal(SIGINT, sigintterm_handler) == SIG_ERR || 

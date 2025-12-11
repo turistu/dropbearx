@@ -32,10 +32,6 @@
 #include "dbhelpers.h"
 #include "dbmalloc.h"
 
-#ifndef DISABLE_SYSLOG
-void startsyslog(const char *ident);
-#endif
-
 extern void (*_dropbear_exit)(int exitcode, const char *msg) ATTRIB_NORETURN;
 extern void (*_dropbear_log)(int priority, const char *msg);
 

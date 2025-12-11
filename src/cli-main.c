@@ -57,12 +57,6 @@ int main(int argc, char ** argv) {
 
 	cli_getopts(argc, argv);
 
-#ifndef DISABLE_SYSLOG
-	if (opts.log_level < 0) {
-		startsyslog("dbclient");
-	}
-#endif
-
         if (cli_opts.bind_address) {
 		DEBUG1(("connect to: user=%s host=%s/%s bind_address=%s:%s", cli_opts.username,
 			cli_opts.remotehost, cli_opts.remoteport, cli_opts.bind_address, cli_opts.bind_port))

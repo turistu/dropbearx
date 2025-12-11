@@ -55,14 +55,6 @@ void (*_dropbear_exit)(int exitcode, const char *buf) ATTRIB_NORETURN
 	= generic_dropbear_exit;
 										void (*_dropbear_log)(int priority, const char *buf) = generic_dropbear_log;
 
-#ifndef DISABLE_SYSLOG
-void startsyslog(const char *ident) {
-
-	openlog(ident, LOG_PID, LOG_AUTHPRIV);
-
-}
-#endif /* DISABLE_SYSLOG */
-
 void msg_format(char *buf, int size, const char *fmt, va_list va) {
 	int l = vsnprintf(buf, size, fmt, va);
 	if (l > 0 && l < size - 10 && buf[l - 1] == ':') {
