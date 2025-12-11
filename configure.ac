@@ -31,7 +31,7 @@ AC_DEFUN([DB_TRYADDCFLAGS],
 
 # set compile flags prior to other tests
 if test -z "$ORIGCFLAGS" && test "$GCC" = "yes"; then
-	CFLAGS="-Os -g -W -Wall -Wformat-truncation=2"
+	CFLAGS="-Os -g -W -Wall -Wformat-truncation"
 	AC_MSG_NOTICE(No \$CFLAGS set... using "$CFLAGS" for GCC)
 fi
 
