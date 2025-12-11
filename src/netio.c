@@ -623,7 +623,7 @@ int dropbear_listen(const char* address, const char* portstring,
 		if (errstring != NULL && *errstring == NULL) {
 			*errstring = m_asprintf("Error listening: %s", strerror(err));
 		}
-		TRACE(("leave dropbear_listen: failure, %s", strerror(err)))
+		TRACE(("leave dropbear_listen:"))
 		return -1;
 	}
 

@@ -382,7 +382,7 @@ static void printpubkey(sign_key * key, int keytype, const char * comment, int c
 			}
 		}
 		if (!pubkey_file) {
-			dropbear_log(LOG_ERR, "Save public key to %s failed: %s", filename_pub, strerror(errno));
+			dropbear_log(LOG_ERR, "Save public key to %s failed:", filename_pub);
 		}
 	}
 
