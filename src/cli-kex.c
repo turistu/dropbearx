@@ -234,7 +234,7 @@ static void ask_to_confirm(const unsigned char* keyblob, unsigned int keybloblen
 		m_free(fp);
 		return;
 	}
-	if (cli_opts.batchmode) {
+	if (cli_opts.batch_mode) {
 		dropbear_exit("Host '%s' is not in '%s'.\n(%s fingerprint %s)", cli_opts.known_hosts_file, cli_opts.remotehost, algoname, fp);
 	}
 	prompt = m_asprintf("\nHost '%s' is not in '%s'.\n(%s fingerprint %s)\nDo you want to continue connecting? (y/n) ", 

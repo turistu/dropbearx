@@ -176,11 +176,6 @@ void recv_msg_userauth_failure() {
 		dropbear_exit("Unexpected userauth failure");
 	}
 
-	/* Password authentication is only allowed in batch mode
-	 * when a password can be provided non-interactively */
-	if (cli_opts.batch_mode && !getenv(DROPBEAR_PASSWORD_ENV)) {
-		allow_pw_auth = 0;
-	}
 	allow_pw_auth &= cli_opts.password_authentication;
 
 	/* When DROPBEAR_CLI_IMMEDIATE_AUTH is set there will be an initial response for 
@@ -303,7 +298,7 @@ int cli_auth_try() {
 		cli_ses.lastauthtype = AUTH_TYPE_PUBKEY;
 	}
 #endif
-	if (cli_opts.batchmode) {
+	if (cli_opts.batch_mode) {
 		goto done;
 	}
 

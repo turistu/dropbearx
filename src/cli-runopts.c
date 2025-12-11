@@ -523,7 +523,7 @@ void cli_getopts(int argc, char ** argv) {
 #ifndef DISABLE_SYSLOG
 		opts.log_level = -1;
 #endif
-		cli_opts.batchmode = cli_opts.exit_on_fwd_failure = 1;
+		cli_opts.batch_mode = cli_opts.exit_on_fwd_failure = 1;
 	}
 
 #if DROPBEAR_CLI_NETCAT
@@ -989,14 +989,10 @@ static void add_extendedopt(const char* origstr) {
 		);
 		exit(EXIT_SUCCESS);
 	}
-	if (match_extendedopt(&optstr, "BatchMode") == DROPBEAR_SUCCESS) {
-		cli_opts.batchmode = parse_flag_value(optstr);
-		opts.keepalive_secs = 300;
-		return;
-	}
 
 	if (match_extendedopt(&optstr, "BatchMode") == DROPBEAR_SUCCESS) {
 		cli_opts.batch_mode = parse_flag_value(optstr);
+		opts.keepalive_secs = 300;
 		return;
 	}
 
@@ -1049,11 +1045,6 @@ static void add_extendedopt(const char* origstr) {
 		return;
 	}
 #endif
-
-	if (match_extendedopt(&optstr, "BatchMode") == DROPBEAR_SUCCESS) {
-		cli_opts.batch_mode = parse_flag_value(optstr);
-		return;
-	}
 
 	if (match_extendedopt(&optstr, "Port") == DROPBEAR_SUCCESS) {
 		cli_opts.remoteport = m_strdup(optstr);
