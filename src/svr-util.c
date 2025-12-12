@@ -25,7 +25,8 @@ int setxgid(gid_t gid, gid_t sgid){
 int drop_saved_uid(uid_t suid){
 	uid_t euid = geteuid();
 	if(setreuid(euid, suid)) return -1;
-	return setreuid(euid, euid);
+	if(setreuid(euid, euid)) return -1;
+	return setuid(euid);
 }
 #else
 #error this needs either setresuid or setreuid
