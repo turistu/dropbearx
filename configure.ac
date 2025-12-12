@@ -520,22 +520,6 @@ AC_CHECK_FUNCS(setutxent utmpxname)
 AC_CHECK_FUNCS(logout updwtmp logwtmp)
 AC_CHECK_FUNCS(setresuid setreuid)
 
-# Might be a macro. Might be sys/endian.h on BSDs
-AC_CHECK_HEADERS([endian.h])
-AC_CHECK_HEADERS([sys/endian.h])
-AC_CHECK_FUNCS(htole64)
-AC_CHECK_DECL(htole64,
-	[
-	AC_DEFINE(HAVE_DECL_HTOLE64,1,htole64 is a macro)
-	],,[
-	#ifdef HAVE_ENDIAN_H
-		#include <endian.h>
-	#endif
-	#ifdef HAVE_SYS_ENDIAN_H
-		#include <sys/endian.h>
-	#endif
-	])
-
 # POSIX monotonic time
 AC_CHECK_FUNCS(clock_gettime)
 
