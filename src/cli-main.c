@@ -139,8 +139,6 @@ static void cli_proxy_cmd(int *sock_in, int *sock_out, pid_t *pid_out) {
 
 	if (cli_opts.proxycmd) {
 		/* Normal proxycommand */
-		/* So that spawn_command knows which shell to run */
-		fill_passwd(cli_opts.own_user);
 
 		cmd_arg = m_asprintf("exec %s", cli_opts.proxycmd);
 		exec_fn = shell_proxy_cmd;
