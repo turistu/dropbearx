@@ -67,7 +67,7 @@ void svr_auth_password(int valid_user) {
 	password = buf_getstring(ses.payload, &passwordlen);
 	if (valid_user && passwordlen <= DROPBEAR_MAX_PASSWORD_LEN) {
 		/* the first bytes of passwdcrypt are the salt */
-		passwdcrypt = ses.authstate.pw_passwd;
+		passwdcrypt = svr_ses.pw_passwd;
 		testcrypt = crypt(password, passwdcrypt);
 	}
 	m_burn(password, passwordlen);
@@ -83,7 +83,7 @@ void svr_auth_password(int valid_user) {
 	if (passwordlen > DROPBEAR_MAX_PASSWORD_LEN) {
 		dropbear_log(LOG_WARNING,
 				"Too-long password attempt for '%s' from %s",
-				ses.authstate.pw_name,
+				svr_ses.pw_name,
 				svr_ses.addrstring);
 		send_msg_userauth_failure(0, 1);
 		return;
@@ -92,7 +92,7 @@ void svr_auth_password(int valid_user) {
 	if (testcrypt == NULL) {
 		/* crypt() with an invalid salt like "!!" */
 		dropbear_log(LOG_WARNING, "User account '%s' is locked",
-				ses.authstate.pw_name);
+				svr_ses.pw_name);
 		send_msg_userauth_failure(0, 1);
 		return;
 	}
@@ -100,7 +100,7 @@ void svr_auth_password(int valid_user) {
 	/* check for empty password */
 	if (passwdcrypt[0] == '\0') {
 		dropbear_log(LOG_WARNING, "User '%s' has blank password, rejected",
-				ses.authstate.pw_name);
+				svr_ses.pw_name);
 		send_msg_userauth_failure(0, 1);
 		return;
 	}
@@ -110,7 +110,7 @@ void svr_auth_password(int valid_user) {
 			/* successful password authentication, but extra auth required */
 			dropbear_log(LOG_INFO,
 					"Password auth succeeded for '%s' from %s, extra auth required",
-					ses.authstate.pw_name,
+					svr_ses.pw_name,
 					svr_ses.addrstring);
 			ses.authstate.authtypes &= ~AUTH_TYPE_PASSWORD; /* password auth ok, delete the method flag */
 			send_msg_userauth_failure(1, 0);  /* Send partial success */
@@ -118,14 +118,14 @@ void svr_auth_password(int valid_user) {
 			/* successful authentication */
 			dropbear_log(LOG_INFO, 
 					"Password auth succeeded for '%s' from %s",
-					ses.authstate.pw_name,
+					svr_ses.pw_name,
 					svr_ses.addrstring);
 			send_msg_userauth_success();
 		}
 	} else {
 		dropbear_log(LOG_WARNING,
 				"Bad password attempt for '%s' from %s",
-				ses.authstate.pw_name,
+				svr_ses.pw_name,
 				svr_ses.addrstring);
 		send_msg_userauth_failure(0, 1);
 	}

@@ -55,31 +55,31 @@ void svr_authinitialise() {
 
 void fill_passwd(const char* username) {
 	struct passwd *pw = NULL;
-	if (ses.authstate.pw_name)
-		m_free(ses.authstate.pw_name);
-	if (ses.authstate.pw_dir)
-		m_free(ses.authstate.pw_dir);
-	if (ses.authstate.pw_shell)
-		m_free(ses.authstate.pw_shell);
-	if (ses.authstate.pw_passwd)
-		m_free(ses.authstate.pw_passwd);
+	if (svr_ses.pw_name)
+		m_free(svr_ses.pw_name);
+	if (svr_ses.pw_dir)
+		m_free(svr_ses.pw_dir);
+	if (svr_ses.pw_shell)
+		m_free(svr_ses.pw_shell);
+	if (svr_ses.pw_passwd)
+		m_free(svr_ses.pw_passwd);
 
 	pw = getpwnam(username);
 	if (!pw) {
 		return;
 	}
-	ses.authstate.pw_uid = pw->pw_uid;
-	ses.authstate.pw_gid = pw->pw_gid;
-	ses.authstate.pw_name = m_strdup(pw->pw_name);
-	ses.authstate.pw_dir = m_strdup(pw->pw_dir);
-	ses.authstate.pw_shell = m_strdup(pw->pw_shell);
+	svr_ses.pw_uid = pw->pw_uid;
+	svr_ses.pw_gid = pw->pw_gid;
+	svr_ses.pw_name = m_strdup(pw->pw_name);
+	svr_ses.pw_dir = m_strdup(pw->pw_dir);
+	svr_ses.pw_shell = m_strdup(pw->pw_shell);
 	{
 		char *passwd_crypt = pw->pw_passwd;
 #ifdef HAVE_SHADOW_H
 		/* "x" for the passwd crypt indicates shadow should be used */
 		if (pw->pw_passwd && strcmp(pw->pw_passwd, "x") == 0) {
 			/* get the shadow password */
-			struct spwd *spasswd = getspnam(ses.authstate.pw_name);
+			struct spwd *spasswd = getspnam(svr_ses.pw_name);
 			if (spasswd && spasswd->sp_pwdp) {
 				passwd_crypt = spasswd->sp_pwdp;
 			} else {
@@ -92,16 +92,16 @@ void fill_passwd(const char* username) {
 			/* android supposedly returns NULL */
 			passwd_crypt = "!!";
 		}
-		ses.authstate.pw_passwd = m_strdup(passwd_crypt);
+		svr_ses.pw_passwd = m_strdup(passwd_crypt);
 	}
 }
 
 const char* get_user_shell() {
 	/* an empty shell should be interpreted as "/bin/sh" */
-	if (ses.authstate.pw_shell[0] == '\0') {
+	if (svr_ses.pw_shell[0] == '\0') {
 		return "/bin/sh";
 	} else {
-		return ses.authstate.pw_shell;
+		return svr_ses.pw_shell;
 	}
 }
 
@@ -184,12 +184,12 @@ void recv_msg_userauth_request() {
 		if (valid_user
 				&& svr_opts.allowblankpass
 				&& !svr_opts.noauthpass
-				&& !(svr_opts.norootpass && ses.authstate.pw_uid == 0) 
-				&& ses.authstate.pw_passwd[0] == '\0') 
+				&& !(svr_opts.norootpass && svr_ses.pw_uid == 0) 
+				&& svr_ses.pw_passwd[0] == '\0') 
 		{
 			dropbear_log(LOG_NOTICE, 
 					"Auth succeeded with blank password for '%s' from %s",
-					ses.authstate.pw_name,
+					svr_ses.pw_name,
 					svr_ses.addrstring);
 			send_msg_userauth_success();
 			goto out;
@@ -204,7 +204,7 @@ void recv_msg_userauth_request() {
 	
 #if DROPBEAR_SVR_PASSWORD_AUTH
 	if (!svr_opts.noauthpass &&
-			!(svr_opts.norootpass && ses.authstate.pw_uid == 0) ) {
+			!(svr_opts.norootpass && svr_ses.pw_uid == 0) ) {
 		/* user wants to try password auth */
 		if (methodlen == AUTH_METHOD_PASSWORD_LEN &&
 				strncmp(methodname, AUTH_METHOD_PASSWORD,
@@ -217,7 +217,7 @@ void recv_msg_userauth_request() {
 
 #if DROPBEAR_SVR_PAM_AUTH
 	if (!svr_opts.noauthpass &&
-			!(svr_opts.norootpass && ses.authstate.pw_uid == 0) ) {
+			!(svr_opts.norootpass && svr_ses.pw_uid == 0) ) {
 		/* user wants to try password auth */
 		if (methodlen == AUTH_METHOD_PASSWORD_LEN &&
 				strncmp(methodname, AUTH_METHOD_PASSWORD,
@@ -321,7 +321,7 @@ static int checkusername(const char *username, unsigned int userlen) {
 	}
 
 	/* check that user exists */
-	if (!ses.authstate.pw_name) {
+	if (!svr_ses.pw_name) {
 		TRACE(("leave checkusername: user '%s' doesn't exist", username))
 		dropbear_log(LOG_WARNING,
 				"Login attempt for nonexistent user from %s",
@@ -331,7 +331,7 @@ static int checkusername(const char *username, unsigned int userlen) {
 	}
 
 	/* check for non-root if desired */
-	if (svr_opts.norootlogin && ses.authstate.pw_uid == 0) {
+	if (svr_opts.norootlogin && svr_ses.pw_uid == 0) {
 		TRACE(("leave checkusername: root login disabled"))
 		dropbear_log(LOG_WARNING, "root login rejected");
 		ses.authstate.checkusername_failed = 1;
@@ -342,20 +342,20 @@ static int checkusername(const char *username, unsigned int userlen) {
 #ifdef HAVE_GETGROUPLIST
 	if (svr_opts.restrict_group) {
 		if (check_group_membership(svr_opts.restrict_group_gid,
-				ses.authstate.pw_name, ses.authstate.pw_gid) == DROPBEAR_FAILURE) {
+				svr_ses.pw_name, svr_ses.pw_gid) == DROPBEAR_FAILURE) {
 			dropbear_log(LOG_WARNING,
 				"Logins are restricted to the group %s but user '%s' is not a member",
-				svr_opts.restrict_group, ses.authstate.pw_name);
+				svr_opts.restrict_group, svr_ses.pw_name);
 			ses.authstate.checkusername_failed = 1;
 			return DROPBEAR_FAILURE;
 		}
 	}
 #endif /* HAVE_GETGROUPLIST */
 
-	TRACE(("shell is %s", ses.authstate.pw_shell))
+	TRACE(("shell is %s", svr_ses.pw_shell))
 
 	/* check that the shell is set */
-	usershell = ses.authstate.pw_shell;
+	usershell = svr_ses.pw_shell;
 	if (usershell[0] == '\0') {
 		/* empty shell in /etc/passwd means /bin/sh according to passwd(5) */
 		usershell = "/bin/sh";
@@ -377,7 +377,7 @@ static int checkusername(const char *username, unsigned int userlen) {
 	TRACE(("no matching shell"))
 	ses.authstate.checkusername_failed = 1;
 	dropbear_log(LOG_WARNING, "User '%s' has invalid shell, rejected",
-				ses.authstate.pw_name);
+				svr_ses.pw_name);
 	return DROPBEAR_FAILURE;
 	
 goodshell:
@@ -388,21 +388,21 @@ goodshell:
 	   possibly set the saved set-group-ID to the utmp gid so we can
 	   switch to it with setegid() when writing the login records */
 	gid = (gr = getgrnam("utmp")) ?
-		svr_ses.utmp_gid = gr->gr_gid : ses.authstate.pw_gid;
-	if (geteuid() != ses.authstate.pw_uid) {
+		svr_ses.utmp_gid = gr->gr_gid : svr_ses.pw_gid;
+	if (geteuid() != svr_ses.pw_uid) {
 		/* change the next statement to
 			uid_t suid = svr_ses.orig_uid = geteuid()
 		   in order to set the saved set-user-ID to the current uid */
-		uid_t suid = ses.authstate.pw_uid;
-		if (initgroups(ses.authstate.pw_name, ses.authstate.pw_gid) ||
-		    setxgid(ses.authstate.pw_gid, gid) ||
-		    setxuid(ses.authstate.pw_uid, suid)) {
-			dropbear_log(LOG_WARNING, "Couldn't switch to user '%s', rejected", ses.authstate.pw_name);
+		uid_t suid = svr_ses.pw_uid;
+		if (initgroups(svr_ses.pw_name, svr_ses.pw_gid) ||
+		    setxgid(svr_ses.pw_gid, gid) ||
+		    setxuid(svr_ses.pw_uid, suid)) {
+			dropbear_log(LOG_WARNING, "Couldn't switch to user '%s', rejected", svr_ses.pw_name);
 			return DROPBEAR_FAILURE;
 		}
 	}
 
-	TRACE(("uid = %d", ses.authstate.pw_uid))
+	TRACE(("uid = %d", svr_ses.pw_uid))
 	TRACE(("leave checkusername"))
 	return DROPBEAR_SUCCESS;
 }
@@ -497,10 +497,10 @@ void send_msg_userauth_failure(int partial, int incrfail) {
 		/* XXX - send disconnect ? */
 		TRACE(("Max auth tries reached, exiting"))
 
-		if (ses.authstate.pw_name == NULL) {
+		if (svr_ses.pw_name == NULL) {
 			userstr = "is invalid";
 		} else {
-			userstr = ses.authstate.pw_name;
+			userstr = svr_ses.pw_name;
 		}
 		dropbear_exit("Max auth tries reached - user '%s'",
 				userstr);
@@ -528,7 +528,7 @@ void send_msg_userauth_success() {
 	if (svr_ses.orig_uid != (uid_t)-1)
 		drop_saved_uid(svr_ses.orig_uid);
 
-	if (ses.authstate.pw_uid == 0) {
+	if (svr_ses.pw_uid == 0) {
 		ses.allowprivport = 1;
 	}
 

@@ -208,7 +208,7 @@ void svr_auth_pam(int valid_user) {
 
 	/* We run the PAM conversation regardless of whether the username is valid
 	in case the conversation function has an inherent delay.
-	Use ses.authstate.username rather than ses.authstate.pw_name.
+	Use ses.authstate.username rather than svr_ses.pw_name.
 	After PAM succeeds we then check the valid_user flag too */
 
 	/* used to pass data to the PAM conversation function - don't bother with
@@ -217,8 +217,8 @@ void svr_auth_pam(int valid_user) {
 	userData.user = ses.authstate.username;
 	userData.passwd = password;
 
-	if (ses.authstate.pw_name) {
-		printable_user = ses.authstate.pw_name;
+	if (svr_ses.pw_name) {
+		printable_user = svr_ses.pw_name;
 	} else {
 		printable_user = "<invalid username>";
 	}
@@ -283,14 +283,14 @@ void svr_auth_pam(int valid_user) {
 			/* successful PAM password authentication, but extra auth required */
 			dropbear_log(LOG_INFO,
 					"PAM password auth succeeded for '%s' from %s, extra auth required",
-					ses.authstate.pw_name,
+					svr_ses.pw_name,
 					svr_ses.addrstring);
 			ses.authstate.authtypes &= ~AUTH_TYPE_PASSWORD; /* PAM password auth ok, delete the method flag */
 			send_msg_userauth_failure(1, 0);  /* Send partial success */
 		} else {
 			/* successful authentication */
 			dropbear_log(LOG_INFO, "PAM password auth succeeded for '%s' from %s",
-				ses.authstate.pw_name,
+				svr_ses.pw_name,
 				svr_ses.addrstring);
 			send_msg_userauth_success();
 		}

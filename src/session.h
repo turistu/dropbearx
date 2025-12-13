@@ -275,6 +275,13 @@ struct serversession {
 	/* The instance created by the plugin_new function */
 	struct PluginInstance *plugin_instance;
 #endif
+	uid_t pw_uid;
+	gid_t pw_gid;
+	char *pw_dir;
+	char *pw_shell;
+	char *pw_name;
+	char *pw_passwd;
+
 	uid_t orig_uid;
 	gid_t utmp_gid;
 };

@@ -90,6 +90,10 @@ svr_session_cleanup(void) {
 	m_free(svr_ses.addrstring);
 	m_free(svr_ses.remotehost);
 	m_free(svr_ses.childpids);
+	m_free(svr_ses.pw_dir);
+	m_free(svr_ses.pw_name);
+	m_free(svr_ses.pw_shell);
+	m_free(svr_ses.pw_passwd);
 	svr_ses.childpidsize = 0;
 
 #if DROPBEAR_PLUGIN
@@ -238,12 +242,12 @@ void svr_dropbear_exit(int exitcode, const char *msg) {
 		/* user has authenticated */
 		snprintf(fullmsg, sizeof(fullmsg),
 				"Exit (%s)%s: %s", 
-				ses.authstate.pw_name, fromaddr, msg);
-	} else if (ses.authstate.pw_name) {
+				svr_ses.pw_name, fromaddr, msg);
+	} else if (svr_ses.pw_name) {
 		/* we have a potential user */
 		snprintf(fullmsg, sizeof(fullmsg), 
 				"Exit before auth%s: (user '%s', %u fails): %s",
-				fromaddr, ses.authstate.pw_name, ses.authstate.failcount, msg);
+				fromaddr, svr_ses.pw_name, ses.authstate.failcount, msg);
 		add_delay = 1;
 	} else {
 		/* before userauth */

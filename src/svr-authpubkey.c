@@ -217,7 +217,7 @@ void svr_auth_pubkey(int valid_user) {
 			/* successful pubkey authentication, but extra auth required */
 			dropbear_log(LOG_INFO,
 					"Pubkey auth succeeded for '%s' with %s key %s from %s, extra auth required",
-					ses.authstate.pw_name,
+					svr_ses.pw_name,
 					signkey_name_from_type(keytype, NULL), fp,
 					svr_ses.addrstring);
 			ses.authstate.authtypes &= ~AUTH_TYPE_PUBKEY; /* pubkey auth ok, delete the method flag */
@@ -226,7 +226,7 @@ void svr_auth_pubkey(int valid_user) {
 			/* successful authentication */
 			dropbear_log(LOG_INFO,
 					"Pubkey auth succeeded for '%s' with %s key %s from %s",
-					ses.authstate.pw_name,
+					svr_ses.pw_name,
 					signkey_name_from_type(keytype, NULL), fp,
 					svr_ses.addrstring);
 			send_msg_userauth_success();
@@ -240,7 +240,7 @@ void svr_auth_pubkey(int valid_user) {
 	} else {
 		dropbear_log(LOG_WARNING,
 				"Pubkey auth bad signature for '%s' with key %s from %s",
-				ses.authstate.pw_name, fp, svr_ses.addrstring);
+				svr_ses.pw_name, fp, svr_ses.addrstring);
 		send_msg_userauth_failure(0, 1);
 	}
 	m_free(fp);
@@ -466,7 +466,7 @@ static int checkpubkey(const char* keyalgo, unsigned int keyalgolen,
 
 	filename = svr_opts.authorized_keys_file;
 	if (!strncmp(svr_opts.authorized_keys_file, "~/", 2)) {
-		filename = m_asprintf("%s%s", ses.authstate.pw_dir,
+		filename = m_asprintf("%s%s", svr_ses.pw_dir,
 			svr_opts.authorized_keys_file + 1);
 	} else {
 		filename = m_strdup(svr_opts.authorized_keys_file);
@@ -534,7 +534,7 @@ static int checkfileperm(char * filename) {
 		return DROPBEAR_FAILURE;
 	}
 	/* check ownership - user or root only*/
-	if (filestat.st_uid != ses.authstate.pw_uid
+	if (filestat.st_uid != svr_ses.pw_uid
 			&& filestat.st_uid != 0) {
 		badperm = 1;
 		TRACE(("wrong ownership"))

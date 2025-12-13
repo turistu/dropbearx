@@ -328,10 +328,6 @@ void session_cleanup() {
 #endif
 
 	m_free(ses.remoteident);
-	m_free(ses.authstate.pw_dir);
-	m_free(ses.authstate.pw_name);
-	m_free(ses.authstate.pw_shell);
-	m_free(ses.authstate.pw_passwd);
 	m_free(ses.authstate.username);
 #endif
 

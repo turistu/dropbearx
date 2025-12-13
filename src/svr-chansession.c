@@ -712,10 +712,10 @@ static int sessioncommand(struct Channel *channel, struct ChanSess *chansess,
 #if LOG_COMMANDS
 	if (chansess->cmd) {
 		dropbear_log(LOG_INFO, "User %s executing '%s'", 
-						ses.authstate.pw_name, chansess->cmd);
+						svr_ses.pw_name, chansess->cmd);
 	} else {
 		dropbear_log(LOG_INFO, "User %s executing login shell", 
-						ses.authstate.pw_name);
+						svr_ses.pw_name);
 	}
 #endif
 
@@ -846,7 +846,7 @@ static int ptycommand(struct Channel *channel, struct ChanSess *chansess) {
 #if DO_MOTD
 		if (svr_opts.domotd && !chansess->cmd) {
 			/* don't show the motd if ~/.hushlogin exists */
-			hushpath = m_asprintf("%s/.hushlogin", ses.authstate.pw_dir);
+			hushpath = m_asprintf("%s/.hushlogin", svr_ses.pw_dir);
 			if (stat(hushpath, &sb) < 0) {
 				char *expand_path = NULL;
 				/* more than a screenful is stupid IMHO */
@@ -959,9 +959,9 @@ static void execchild(const void *user_data) {
 	}
 
 	/* set env vars */
-	addnewvar("USER", ses.authstate.pw_name);
-	addnewvar("LOGNAME", ses.authstate.pw_name);
-	addnewvar("HOME", ses.authstate.pw_dir);
+	addnewvar("USER", svr_ses.pw_name);
+	addnewvar("LOGNAME", svr_ses.pw_name);
+	addnewvar("HOME", svr_ses.pw_dir);
 	addnewvar("SHELL", get_user_shell());
 	if (getuid() == 0) {
 		addnewvar("PATH", DEFAULT_ROOT_PATH);
@@ -998,12 +998,12 @@ static void execchild(const void *user_data) {
 #endif
 
 	/* change directory */
-	if (chdir(ses.authstate.pw_dir) < 0) {
+	if (chdir(svr_ses.pw_dir) < 0) {
 		int e = errno;
 		if (chdir("/") < 0) {
 			dropbear_exit("chdir(\"/\") failed");
 		}
-		fprintf(stderr, "Failed chdir '%s': %s\n", ses.authstate.pw_dir, strerror(e));
+		fprintf(stderr, "Failed chdir '%s': %s\n", svr_ses.pw_dir, strerror(e));
 	}
 
 
