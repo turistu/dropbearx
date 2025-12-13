@@ -48,7 +48,7 @@ else
 endif
 endif
 
-LTM_CFLAGS += -I./ -Wall -Wsign-compare -Wextra -Wshadow
+LTM_CFLAGS += -I./ -Wall -Wsign-compare -Wextra -Wshadow -Wno-system-headers
 
 # renamed for Dropbear to avoid clash with oss-fuzz $SANITIZER var
 ifdef LTM_SANITIZER
@@ -67,7 +67,7 @@ ifeq ($(CONV_WARNINGS), strict)
 LTM_CFLAGS += -DMP_USE_ENUMS -Wc++-compat
 endif
 else
-LTM_CFLAGS += -Wsystem-headers
+LTM_CFLAGS += -Wno-system-headers
 endif
 
 ifdef COMPILE_DEBUG
