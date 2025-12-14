@@ -54,25 +54,21 @@ void svr_authinitialise() {
 }
 
 void fill_passwd(const char* username) {
-	struct passwd *pw = NULL;
-	if (svr_ses.pw_name)
-		m_free(svr_ses.pw_name);
-	if (svr_ses.pw_dir)
-		m_free(svr_ses.pw_dir);
-	if (svr_ses.pw_shell)
-		m_free(svr_ses.pw_shell);
-	if (svr_ses.pw_passwd)
-		m_free(svr_ses.pw_passwd);
-
-	pw = getpwnam(username);
+	struct passwd *pw = getpwnam(username);
 	if (!pw) {
 		return;
 	}
+	m_free(svr_ses.pw_name);
+	m_free(svr_ses.pw_dir);
+	m_free(svr_ses.pw_shell);
+	m_free(svr_ses.pw_passwd);
+
 	svr_ses.pw_uid = pw->pw_uid;
 	svr_ses.pw_gid = pw->pw_gid;
 	svr_ses.pw_name = m_strdup(pw->pw_name);
 	svr_ses.pw_dir = m_strdup(pw->pw_dir);
-	svr_ses.pw_shell = m_strdup(pw->pw_shell);
+	/* empty = /bin/sh */
+	svr_ses.pw_shell = m_strdup(pw->pw_shell[0] ? pw->pw_shell : _PATH_BSHELL);
 	{
 		char *passwd_crypt = pw->pw_passwd;
 #ifdef HAVE_SHADOW_H
@@ -93,15 +89,6 @@ void fill_passwd(const char* username) {
 			passwd_crypt = "!!";
 		}
 		svr_ses.pw_passwd = m_strdup(passwd_crypt);
-	}
-}
-
-const char* get_user_shell() {
-	/* an empty shell should be interpreted as "/bin/sh" */
-	if (svr_ses.pw_shell[0] == '\0') {
-		return "/bin/sh";
-	} else {
-		return svr_ses.pw_shell;
 	}
 }
 
@@ -288,8 +275,6 @@ static int check_group_membership(gid_t check_gid, const char* username, gid_t u
  * returns DROPBEAR_SUCCESS on valid username, DROPBEAR_FAILURE on failure */
 static int checkusername(const char *username, unsigned int userlen) {
 
-	char* listshell = NULL;
-	char* usershell = NULL;
 	struct group *gr;
 	gid_t gid;
 
@@ -351,38 +336,6 @@ static int checkusername(const char *username, unsigned int userlen) {
 		}
 	}
 #endif /* HAVE_GETGROUPLIST */
-
-	TRACE(("shell is %s", svr_ses.pw_shell))
-
-	/* check that the shell is set */
-	usershell = svr_ses.pw_shell;
-	if (usershell[0] == '\0') {
-		/* empty shell in /etc/passwd means /bin/sh according to passwd(5) */
-		usershell = "/bin/sh";
-	}
-
-	/* check the shell is valid. If /etc/shells doesn't exist, getusershell()
-	 * should return some standard shells like "/bin/sh" and "/bin/csh" (this
-	 * is platform-specific) */
-	setusershell();
-	while ((listshell = getusershell()) != NULL) {
-		TRACE(("test shell is '%s'", listshell))
-		if (strcmp(listshell, usershell) == 0) {
-			/* have a match */
-			goto goodshell;
-		}
-	}
-	/* no matching shell */
-	endusershell();
-	TRACE(("no matching shell"))
-	ses.authstate.checkusername_failed = 1;
-	dropbear_log(LOG_WARNING, "User '%s' has invalid shell, rejected",
-				svr_ses.pw_name);
-	return DROPBEAR_FAILURE;
-	
-goodshell:
-	endusershell();
-	TRACE(("matching shell"))
 
 	/* set both the real and effective uids with setxuid().
 	   possibly set the saved set-group-ID to the utmp gid so we can

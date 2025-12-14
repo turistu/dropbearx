@@ -53,8 +53,6 @@ void ignore_recv_response(void);
 
 void update_channel_prio(void);
 
-const char* get_user_shell(void);
-
 /* Server */
 void svr_session(int sock, int childpipe) ATTRIB_NORETURN;
 void svr_dropbear_exit(int exitcode, const char *msg) ATTRIB_NORETURN;

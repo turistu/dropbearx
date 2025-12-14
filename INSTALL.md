@@ -64,7 +64,6 @@ Binaries can be stripped with `make strip`.
 
 ## Compiling with uClibc
 
-Firstly, make sure you have at least uclibc 0.9.17, as `getusershell()` in prior versions is broken.
 Also note that you may get strange issues if your uClibc headers don't match the library you are running with.
 I.e. the headers might say that shadow password support exists, but the libraries don't have it.
 

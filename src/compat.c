@@ -44,7 +44,7 @@
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * daemon() and getusershell() is copyright as follows:
+ * daemon() is copyright as follows:
  *
  * Copyright (c) 1990, 1993
  *      The Regents of the University of California.  All rights reserved.
@@ -73,15 +73,9 @@
 * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 * SUCH DAMAGE.
 *
-* Modifications for Dropbear to getusershell() are by Paul Marinceu
 */
 
 #include "includes.h"
-
-#ifndef HAVE_GETUSERSHELL
-static char **curshell, **shells, *strings;
-static char **initshells();
-#endif
 
 #ifndef HAVE_DAEMON
 /* From NetBSD - daemonise a process */
@@ -129,84 +123,3 @@ char *basename(const char *path) {
 }
 
 #endif /* HAVE_BASENAME */
-
-#ifndef HAVE_GETUSERSHELL
-
-/*
- * Get a list of shells from /etc/shells, if it exists.
- */
-char * getusershell() {
-	char *ret;
-
-	if (curshell == NULL)
-		curshell = initshells();
-	ret = *curshell;
-	if (ret != NULL)
-		curshell++;
-	return (ret);
-}
-
-void endusershell() {
-
-	if (shells != NULL)
-		free(shells);
-	shells = NULL;
-	if (strings != NULL)
-		free(strings);
-	strings = NULL;
-	curshell = NULL;
-}
-
-void setusershell() {
-	curshell = initshells();
-}
-
-static char **initshells() {
-	static const char *okshells[] = { COMPAT_USER_SHELLS, NULL };
-	register char **sp, *cp;
-	register FILE *fp;
-	struct stat statb;
-	int flen;
-
-	if (shells != NULL)
-		free(shells);
-	shells = NULL;
-	if (strings != NULL)
-		free(strings);
-	strings = NULL;
-	if ((fp = fopen("/etc/shells", "rc")) == NULL)
-		return (char **) okshells;
-	if (fstat(fileno(fp), &statb) == -1) {
-		(void)fclose(fp);
-		return (char **) okshells;
-	}
-	if ((strings = malloc((u_int)statb.st_size + 1)) == NULL) {
-		(void)fclose(fp);
-		return (char **) okshells;
-	}
-	shells = calloc((unsigned)statb.st_size / 3, sizeof (char *));
-	if (shells == NULL) {
-		(void)fclose(fp);
-		free(strings);
-		strings = NULL;
-		return (char **) okshells;
-	}
-	sp = shells;
-	cp = strings;
-	flen = statb.st_size;
-	while (fgets(cp, flen - (cp - strings), fp) != NULL) {
-		while (*cp != '#' && *cp != '/' && *cp != '\0')
-			cp++;
-		if (*cp == '#' || *cp == '\0')
-			continue;
-		*sp++ = cp;
-		while (!isspace(*cp) && *cp != '#' && *cp != '\0')
-			cp++;
-		*cp++ = '\0';
-	}
-	*sp = NULL;
-	(void)fclose(fp);
-	return (shells);
-}
-
-#endif /* HAVE_GETUSERSHELL */

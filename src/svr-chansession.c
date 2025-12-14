@@ -924,7 +924,6 @@ static void addchildpid(struct ChanSess *chansess, pid_t pid) {
  * the command/shell. This function does not return. */
 static void execchild(const void *user_data) {
 	const struct ChanSess *chansess = user_data;
-	char *usershell = NULL;
 	char *cp = NULL;
 	char *envcp = getenv("LANG");
 	if (envcp != NULL) {
@@ -962,7 +961,7 @@ static void execchild(const void *user_data) {
 	addnewvar("USER", svr_ses.pw_name);
 	addnewvar("LOGNAME", svr_ses.pw_name);
 	addnewvar("HOME", svr_ses.pw_dir);
-	addnewvar("SHELL", get_user_shell());
+	addnewvar("SHELL", svr_ses.pw_shell);
 	if (getuid() == 0) {
 		addnewvar("PATH", DEFAULT_ROOT_PATH);
 	} else {
@@ -1016,8 +1015,7 @@ static void execchild(const void *user_data) {
 	svr_agentset(chansess);
 #endif
 
-	usershell = m_strdup(get_user_shell());
-	run_shell_command(chansess->cmd, ses.maxfd, usershell);
+	run_shell_command(chansess->cmd, ses.maxfd, svr_ses.pw_shell);
 
 	/* only reached on error */
 	dropbear_exit("Child failed");
@@ -1052,16 +1050,3 @@ void addnewvar(const char* name, const char* val) {
 		dropbear_exit("environ error");
 	}
 }
-
-#ifdef __ANDROID__
-static int usershell_done;
-void setusershell(void) { usershell_done = 0; }
-void endusershell(void) { usershell_done = 2; }
-char *getusershell(void){
-	switch(usershell_done++){
-	case 0:	return "/system/bin/sh";
-	case 1: return "/bin/sh";
-	default: return NULL;
-	}
-}
-#endif

@@ -13,7 +13,12 @@ This is a fork of [Matt Johnston's dropbear](https://matt.ucc.asn.au/dropbear/dr
 - a better password-reading function which doesn't depend on `getpass()`
 	(which is deprecated and not available on android)
 	
-some incompatible changes:
+and some **incompatible changes:**
+- the server does not longer check if the user's login shell from `/etc/passwd`
+  is in `/etc/shells`; the sysadmin should be able to set a user's shell to
+  whatever they like without having to add it to `/etc/shells` and let any
+  other user set it as their shell with `chsh(1)`.
+  (this matches the openssh behaviour).
 - dbclient will exit with an error instead of hanging when the server wasn't
 	able to allocate a pty and start a shell ([721554d][7215]).
 - allow `-t` (force pty) to work even when the stdin of the client is not

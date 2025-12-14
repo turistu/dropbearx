@@ -95,15 +95,6 @@
 
 #define _PATH_CP "/bin/cp"
 
-/* Default contents of /etc/shells if system getusershell() doesn't exist.
- * Paths taken from getusershell(3) manpage. These can be customised
- * on other platforms. One the commandline for CFLAGS it would look like eg
-  -DCOMPAT_USER_SHELLS='"/bin/sh","/apps/bin/sh","/data/bin/zsh"'
- */
-#ifndef COMPAT_USER_SHELLS
-#define COMPAT_USER_SHELLS "/bin/sh","/bin/csh"
-#endif
-
 #define DROPBEAR_ESCAPE_CHAR '~'
 
 /* success/failure defines */
@@ -465,10 +456,6 @@
 #endif
 
 #ifdef __ANDROID__
-#define HAVE_GETUSERSHELL	1
-char *getusershell(void);
-void setusershell(void), endusershell(void);
-
 #define DISABLE_UTMP   1
 #define DISABLE_UTMPX  1
 #define DISABLE_WTMP   1

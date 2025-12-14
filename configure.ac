@@ -834,7 +834,7 @@ fi
 # Checks for library functions.
 AC_FUNC_MEMCMP
 AC_FUNC_SELECT_ARGTYPES
-AC_CHECK_FUNCS([getspnam getusershell putenv])
+AC_CHECK_FUNCS([getspnam putenv])
 AC_CHECK_FUNCS([clearenv daemon basename])
 AC_CHECK_FUNCS([freeaddrinfo getnameinfo fork writev getgrouplist])
 
