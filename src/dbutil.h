@@ -70,8 +70,6 @@ int buf_getline(buffer * line, FILE * authfile);
 void m_close(int fd);
 void setnonblocking(int fd);
 int m_str_to_uint(const char* str, unsigned int *val);
-/* The same as snprintf() but exits rather than returning negative */
-int m_snprintf(char *str, size_t size, const char *format, ...);
 
 /* Used to force mp_ints to be initialised */
 #define DEF_MP_INT(X) mp_int X = {0, 0, 0, NULL}
@@ -88,7 +86,6 @@ time_t monotonic_now(void);
 /* Higher resolution clock_gettime(CLOCK_MONOTONIC) wrapper */
 void gettime_wrapper(struct timespec *now);
 
-const char *get_homedir(void);
 const char *get_username(void);
 char * expand_homedir_path(const char *inpath);
 

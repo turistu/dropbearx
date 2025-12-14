@@ -67,6 +67,15 @@ static volatile sig_atomic_t win_resized; /* for window resizing */
 /* units for format_size */
 static const char unit[] = " KMGT";
 
+static int xsnprintf(char *str, size_t size, const char *format, ...) {
+	va_list param;
+	int ret;
+
+	va_start(param, format);
+	ret = vsnprintf(str, size, format, param);
+	va_end(param);
+	return ret < 0 ? 0 : ret;
+}
 static int
 can_output(void)
 {
@@ -85,7 +94,7 @@ format_rate(char *buf, int size, off_t bytes)
 		i++;
 		bytes = (bytes + 512) / 1024;
 	}
-	return m_snprintf(buf, size, " %3lld.%1lld%c%s/s ",
+	return xsnprintf(buf, size, " %3lld.%1lld%c%s/s ",
 	    (long long) (bytes + 5) / 100,
 	    (long long) (bytes + 5) / 10 % 10,
 	    unit[i],
@@ -99,7 +108,7 @@ format_size(char *buf, int size, off_t bytes)
 
 	for (i = 0; bytes >= 10000 && unit[i] != 'T'; i++)
 		bytes = (bytes + 512) / 1024;
-	return m_snprintf(buf, size, "%4lld%c%s",
+	return xsnprintf(buf, size, "%4lld%c%s",
 	    (long long) bytes,
 	    unit[i],
 	    i ? "B" : " ");
@@ -149,7 +158,7 @@ refresh_progress_meter(void)
 	/* filename */
 	file_len = win_size - 35;
 	if (file_len > 0) {
-		len = m_snprintf(buf, sizeof buf, "\r%*.*s",
+		len = xsnprintf(buf, sizeof buf, "\r%*.*s",
 			filelen, filelen, file);
 	}
 
@@ -158,7 +167,7 @@ refresh_progress_meter(void)
 		percent = ((float)cur_pos / end_pos) * 100;
 	else
 		percent = 100;
-	len += m_snprintf(buf + len, win_size - len, " %3d%%", percent);
+	len += xsnprintf(buf + len, win_size - len, " %3d%%", percent);
 
 	/* amount transferred */
 	len += format_size(buf + len, win_size - len, cur_pos);
@@ -173,9 +182,9 @@ refresh_progress_meter(void)
 		stalled = 0;
 
 	if (stalled >= STALL_TIME)
-		len += m_snprintf(buf + len, win_size - len, "- stalled -");
+		len += xsnprintf(buf + len, win_size - len, "- stalled -");
 	else if (bytes_per_second == 0 && bytes_left)
-		len += m_snprintf(buf + len, win_size - len, "  --:-- ETA");
+		len += xsnprintf(buf + len, win_size - len, "  --:-- ETA");
 	else {
 		if (bytes_left > 0)
 			seconds = bytes_left / bytes_per_second;
@@ -188,14 +197,14 @@ refresh_progress_meter(void)
 		seconds -= minutes * 60;
 
 		if (hours != 0)
-			len += m_snprintf(buf + len, win_size - len,
+			len += xsnprintf(buf + len, win_size - len,
 			    "%d:%02d:%02d", hours, minutes, seconds);
 		else
-			len += m_snprintf(buf + len, win_size - len,
+			len += xsnprintf(buf + len, win_size - len,
 			    "  %02d:%02d", minutes, seconds);
 
 		if (bytes_left > 0)
-		m_snprintf(buf + len, win_size - len, 
+		xsnprintf(buf + len, win_size - len, 
 			bytes_left > 0 ? " ETA" : "    ");
 	}
 

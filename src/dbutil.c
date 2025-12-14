@@ -620,6 +620,15 @@ int m_str_to_uint(const char* str, unsigned int *val) {
 	}
 }
 
+static const char *get_homedir(void) {
+	char *h;
+	struct passwd *pw;
+	if ((h = getenv("HOME")))
+		return h;
+	if ((pw = getpwuid(getuid())) && (h = pw->pw_dir) && *h)
+		return h;
+	return "/";
+}
 /* Returns malloced path. inpath beginning with '~/' expanded,
    otherwise returned as-is */
 char * expand_homedir_path(const char *inpath) {
@@ -743,27 +752,6 @@ int fd_read_pending(int fd) {
 	}
 }
 
-int m_snprintf(char *str, size_t size, const char *format, ...) {
-	va_list param;
-	int ret;
-
-	va_start(param, format);
-	ret = vsnprintf(str, size, format, param);
-	va_end(param);
-	if (ret < 0) {
-		dropbear_exit("snprintf failed");
-	}
-	return ret;
-}
-const char *get_homedir(void) {
-	char *h;
-	struct passwd *pw;
-	if ((h = getenv("HOME")))
-		return h;
-	if ((pw = getpwuid(getuid())) && (h = pw->pw_dir) && *h)
-		return h;
-	return "/";
-}
 const char *get_username(void) {
 	char *u;
 	struct passwd *pw;
