@@ -188,12 +188,6 @@ static int svr_remotetcpreq(void) {
 		goto out;
 	}
 
-	/* XXXXX */
-	if (!ses.allowprivport && port > 0 && port < IPPORT_RESERVED) {
-		TRACE(("can't assign port < 1024 for non-root"))
-		goto out;
-	}
-
 	tcpinfo = m_malloc(sizeof(struct TCPListener));
 	tcpinfo->sendaddr = NULL;
 	tcpinfo->sendport = 0;
