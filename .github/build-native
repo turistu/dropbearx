@@ -14,20 +14,13 @@ case $0 in
 *)	srcdir=$(pwd)
 esac
 outdir=$srcdir/OUT
+pname=dropbearx-$os
 bdir=$outdir/build-$os
-pdir=$outdir/inst-$os
+pdir=$outdir/$pname
 case $opt in *n*);;*)	rm -fr "$bdir" "$pdir"; esac
 mkdir -p "$bdir" "$pdir"
-onexit(){
-	err=$?
-	if [ "$err" = 0 ]; then
-		echo "OK, $bdir done"
-	else
-		echo FAILED
-	fi
-}
+onexit(){ [ "$?" != 0 ] && echo FAILED; }
 trap onexit EXIT
-set -x
 case $opt in *r*);;*)
 	autoreconf -i "$srcdir"
 	# wtf
@@ -39,8 +32,8 @@ cd "$bdir"
 case $opt in *c*);;*)	"$srcdir/configure" --prefix="$pdir"; esac
 make=${make:-make}
 $make -j32
-# make check
 $make strip
 $make install
-tar -C "$pdir" -zcf "$outdir/dropbearx-$os.tgz" .
+tar -C "$outdir" -zcf "$outdir/$pname.tgz" "$pname"
 $srcdir/util/simple-test
+echo "OK, output in $outdir/$pname.tgz"
