@@ -138,7 +138,6 @@ void svr_chansess_checksignal(void) {
 }
 
 static void sesssigchild_handler(int UNUSED(dummy)) {
-	struct sigaction sa_chld;
 
 	const int saved_errno = errno;
 
@@ -151,11 +150,6 @@ static void sesssigchild_handler(int UNUSED(dummy)) {
 			break;
 		}
 	}
-
-	sa_chld.sa_handler = sesssigchild_handler;
-	sa_chld.sa_flags = SA_NOCLDSTOP;
-	sigemptyset(&sa_chld.sa_mask);
-	sigaction(SIGCHLD, &sa_chld, NULL);
 
 	errno = saved_errno;
 }
@@ -1036,7 +1030,7 @@ void svr_chansessinitialise() {
 	sa_chld.sa_handler = sesssigchild_handler;
 	sa_chld.sa_flags = SA_NOCLDSTOP;
 	sigemptyset(&sa_chld.sa_mask);
-	if (sigaction(SIGCHLD, &sa_chld, NULL) < 0) {
+	if (sigaction(SIGCHLD, &sa_chld, NULL)) {
 		dropbear_exit("sigaction:");
 	}
 	

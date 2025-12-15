@@ -367,18 +367,10 @@ out:
 
 /* catch + reap zombie children */
 static void sigchld_handler(int UNUSED(unused)) {
-	struct sigaction sa_chld;
-
 	const int saved_errno = errno;
 
 	while(waitpid(-1, NULL, WNOHANG) > 0) {}
 
-	sa_chld.sa_handler = sigchld_handler;
-	sa_chld.sa_flags = SA_NOCLDSTOP;
-	sigemptyset(&sa_chld.sa_mask);
-	if (sigaction(SIGCHLD, &sa_chld, NULL) < 0) {
-		dropbear_exit("signal() error");
-	}
 	errno = saved_errno;
 }
 
@@ -406,8 +398,8 @@ static void commonsetup() {
 	sa_chld.sa_handler = sigchld_handler;
 	sa_chld.sa_flags = SA_NOCLDSTOP;
 	sigemptyset(&sa_chld.sa_mask);
-	if (sigaction(SIGCHLD, &sa_chld, NULL) < 0) {
-		dropbear_exit("signal() error");
+	if (sigaction(SIGCHLD, &sa_chld, NULL)) {
+		dropbear_exit("sigaction:");
 	}
 	crypto_init();
 
