@@ -393,6 +393,19 @@ void run_shell_command(const char* cmd, unsigned int maxfd, char* usershell) {
 	run_command(usershell, argv, maxfd);
 }
 
+#ifdef HAVE_CLOSE_RANGE
+static void close_all(unsigned int UNUSED(maxfd)) {
+	close_range(3, ~0u, 0);
+}
+#else
+static void close_all(unsigned int maxfd) {
+	int i;
+	for (i = 3; i <= maxfd; i++) {
+		m_close(i);
+	}
+}
+#endif
+
 void run_command(const char* argv0, char** args, unsigned int maxfd) {
 	unsigned int i;
 
@@ -403,9 +416,7 @@ void run_command(const char* argv0, char** args, unsigned int maxfd) {
 
 	/* close file descriptors except stdin/stdout/stderr
 	 * Need to be sure FDs are closed here to avoid reading files as root */
-	for (i = 3; i <= maxfd; i++) {
-		m_close(i);
-	}
+	close_all(maxfd);
 
 	execv(argv0, args);
 }
