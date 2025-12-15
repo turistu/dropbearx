@@ -407,7 +407,6 @@ static void close_all(unsigned int maxfd) {
 #endif
 
 void run_command(const char* argv0, char** args, unsigned int maxfd) {
-	unsigned int i;
 
 	/* Re-enable SIGPIPE for the executed process */
 	if (signal(SIGPIPE, SIG_DFL) == SIG_ERR) {

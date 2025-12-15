@@ -812,12 +812,6 @@ static int ptycommand(struct Channel *channel, struct ChanSess *chansess) {
 		char *e;
 		/* child */
 		
-		TRACE(("back to normal sigchld"))
-		/* Revert to normal sigchld handling */
-		if (signal(SIGCHLD, SIG_DFL) == SIG_ERR) {
-			dropbear_exit("signal:");
-		}
-		
 		/* redirect stdin/stdout/stderr */
 		close(chansess->master);
 
