@@ -19,7 +19,7 @@ bdir=$outdir/build-$os
 pdir=$outdir/$pname
 case $opt in *n*);;*)	rm -fr "$bdir" "$pdir"; esac
 mkdir -p "$bdir" "$pdir"
-onexit(){ [ "$?" != 0 ] && echo FAILED; }
+onexit(){ if [ "$?" != 0 ]; then echo FAILED; fi; }
 trap onexit EXIT
 case $opt in *r*);;*)
 	autoreconf -i "$srcdir"
