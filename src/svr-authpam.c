@@ -105,8 +105,7 @@ pamConvFunc(int num_msg,
 			 * module writers? no.) to find out that the module will
 			 * free the pam_response and its resp element - ie we _must_ malloc
 			 * it here */
-			resp = (struct pam_response*) m_malloc(sizeof(struct pam_response));
-			memset(resp, 0, sizeof(struct pam_response));
+			resp = m_calloc(1, sizeof *resp);
 
 			resp->resp = m_strdup(userDatap->passwd);
 			m_burn(userDatap->passwd, strlen(userDatap->passwd));
@@ -135,8 +134,7 @@ pamConvFunc(int num_msg,
 			 * module writers? no.) to find out that the module will
 			 * free the pam_response and its resp element - ie we _must_ malloc
 			 * it here */
-			resp = (struct pam_response*) m_malloc(sizeof(struct pam_response));
-			memset(resp, 0, sizeof(struct pam_response));
+			resp = m_calloc(1, sizeof *resp);
 
 			resp->resp = m_strdup(userDatap->user);
 			TRACE(("userDatap->user='%s'", userDatap->user))

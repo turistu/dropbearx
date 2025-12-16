@@ -106,7 +106,7 @@ void common_session_init(int sock_in, int sock_out) {
 	ses.reply_queue_tail = NULL;
 
 	/* set all the algos to none */
-	ses.keys = (struct key_context*)m_malloc(sizeof(struct key_context));
+	ses.keys = m_malloc(sizeof(struct key_context));
 	ses.newkeys = NULL;
 	ses.keys->recv.algo_crypt = &dropbear_nocipher;
 	ses.keys->trans.algo_crypt = &dropbear_nocipher;

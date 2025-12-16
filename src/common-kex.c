@@ -103,7 +103,7 @@ void send_msg_kexinit() {
 
 	ses.kexstate.sentkexinit = 1;
 
-	ses.newkeys = (struct key_context*)m_malloc(sizeof(struct key_context));
+	ses.newkeys = m_malloc(sizeof(struct key_context));
 
 	if (ses.send_kex_first_guess) {
 		ses.newkeys->algo_kex = first_usable_algo(sshkex)->data;
@@ -436,7 +436,7 @@ static void gen_new_zstream_recv() {
 	/* create new zstreams */
 	if (ses.newkeys->recv.algo_comp == DROPBEAR_COMP_ZLIB
 			|| ses.newkeys->recv.algo_comp == DROPBEAR_COMP_ZLIB_DELAY) {
-		ses.newkeys->recv.zstream = (z_streamp)m_malloc(sizeof(z_stream));
+		ses.newkeys->recv.zstream = m_malloc(sizeof(z_stream));
 		ses.newkeys->recv.zstream->zalloc = dropbear_zalloc;
 		ses.newkeys->recv.zstream->zfree = dropbear_zfree;
 		
@@ -460,7 +460,7 @@ static void gen_new_zstream_trans() {
 
 	if (ses.newkeys->trans.algo_comp == DROPBEAR_COMP_ZLIB
 			|| ses.newkeys->trans.algo_comp == DROPBEAR_COMP_ZLIB_DELAY) {
-		ses.newkeys->trans.zstream = (z_streamp)m_malloc(sizeof(z_stream));
+		ses.newkeys->trans.zstream = m_malloc(sizeof(z_stream));
 		ses.newkeys->trans.zstream->zalloc = dropbear_zalloc;
 		ses.newkeys->trans.zstream->zfree = dropbear_zfree;
 	
