@@ -20,12 +20,14 @@ endif
 
 OPTION_HEADERS = default_options_guard.h $(srcdir)/sysoptions.h
 ifneq ($(wildcard @srcdir@/localoptions.h),)
-	CPPFLAGS+=-DLOCALOPTIONS_H_EXISTS -I@srcdir@
+	CPPFLAGS+=-DLOCALOPTIONS_H_EXISTS
 	OPTION_HEADERS += @srcdir@/localoptions.h
 endif
-ifneq ($(wildcard $(srcdir)/distrooptions.h),)
+ifneq ($(wildcard @srcdir@/distrooptions.h),)
 	CPPFLAGS+=-DDISTROOPTIONS_H_EXISTS
+	OPTION_HEADERS += @srcdir@/distrooptions.h
 endif
+CPPFLAGS += -I@srcdir@
 
 MAN_DIR=@srcdir@/manpages
 
