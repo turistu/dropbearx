@@ -397,12 +397,14 @@ void run_shell_command(const char* cmd, unsigned int maxfd, char* usershell) {
 static void close_all(unsigned int UNUSED(maxfd)) {
 	close_range(3, ~0u, 0);
 }
+#elif defined(HAVE_CLOSEFROM)
+static void close_all(unsigned int UNUSED(maxfd)) {
+	closefrom(3);
+}
 #else
 static void close_all(unsigned int maxfd) {
 	int i;
-	for (i = 3; i <= maxfd; i++) {
-		m_close(i);
-	}
+	for (i = 3; i <= maxfd; i++) m_close(i);
 }
 #endif
 

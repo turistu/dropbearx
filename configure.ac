@@ -838,7 +838,8 @@ AC_CHECK_FUNCS([getspnam putenv])
 AC_CHECK_FUNCS([clearenv daemon basename])
 AC_CHECK_FUNCS([freeaddrinfo getnameinfo fork writev getgrouplist])
 
-AC_CHECK_FUNCS([socketpair vasprintf posix_openpt setresuid close_range])
+AC_CHECK_FUNCS([socketpair vasprintf posix_openpt setresuid
+	close_range closefrom])
 
 AC_SEARCH_LIBS(basename, gen, AC_DEFINE(HAVE_BASENAME))
 
