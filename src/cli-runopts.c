@@ -46,7 +46,7 @@ static void add_netcat(const char *str);
 static void add_extendedopt(const char *str);
 
 #if DROPBEAR_USE_SSH_CONFIG
-void apply_config_settings(char* cli_host_arg);
+static void apply_config_settings(char* cli_host_arg);
 #endif
 
 static void printhelp() {
@@ -551,7 +551,6 @@ void cli_getopts(int argc, char ** argv) {
 #if DROPBEAR_CLI_PUBKEY_AUTH
 void loadidentityfile(const char* filename, int warnfail) {
 	sign_key *key;
-	char *expand_path = expand_homedir_path(filename);
 	enum signkey_type keytype;
 
 	char *id_key_path = expand_homedir_path(filename);
@@ -559,16 +558,16 @@ void loadidentityfile(const char* filename, int warnfail) {
 
 	key = new_sign_key();
 	keytype = DROPBEAR_SIGNKEY_ANY;
-	if ( readhostkey(expand_path, key, &keytype) != DROPBEAR_SUCCESS ) {
+	if ( readhostkey(id_key_path, key, &keytype) != DROPBEAR_SUCCESS ) {
 		if (warnfail) {
 			dropbear_log(LOG_WARNING, "Failed loading keyfile '%s'\n", id_key_path);
 		}
 		sign_key_free(key);
-		m_free(expand_path);
+		m_free(id_key_path);
 	} else {
 		key->type = keytype;
 		key->source = SIGNKEY_SOURCE_RAW_FILE;
-		key->filename = expand_path;
+		key->filename = id_key_path;
 		list_append(cli_opts.privkeys, key);
 	}
 }
