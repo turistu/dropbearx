@@ -54,7 +54,12 @@ void svr_authinitialise() {
 }
 
 void fill_passwd(const char* username) {
-	struct passwd *pw = getpwnam(username);
+	struct passwd *pw;
+#ifdef HAVE_GETPWNAM_SHADOW
+	pw = getpwnam_shadow(username);
+#else
+	pw = getpwnam(username);
+#endif
 	if (!pw) {
 		return;
 	}
