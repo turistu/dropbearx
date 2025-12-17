@@ -32,7 +32,7 @@
   @param prng     [out] The PRNG state to initialize
   @return CRYPT_OK if successful
 */  
-int dropbear_prng_start(prng_state* UNUSED(prng))
+static int dropbear_prng_start(prng_state* UNUSED(prng))
 {
    return CRYPT_OK;  
 }
@@ -44,7 +44,7 @@ int dropbear_prng_start(prng_state* UNUSED(prng))
   @param prng     PRNG state to update
   @return CRYPT_OK if successful
 */  
-int dropbear_prng_add_entropy(const unsigned char* UNUSED(in), unsigned long UNUSED(inlen), prng_state* UNUSED(prng))
+static int dropbear_prng_add_entropy(const unsigned char* UNUSED(in), unsigned long UNUSED(inlen), prng_state* UNUSED(prng))
 {
    return CRYPT_OK;
 }
@@ -54,7 +54,7 @@ int dropbear_prng_add_entropy(const unsigned char* UNUSED(in), unsigned long UNU
   @param prng   The PRNG to make active
   @return CRYPT_OK if successful
 */  
-int dropbear_prng_ready(prng_state* UNUSED(prng))
+static int dropbear_prng_ready(prng_state* UNUSED(prng))
 {
    return CRYPT_OK;
 }
@@ -66,7 +66,7 @@ int dropbear_prng_ready(prng_state* UNUSED(prng))
   @param prng     The active PRNG to read from
   @return Number of octets read
 */  
-unsigned long dropbear_prng_read(unsigned char* out, unsigned long outlen, prng_state* UNUSED(prng))
+static unsigned long dropbear_prng_read(unsigned char* out, unsigned long outlen, prng_state* UNUSED(prng))
 {
    LTC_ARGCHK(out != NULL);
    genrandom(out, outlen);
@@ -78,7 +78,7 @@ unsigned long dropbear_prng_read(unsigned char* out, unsigned long outlen, prng_
   @param prng   The PRNG to terminate
   @return CRYPT_OK if successful
 */  
-int dropbear_prng_done(prng_state* UNUSED(prng))
+static int dropbear_prng_done(prng_state* UNUSED(prng))
 {
    return CRYPT_OK;
 }
@@ -90,7 +90,7 @@ int dropbear_prng_done(prng_state* UNUSED(prng))
   @param prng      The PRNG to export
   @return CRYPT_OK if successful
 */  
-int dropbear_prng_export(unsigned char* UNUSED(out), unsigned long* outlen, prng_state* UNUSED(prng))
+static int dropbear_prng_export(unsigned char* UNUSED(out), unsigned long* outlen, prng_state* UNUSED(prng))
 {
    LTC_ARGCHK(outlen != NULL);
 
@@ -105,7 +105,7 @@ int dropbear_prng_export(unsigned char* UNUSED(out), unsigned long* outlen, prng
   @param prng     The PRNG to import
   @return CRYPT_OK if successful
 */  
-int dropbear_prng_import(const unsigned char* UNUSED(in), unsigned long UNUSED(inlen), prng_state* UNUSED(prng))
+static int dropbear_prng_import(const unsigned char* UNUSED(in), unsigned long UNUSED(inlen), prng_state* UNUSED(prng))
 {
    return CRYPT_OK;
 }
@@ -114,7 +114,7 @@ int dropbear_prng_import(const unsigned char* UNUSED(in), unsigned long UNUSED(i
   PRNG self-test
   @return CRYPT_OK if successful, CRYPT_NOP if self-testing has been disabled
 */  
-int dropbear_prng_test(void)
+static int dropbear_prng_test(void)
 {
    return CRYPT_OK;
 }

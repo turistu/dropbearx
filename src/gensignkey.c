@@ -7,6 +7,7 @@
 #include "gened25519.h"
 #include "signkey.h"
 #include "dbrandom.h"
+#include "gensignkey.h"
 
 /* Returns DROPBEAR_SUCCESS or DROPBEAR_FAILURE */
 static int buf_writefile(buffer * buf, const char * filename, int skip_exist) {

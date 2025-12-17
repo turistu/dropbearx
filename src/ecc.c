@@ -72,7 +72,7 @@ struct dropbear_ecc_curve* curve_for_dp(const ltc_ecc_set_type *dp) {
 	return *curve;
 }
 
-ecc_key * new_ecc_key(void) {
+static ecc_key * new_ecc_key(void) {
 	ecc_key *key = m_malloc(sizeof(*key));
 	m_mp_alloc_init_multi((mp_int**)&key->pubkey.x, (mp_int**)&key->pubkey.y, 
 		(mp_int**)&key->pubkey.z, (mp_int**)&key->k, NULL);

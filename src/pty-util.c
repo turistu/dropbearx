@@ -8,6 +8,7 @@
 #include <termios.h>
 
 #include "dbutil.h"
+#include "pty-util.h"
 
 #define FAIL(msg)	{ e = (msg); goto fail; }
 

@@ -26,6 +26,7 @@
 
 #include "includes.h"
 #include "dbutil.h"
+#include "bignum.h"
 
 /* wrapper for mp_init, failing fatally on errors (memory allocation) */
 void m_mp_init(mp_int *mp) {

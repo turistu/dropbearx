@@ -7,6 +7,7 @@
 #include "curve25519.h"
 #include "ed25519.h"
 #include "ssh.h"
+#include "sk-ed25519.h"
 
 int buf_sk_ed25519_verify(buffer *buf, const dropbear_ed25519_key *key, const buffer *data_buf,
 			const char* app, unsigned int applen,

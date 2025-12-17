@@ -55,7 +55,7 @@ void (*_dropbear_exit)(int exitcode, const char *buf) ATTRIB_NORETURN
 	= generic_dropbear_exit;
 										void (*_dropbear_log)(int priority, const char *buf) = generic_dropbear_log;
 
-void msg_format(char *buf, int size, const char *fmt, va_list va) {
+static void msg_format(char *buf, int size, const char *fmt, va_list va) {
 	int l = vsnprintf(buf, size, fmt, va);
 	if (l > 0 && l < size - 10 && buf[l - 1] == ':') {
 		snprintf(buf + l, size - l, " %s", strerror(errno));

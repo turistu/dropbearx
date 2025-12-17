@@ -188,7 +188,7 @@ arg_setup(char *host, char *remuser, char *cmd)
 	addargs(&args, "%s", cmd);
 }
 
-int
+static int
 do_cmd(char *host, char *remuser, char *cmd, int *fdin, int *fdout)
 {
 	int pin[2], pout[2], reserved[2];
