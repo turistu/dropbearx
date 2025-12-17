@@ -32,18 +32,14 @@
 #include "crypto_desc.h"
 #include "netio.h"
 #include "fuzz.h"
+#include "main.h"
 
 #if DROPBEAR_CLI_PROXYCMD
 static void cli_proxy_cmd(int *sock_in, int *sock_out, pid_t *pid_out);
 static void kill_proxy_sighandler(int signo);
 #endif
 
-#if defined(DBMULTI_dbclient) || !DROPBEAR_MULTI
-#if defined(DBMULTI_dbclient) && DROPBEAR_MULTI
-int cli_main(int argc, char ** argv) {
-#else
-int main(int argc, char ** argv) {
-#endif
+int dbclient_main(int argc, char ** argv) {
 
 	int sock_in, sock_out;
 	struct dropbear_progress_connection *progress = NULL;
@@ -94,7 +90,6 @@ int main(int argc, char ** argv) {
 	/* not reached */
 	return -1;
 }
-#endif /* DBMULTI stuff */
 
 static char *usershell(void) {
 	char *s; struct passwd *pw;
@@ -111,8 +106,8 @@ static void shell_proxy_cmd(const void *user_data_cmd) {
 }
 
 #if DROPBEAR_CLI_MULTIHOP
-static void exec_proxy_cmd(const void *unused) {
-	(void)unused;
+static void exec_proxy_cmd(const void *UNUSED(unused)) {
+	run_command("/proc/self/exe", cli_opts.proxyexec, ses.maxfd);
 	run_command(cli_opts.proxyexec[0], cli_opts.proxyexec, ses.maxfd);
 	dropbear_exit("Failed to run '%s'\n", cli_opts.proxyexec[0]);
 }

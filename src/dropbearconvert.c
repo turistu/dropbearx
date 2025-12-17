@@ -30,7 +30,7 @@
 #include "keyimport.h"
 #include "crypto_desc.h" 
 #include "dbrandom.h" 
-
+#include "main.h"
 
 static int do_convert(int intype, const char* infile, int outtype,
 		const char* outfile);
@@ -53,12 +53,7 @@ static void printhelp(char * progname) {
 					progname);
 }
 
-#if defined(DBMULTI_dropbearconvert) || !DROPBEAR_MULTI
-#if defined(DBMULTI_dropbearconvert) && DROPBEAR_MULTI
 int dropbearconvert_main(int argc, char ** argv) {
-#else 
-int main(int argc, char ** argv) {
-#endif
 
 	int intype, outtype;
 	const char* infile;
@@ -110,7 +105,6 @@ usage:
 	printhelp(argv[0]);
 	return 1;
 }
-#endif
 
 static int do_convert(int intype, const char* infile, int outtype,
 		const char* outfile) {

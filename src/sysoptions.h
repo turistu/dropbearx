@@ -426,10 +426,6 @@
 #define DEBUG_DSS_VERIFY 0
 #endif
 
-#ifndef DROPBEAR_MULTI
-#define DROPBEAR_MULTI 0
-#endif
-
 /* Fuzzing expects all key types to be enabled */
 #if DROPBEAR_FUZZ
 #if defined(DROPBEAR_DSS)
@@ -464,6 +460,12 @@
 #define DISABLE_PUTUTXLINE     1
 #define DISABLE_LASTLOG        1
 #define DISABLE_PIDFILE	1
+#endif
+
+#ifdef __DragonFly__
+#define PROC_SELF_EXE	"/proc/curproc/exe"
+#else
+#define PROC_SELF_EXE	"/proc/self/exe"
 #endif
 
 /* no include guard for this file */
