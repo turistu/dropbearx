@@ -10,7 +10,7 @@ int setxuid(uid_t uid, uid_t suid){
 int setxgid(gid_t gid, gid_t sgid){
 	return setresgid(gid, gid, sgid);
 }
-int drop_saved_uid(uid_t UNUSED(suid)){
+int drop_saved_uid(){
 	return setresuid(-1, -1, geteuid());
 }
 #elif HAVE_SETREUID
@@ -22,9 +22,8 @@ int setxgid(gid_t gid, gid_t sgid){
 	if(setregid(gid, sgid)) return -1;
 	return setegid(gid);
 }
-int drop_saved_uid(uid_t suid){
+int drop_saved_uid(){
 	uid_t euid = geteuid();
-	if(setreuid(euid, suid)) return -1;
 	if(setreuid(euid, euid)) return -1;
 	return setuid(euid);
 }

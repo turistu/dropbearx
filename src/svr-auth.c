@@ -342,15 +342,18 @@ static int checkusername(const char *username, unsigned int userlen) {
 	}
 #endif /* HAVE_GETGROUPLIST */
 
-	/* set both the real and effective uids with setxuid().
-	   possibly set the saved set-group-ID to the utmp gid so we can
-	   switch to it with setegid() when writing the login records */
+	/* set both the real and effective uid with src/svr-util.c:setxuid()
+	   if possibly, set the saved set-group-ID to the utmp gid so we can
+	   temporarily switch back to it with setegid() for writing the
+	   login records */
 	gid = (gr = getgrnam("utmp")) ?
 		svr_ses.utmp_gid = gr->gr_gid : svr_ses.pw_gid;
 	if (geteuid() != svr_ses.pw_uid) {
-		/* change the next statement to
+		/* in order to set the saved set-user-ID to the current uid
+		   (so we can temporarily switch back to it with seteuid),
+		   change the next statement to
 			uid_t suid = svr_ses.orig_uid = geteuid()
-		   in order to set the saved set-user-ID to the current uid */
+		*/
 		uid_t suid = svr_ses.pw_uid;
 		if (initgroups(svr_ses.pw_name, svr_ses.pw_gid) ||
 		    setxgid(svr_ses.pw_gid, gid) ||
@@ -483,8 +486,7 @@ void send_msg_userauth_success() {
 	ses.connect_time = 0;
 
 	/* drop any privileged saved-set-uid */
-	if (svr_ses.orig_uid != (uid_t)-1)
-		drop_saved_uid(svr_ses.orig_uid);
+	drop_saved_uid();
 
 	if (svr_ses.pw_uid == 0) {
 		ses.allowprivport = 1;
