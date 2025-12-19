@@ -30,24 +30,17 @@
 #include "runopts.h"
 #include "dbrandom.h"
 #include "crypto_desc.h"
+#include "main.h"
 
 static size_t listensockets(int *sock, size_t sockcount, int *maxfd);
 static void sigchld_handler(int dummy);
 static void sigintterm_handler(int fish);
 static void main_inetd(int reexec_fd);
-static void main_noinetd(int argc, char ** argv, const char* multipath);
+static void main_noinetd(int argc, char **argv);
 static void commonsetup(void);
 
-#if defined(DBMULTI_dropbear) || !DROPBEAR_MULTI
-#if defined(DBMULTI_dropbear) && DROPBEAR_MULTI
-int dropbear_main(int argc, char ** argv, const char* multipath)
-#else
-int main(int argc, char ** argv)
-#endif
+int dropbear_main(int argc, char ** argv)
 {
-#if !DROPBEAR_MULTI
-	const char* multipath = NULL;
-#endif
 	const char* env;
 	int reexec_fd = -1;
 
@@ -79,14 +72,13 @@ int main(int argc, char ** argv)
 #endif
 
 #if NON_INETD_MODE
-	main_noinetd(argc, argv, multipath);
+	main_noinetd(argc, argv);
 	/* notreached */
 #endif
 
 	dropbear_exit("Compiled without normal mode, can't run without -i\n");
 	return -1;
 }
-#endif
 
 #if INETD_MODE || DROPBEAR_DO_REEXEC
 static void main_inetd(int reexec_fd) {
@@ -116,7 +108,7 @@ static void main_inetd(int reexec_fd) {
 #endif /* INETD_MODE */
 
 #if NON_INETD_MODE
-static void main_noinetd(int argc, char ** argv, const char* multipath) {
+static void main_noinetd(int argc, char ** argv) {
 	fd_set fds;
 	unsigned int i, j;
 	int val;
@@ -135,7 +127,6 @@ static void main_noinetd(int argc, char ** argv, const char* multipath) {
 
 	(void)argc;
 	(void)argv;
-	(void)multipath;
 
 	/* Note: commonsetup() must happen before we daemon()ise. Otherwise
 	   daemon() will chdir("/"), and we won't be able to find local-dir

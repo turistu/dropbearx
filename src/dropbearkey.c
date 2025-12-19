@@ -60,6 +60,7 @@
 #include "crypto_desc.h"
 #include "dbrandom.h"
 #include "gensignkey.h"
+#include "main.h"
 
 #if DROPBEAR_ED25519
 #define DEFAULT_KEY_TYPE_NAME "ed25519"
@@ -165,13 +166,7 @@ static void check_signkey_bits(enum signkey_type type, int bits)
 	}
 }
 
-#if defined(DBMULTI_dropbearkey) || !DROPBEAR_MULTI
-#if defined(DBMULTI_dropbearkey) && DROPBEAR_MULTI
 int dropbearkey_main(int argc, char ** argv) {
-#else
-int main(int argc, char ** argv) {
-#endif
-
 	int i;
 	char ** next = NULL;
 	char * filename = NULL;
@@ -307,7 +302,6 @@ int main(int argc, char ** argv) {
 
 	return EXIT_SUCCESS;
 }
-#endif
 
 static int printpubfile(const char* filename, const char* comment, int create_pub_file) {
 

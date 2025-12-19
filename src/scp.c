@@ -80,6 +80,7 @@
 #include "compat.h"
 #include "scpmisc.h"
 #include "progressmeter.h"
+#include "main.h"
 
 void bwlimit(int);
 
@@ -103,6 +104,12 @@ char *ssh_program = DROPBEAR_PATH_SSH_PROGRAM;
 
 /* This is used to store the pid of ssh_program */
 pid_t do_cmd_pid = -1;
+
+
+static int execv_self(const char *name, char **av){
+	if(find_multi(name)) execv("/proc/self/exe", av);
+	return execvp(name, av);
+}
 
 static void
 killchild(int signo)
@@ -177,11 +184,7 @@ do_local_cmd(arglist *a)
 static void
 arg_setup(char *host, char *remuser, char *cmd)
 {
-#ifdef DBMULTI_scp
-	replacearg(&args, 0, "dbclient");
-#else
 	replacearg(&args, 0, "%s", ssh_program);
-#endif
 	if (remuser != NULL)
 		addargs(&args, "-l%s", remuser);
 	addargs(&args, "%s", host);
@@ -242,10 +245,7 @@ do_cmd(char *host, char *remuser, char *cmd, int *fdin, int *fdout)
 		arg_setup(host, remuser, cmd);
 #endif
 
-#ifdef DBMULTI_scp
-		execvp("/proc/self/exe", args.list);
-#endif
-		execvp(ssh_program, args.list);
+		execv_self(ssh_program, args.list);
 		perror(ssh_program);
 #if DROPBEAR_VFORK
 		_exit(1);
@@ -312,13 +312,7 @@ void tolocal(int, char *[]);
 void toremote(char *, int, char *[]);
 void usage(void);
 
-#if defined(DBMULTI_scp) || !DROPBEAR_MULTI
-#if defined(DBMULTI_scp) && DROPBEAR_MULTI
-int scp_main(int argc, char **argv, char *multipath)
-#else
-int
-main(int argc, char **argv)
-#endif
+int scp_main(int argc, char **argv)
 {
 	int ch, fflag, tflag, status;
 	double speed;
@@ -328,10 +322,6 @@ main(int argc, char **argv)
 
 	/* Ensure that fds 0, 1 and 2 are open or directed to /dev/null */
 	sanitise_stdfd();
-
-#ifdef DBMULTI_scp
-	ssh_program = multipath ? multipath : argv[0];
-#endif
 
 	memset(&args, '\0', sizeof(args));
 	args.list = NULL;
@@ -464,7 +454,6 @@ main(int argc, char **argv)
 	}
 	exit(errs != 0);
 }
-#endif /* DBMULTI_scp stuff */
 
 void
 toremote(char *targ, int argc, char **argv)

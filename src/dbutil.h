@@ -100,14 +100,6 @@ int fd_read_pending(int fd);
 #define DROPBEAR_FD_ZERO(fds) FD_ZERO(fds)
 #endif
 
-/* dropbearmulti entry points */
-int dropbear_main(int argc, char ** argv, const char * multipath);
-int cli_main(int argc, char ** argv);
-int dropbearkey_main(int argc, char ** argv);
-int dropbearconvert_main(int argc, char ** argv);
-int scp_main(int argc, char ** argv, const char * multipath);
-
 #define ARRAY_SIZE(x) (sizeof(x)/sizeof(x[0]))
-
 
 #endif /* DROPBEAR_DBUTIL_H_ */

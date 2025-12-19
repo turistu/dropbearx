@@ -37,6 +37,7 @@
 #include "runopts.h"
 #include "auth.h"
 #include "pty-util.h"
+#include "main.h"
 
 /* Handles sessions (either shells or programs) requested by the client */
 
@@ -691,8 +692,9 @@ static int sessioncommand(struct Channel *channel, struct ChanSess *chansess,
 		svr_pubkey_set_forced_command(chansess);
 	}
 
-#ifdef DBMULTI_scp
-	if (chansess->cmd && strncmp(chansess->cmd, "scp ", 4) == 0) {
+	/* run ourselves as scp if we can do scp */
+	if (chansess->cmd && strncmp(chansess->cmd, "scp ", 4) == 0 &&
+			find_multi("scp")) {
 		struct stat st; char p[64];
 		snprintf(p, sizeof p, "/proc/%d/exe", getpid());
 		if (stat(p, &st) == 0) {
@@ -701,7 +703,6 @@ static int sessioncommand(struct Channel *channel, struct ChanSess *chansess,
 			m_free(ocmd);
 		}
 	}
-#endif
 
 #if LOG_COMMANDS
 	if (chansess->cmd) {
