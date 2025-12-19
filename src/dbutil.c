@@ -467,32 +467,6 @@ void printmpint(const char *label, const mp_int *mp) {
 }
 #endif
 
-/* Strip all control characters from text (a null-terminated string), except
- * for '\n', '\r' and '\t'.
- * The result returned is a newly allocated string, this must be free()d after
- * use */
-char * stripcontrol(const char * text) {
-
-	char * ret;
-	int len, pos;
-	int i;
-	
-	len = strlen(text);
-	ret = m_malloc(len+1);
-
-	pos = 0;
-	for (i = 0; i < len; i++) {
-		if ((text[i] <= '~' && text[i] >= ' ') /* normal printable range */
-				|| text[i] == '\n' || text[i] == '\r' || text[i] == '\t') {
-			ret[pos] = text[i];
-			pos++;
-		}
-	}
-	ret[pos] = 0x0;
-	return ret;
-}
-			
-
 /* reads the contents of filename into the buffer buf, from the current
  * position, either to the end of the file, or the buffer being full.
  * Returns DROPBEAR_SUCCESS or DROPBEAR_FAILURE */
