@@ -132,7 +132,7 @@ install-separate: $(addprefix inst_, $(PROGRAMS))
 # for simplicity assume all source depends on all headers
 HEADERS=$(wildcard $(src)/*.h *.h) $(OPTION_HEADERS)
 
-%_main.o: $(src)/main.c
+%_main.o: $(src)/main.c $(HEADERS)
 	$(CC) -DMAIN=$*_main $(CFLAGS) $(CPPFLAGS) $< -o $@ -c
 dropbearmulti_main.o: $(src)/main.c
 	$(CC) $(addprefix -DDB_, $(PROGRAMS)) $(CFLAGS) $(CPPFLAGS) $< -o $@ -c
