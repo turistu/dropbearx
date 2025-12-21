@@ -462,10 +462,4 @@
 #define DISABLE_PIDFILE	1
 #endif
 
-#ifdef __DragonFly__
-#define PROC_SELF_EXE	"/proc/curproc/exe"
-#else
-#define PROC_SELF_EXE	"/proc/self/exe"
-#endif
-
 /* no include guard for this file */

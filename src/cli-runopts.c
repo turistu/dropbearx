@@ -620,6 +620,12 @@ static char** multihop_args(const char* argv0, const char* prior_hops) {
 		args[pos] = m_strdup("BatchMode=yes");
 		pos++;
 	}
+	if (cli_opts.known_hosts_file) {
+		args[pos] = m_strdup("-o");
+		pos++;
+		args[pos] = m_asprintf("UserKnownHostsFile=%s", cli_opts.known_hosts_file);
+		pos++;
+	}
 
 	if (cli_opts.proxycmd) {
 		args[pos] = m_strdup("-J");

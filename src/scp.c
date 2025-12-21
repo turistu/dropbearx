@@ -102,14 +102,11 @@ int showprogress = 1;
 /* This is the program to execute for the secured connection. ("ssh" or -S) */
 char *ssh_program = DROPBEAR_PATH_SSH_PROGRAM;
 
+/* The real ssh executable if different from ssh_program */
+char *ssh_exe;
+
 /* This is used to store the pid of ssh_program */
 pid_t do_cmd_pid = -1;
-
-
-static int execv_self(const char *name, char **av){
-	if(find_multi(name)) execv("/proc/self/exe", av);
-	return execvp(name, av);
-}
 
 static void
 killchild(int signo)
@@ -245,8 +242,8 @@ do_cmd(char *host, char *remuser, char *cmd, int *fdin, int *fdout)
 		arg_setup(host, remuser, cmd);
 #endif
 
-		execv_self(ssh_program, args.list);
-		perror(ssh_program);
+		execvp(ssh_exe, args.list);
+		perror(ssh_exe);
 #if DROPBEAR_VFORK
 		_exit(1);
 #else
@@ -327,6 +324,8 @@ int scp_main(int argc, char **argv)
 	args.list = NULL;
 	addargs(&args, "%s", ssh_program);
 
+	ssh_exe = find_multi(ssh_program) ? PROC_SELF_EXE : ssh_program;
+
 	fflag = tflag = 0;
 	while ((ch = getopt(argc, argv, "dfl:prtvBCc:i:P:q1246S:o:F:")) != -1)
 		switch (ch) {
@@ -363,7 +362,7 @@ int scp_main(int argc, char **argv)
 			iamrecursive = 1;
 			break;
 		case 'S':
-			ssh_program = xstrdup(optarg);
+			ssh_program = ssh_exe = xstrdup(optarg);
 			break;
 		case 'v':
 			addargs(&args, "-v");

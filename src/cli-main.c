@@ -107,9 +107,9 @@ static void shell_proxy_cmd(const void *user_data_cmd) {
 
 #if DROPBEAR_CLI_MULTIHOP
 static void exec_proxy_cmd(const void *UNUSED(unused)) {
-	run_command("/proc/self/exe", cli_opts.proxyexec, ses.maxfd);
-	run_command(cli_opts.proxyexec[0], cli_opts.proxyexec, ses.maxfd);
-	dropbear_exit("Failed to run '%s'\n", cli_opts.proxyexec[0]);
+	char *self = PROC_SELF_EXE;
+	run_command(self, cli_opts.proxyexec, ses.maxfd);
+	dropbear_exit("Failed to run '%s'\n", self);
 }
 #endif
 
