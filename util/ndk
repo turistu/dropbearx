@@ -1,0 +1,61 @@
+#! /bin/sh
+unset IFS
+api=21
+arch=armv7a
+ndk=${ANDROID_NDK:-$KDIR/v/android-ndk*}
+src=${SRC:-$(pwd)}
+op=
+
+set -e
+while :; do
+	case $1 in
+	build) op=$1;;
+	aarch64|armv7a|i686|x86_64) arch=$1;;
+	[1-9][0-9]|[1-9])	api=$1;;
+	*-ndk-*|*/ndk/*)	ndk=$1;;
+	*=*)	eval "$1";;
+	*) break;;
+	esac
+	shift
+done
+
+case $arch in
+armv7a) garch=arm; eabi=eabi;;
+*) garch=$arch; eabi=;;
+esac
+die(){ echo >&2 "$@"; exit 1; }
+last(){ printf '%s\n' $@ | sort -V | tail -n1; }
+
+clang=$ndk/toolchains/llvm/prebuilt/linux-*/bin/$arch-linux-android$eabi$api-clang
+gcc=$ndk/toolchains/$garch-linux-android$eabi-*/prebuilt/linux-*/bin/$garch-linux-android$eabi-gcc
+sysroot=$ndk/platforms/android-$api/arch-$garch
+
+cc=$(last $clang)
+if "$cc" -v 2>/dev/null; then
+	export STRIP=${cc%/*}/llvm-strip
+	export CC=$cc
+else
+	d=$(last $sysroot)
+	cc=$(last $gcc)
+	test -d "$d" && "$cc" -v 2>/dev/null ||
+		die "api=$api arch=$arch not found inside $ndk"
+	export STRIP=${cc%-gcc}-strip
+	export CC="$cc --sysroot=$d"
+fi
+"$STRIP" --version >/dev/null
+out=${OUT:-B-android-$api-$arch}
+
+case $op in
+build)
+	mkdir -p "$out"
+	cd "$out"
+	"$src/configure" --host="$arch-linux-android$api" "$@"
+	make -j32 everything
+	make strip
+	;;
+'')
+	echo "out=$out"
+	echo "CC=$CC"
+	echo "STRIP=$STRIP"
+	;;
+esac

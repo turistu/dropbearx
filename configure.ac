@@ -82,24 +82,31 @@ if test "$hardenbuild" -eq 1; then
 	AC_MSG_NOTICE(Checking for available hardened build flags:)
 	# relocation flags don't make sense for static builds
 	if test "$STATIC" -ne 1; then
+		case $host in 
+		*-linux-android*)
+			# -Wl,-pie is the default in newer (>=21) android
+			# and doesn't work in older android
+			;;
+		*)
 		# pie
-		DB_TRYADDCFLAGS([-fPIE])
+			DB_TRYADDCFLAGS([-fPIE])
 
-		OLDLDFLAGS="$LDFLAGS"
-		TESTFLAGS="-Wl,-pie"
-		LDFLAGS="$TESTFLAGS $LDFLAGS"
-		AC_LINK_IFELSE([AC_LANG_PROGRAM([])],
-			[AC_MSG_NOTICE([Setting $TESTFLAGS])],
-			[
-				LDFLAGS="$OLDLDFLAGS"
-				TESTFLAGS="-pie"
-				LDFLAGS="$TESTFLAGS $LDFLAGS"
-				AC_LINK_IFELSE([AC_LANG_PROGRAM([])],
-					[AC_MSG_NOTICE([Setting $TESTFLAGS])],
-					[AC_MSG_NOTICE([Not setting $TESTFLAGS]); LDFLAGS="$OLDLDFLAGS" ]
-					)
-			]
+			OLDLDFLAGS="$LDFLAGS"
+			TESTFLAGS="-Wl,-pie"
+			LDFLAGS="$TESTFLAGS $LDFLAGS"
+			AC_LINK_IFELSE([AC_LANG_PROGRAM([])],
+				[AC_MSG_NOTICE([Setting $TESTFLAGS])],
+				[
+					LDFLAGS="$OLDLDFLAGS"
+					TESTFLAGS="-pie"
+					LDFLAGS="$TESTFLAGS $LDFLAGS"
+					AC_LINK_IFELSE([AC_LANG_PROGRAM([])],
+						[AC_MSG_NOTICE([Setting $TESTFLAGS])],
+						[AC_MSG_NOTICE([Not setting $TESTFLAGS]); LDFLAGS="$OLDLDFLAGS" ]
+						)
+				]
 			)
+		esac
 		# readonly elf relocation sections (relro)
 		OLDLDFLAGS="$LDFLAGS"
 		TESTFLAGS="-Wl,-z,now -Wl,-z,relro"
@@ -152,7 +159,7 @@ AC_SYS_LARGEFILE
 # this isn't a definitive list of hosts, they are just added as required
 AC_CANONICAL_HOST
 
-case "$host" in
+case $host in
 
 *-*-linux*)
 	no_ptmx_check=1

@@ -35,5 +35,5 @@ jobs:
     needs: autoreconf
     uses: turistu/odds-n-ends/.github/workflows/build-with-ndk.yml@main
     with:
-      build: .github/build-with-ndk
+      build: util/ndk build
       ref: ${{github.ref_name}}-auto
