@@ -126,9 +126,6 @@ endif
 everything: $(PROGRAMS) dropbearmulti
 install: $(addprefix inst_, $(PROGRAMS) dropbearmulti)
 
-separate: $(PROGRAMS)
-install-separate: $(addprefix inst_, $(PROGRAMS))
-
 # for simplicity assume all source depends on all headers
 HEADERS=$(wildcard $(src)/*.h *.h) $(OPTION_HEADERS)
 
