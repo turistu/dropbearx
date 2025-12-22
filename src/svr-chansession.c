@@ -695,13 +695,10 @@ static int sessioncommand(struct Channel *channel, struct ChanSess *chansess,
 	/* run ourselves as scp if we can do scp */
 	if (chansess->cmd && strncmp(chansess->cmd, "scp ", 4) == 0 &&
 			find_multi("scp")) {
-		struct stat st; char p[64];
-		snprintf(p, sizeof p, "/proc/%d/exe", getpid());
-		if (stat(p, &st) == 0) {
-			char *ocmd = chansess->cmd;
-			chansess->cmd = m_asprintf("%s %s", p, ocmd);
-			m_free(ocmd);
-		}
+		/* nb: this should be /proc/PID/exe, not /proc/self/exe */
+		char *ocmd = chansess->cmd;
+		chansess->cmd = m_asprintf("%s %s", curpid_exe(), ocmd);
+		m_free(ocmd);
 	}
 
 #if LOG_COMMANDS

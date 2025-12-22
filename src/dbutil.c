@@ -403,7 +403,7 @@ static void close_all(unsigned int UNUSED(maxfd)) {
 }
 #else
 static void close_all(unsigned int maxfd) {
-	int i;
+	unsigned int i;
 	for (i = 3; i <= maxfd; i++) m_close(i);
 }
 #endif

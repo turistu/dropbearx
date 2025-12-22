@@ -66,7 +66,7 @@ int main(int ac, char **av){
 #endif
 
 #if __linux__ || __DragonFly__
-const char *curproc_exe(void){
+const char *curpid_exe(void){
 	static char b[32];
 	snprintf(b, sizeof b, "/proc/%u/exe", getpid());
 	return b;
@@ -74,7 +74,7 @@ const char *curproc_exe(void){
 #elif __NetBSD__
 #include <sys/types.h>
 #include <sys/sysctl.h>
-const char *curproc_exe(void){
+const char *curpid_exe(void){
         int mib[4] = { CTL_KERN, KERN_PROC_ARGS, -1, KERN_PROC_PATHNAME };
         static char path[PATH_MAX];
         size_t size = sizeof path;
@@ -84,13 +84,13 @@ const char *curproc_exe(void){
 #elif __APPLE__
 #include <sys/types.h>
 #include <mach-o/dyld.h>
-const char *curproc_exe(void){
+const char *curpid_exe(void){
         static char path[PATH_MAX]; uint32_t z = sizeof path;
 	if(_NSGetExecutablePath(path, &z)) return av0;
 	return path;
 }
 #else
-const char *curproc_exe(void){
+const char *curpid_exe(void){
 	return av0;
 }
 #endif
