@@ -1,4 +1,8 @@
 #! /bin/sh
+case $B in
+'')	B=/bin ;;
+*)	PATH=$B:$PATH ;;
+esac
 status=0
 umask 077
 unset IFS
@@ -25,7 +29,7 @@ mk_key(){
 	"$D/dropbearkey" -q -t ed25519 -f "$1" &&
 	"$D/dropbearkey" -y -f "$1" > "$1.pub+" &&
 	grep ^ssh "$1.pub+" > "$1.pub"
-	rm "$1.pub+"
+	rm -f "$1.pub+"
 }
 init_keys(){
 	mk_key key
@@ -43,12 +47,12 @@ if ! [ "$recursive" ]; then
 		trap 'set +e; rm -fr "$tmpdir"' EXIT INT TERM
 	fi
 
-	cp "$0" "$tmpdir/simple-test"
+	this=$(realpath "$0")
 	cd "$tmpdir"
 	init_keys
 	"$D/dbclient" -t -i key -o UserKnownHostsFile=known_hosts \
 		-J "$D/dropbear -iF $log_opt -r key -A key.pub" \
-		localhost exec "$tmpdir/simple-test -r $log_opt $D $tmpdir" ||
+		localhost "B=$B exec $B/sh $this -r $log_opt $D $tmpdir" ||
 	    status=$?
 	cat "$tmpdir/result" >&2
 	exit "$status"
@@ -115,7 +119,7 @@ port=2222
 I=" -i key"
 P=" -p $port"
 H=" -o UserKnownHostsFile=known_hosts"
-delay='sleep .1 2>/dev/null || sleep 1'
+delay="$B/sleep .1 2>/dev/null || $B/sleep 1"
 
 pwd
 mkdir multi
@@ -137,17 +141,17 @@ hcheck(){
 	*)	t=$1; p=:$t:0 ;;
 	esac
 	shift
-	_check "$p" dssh "$@" localhost printf "$t"
+	_check "$p" dssh "$@" localhost "$B/printf" "$t"
 }
 
 hcheck % $H$I$P
 
 HOME=. check '*key accepted unconditionally*:test:0' \
-	dssh $I$P -y localhost printf test
+	dssh $I$P -y localhost "$B/printf" test
 check ':test\r\n:0' \
 	dssh $H$I -t -p "$port" localhost echo test
 check ':foobar\n:0' \
-	dssh $H$I -p "$port" localhost "{ $delay; echo bar; } & printf foo"
+	dssh $H$I -p "$port" localhost "{ $delay; echo bar; } & $B/printf foo"
 check '* 9999 2222\n:* 9999 * 2222\n:0' \
 	dssh $H$I -p "$port" -b 127.0.0.1:9999 127.0.0.1 \
 		'echo $SSH_CONNECTION; echo >&2 $SSH_CLIENT'
@@ -196,7 +200,7 @@ check ::0 cmp local.txt remote.txt
 ##################################################################
 
 check :test:0 \
-	dssh $H$I -J "$D/dropbear -iFq -r key -A key.pub" localhost printf test
+	dssh $H$I -J "$D/dropbear -iFq -r key -A key.pub" localhost "$B/printf" test
 dssh_pty(){
 	dssh $H$I -t -J "$D/dropbear -iFq -r key -A key.pub" localhost \
 		"cd $T && { $D/dbclient -i key -o UserKnownHostsFile=known_hosts $*; }"
