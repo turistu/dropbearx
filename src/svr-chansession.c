@@ -594,9 +594,9 @@ static int sessionpty(struct ChanSess * chansess) {
 		dropbear_log(LOG_WARNING, "Multiple pty requests");
 		return DROPBEAR_FAILURE;
 	}
-	e = pty_peer(&chansess->master, &chansess->slave, &chansess->tty);
+	e = pty_pair(&chansess->master, &chansess->slave, &chansess->tty);
 	if(e){
-		dropbear_log(LOG_WARNING, "pty_peer: %s:", e);
+		dropbear_log(LOG_WARNING, "pty_pair: %s:", e);
 		return DROPBEAR_FAILURE;
 	}
 	

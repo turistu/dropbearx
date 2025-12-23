@@ -103,7 +103,7 @@ int showprogress = 1;
 char *ssh_program = DROPBEAR_PATH_SSH_PROGRAM;
 
 /* The real ssh executable if different from ssh_program */
-char *ssh_exe;
+const char *ssh_exe;
 
 /* This is used to store the pid of ssh_program */
 pid_t do_cmd_pid = -1;

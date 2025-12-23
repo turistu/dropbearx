@@ -23,7 +23,7 @@
 static void (*old_sigh)(int s);
 static void sigh(int s){ signal(SIGHUP, old_sigh); }
 
-char *pty_peer(int *mtp, int *stp, char **snp){
+char *pty_pair(int *mtp, int *stp, char **snp){
 	int mt = -1, st = -1; char *sn, *e;
 	if((mt = posix_openpt(O_RDWR|O_NOCTTY)) == -1) FAIL("open master");
 	if(grantpt(mt)) FAIL("grantpt");
@@ -46,7 +46,7 @@ fail:
 #define posix_openpt(flags)	open("/dev/ptmx", flags)
 #endif
 
-char *pty_peer(int *mtp, int *stp, char **snp){
+char *pty_pair(int *mtp, int *stp, char **snp){
 	int mt = -1, st = -1; char *sn, *e;
 	if((mt = posix_openpt(O_RDWR|O_NOCTTY)) == -1) return "open master";
 	if(grantpt(mt)) FAIL("grantpt");
