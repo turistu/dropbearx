@@ -700,7 +700,7 @@ static int sessioncommand(struct Channel *channel, struct ChanSess *chansess,
 	if (chansess->cmd && strncmp(chansess->cmd, "scp ", 4) == 0 &&
 			find_multi("scp") && (self = self_exe(NULL))) {
 		char *ocmd = chansess->cmd;
-		chansess->cmd = m_asprintf("%s %s", self, ocmd);
+		chansess->cmd = m_asprintf("%s /%s", self, ocmd);
 		m_free(ocmd);
 	}
 

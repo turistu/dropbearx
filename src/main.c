@@ -49,8 +49,12 @@ static void run(const char *name, int ac, char **av){
 }
 int main(int ac, char **av){
 	struct prog *p;
-	run(av[0], ac, av);
-	if(ac > 1) run(av[1], ac - 1, av + 1);
+	if(ac > 1 && av[1][0] == '/'){
+		run(av[1], ac - 1, av + 1);
+	}else{
+		run(av[0], ac, av);
+		if(ac > 1) run(av[1], ac - 1, av + 1);
+	}
 	fprintf(stderr, "Dropbear SSH multi-purpose v%s\n"
 		"Make a symlink pointing at this binary with one of the\n",
 		DROPBEAR_VERSION);

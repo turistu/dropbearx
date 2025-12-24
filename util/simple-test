@@ -44,7 +44,10 @@ if ! [ "$recursive" ]; then
 		trap 'set +e; rm -fr "$tmpdir"' EXIT INT TERM
 	fi
 
-	this=$(realpath "$0")
+	case $0 in
+	/*)	this=$0;;
+	*)	this=$(pwd)/$0;;
+	esac
 	cd "$tmpdir"
 	init_keys
 	"$D/dbclient" -t -i key -o UserKnownHostsFile=known_hosts \
