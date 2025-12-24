@@ -30,6 +30,7 @@
 #include "runopts.h"
 #include "dbrandom.h"
 #include "crypto_desc.h"
+#include "sys-self_exe.h"
 #include "main.h"
 
 static size_t listensockets(int *sock, size_t sockcount, int *maxfd);
@@ -321,7 +322,7 @@ static void main_noinetd(int argc, char ** argv) {
 
 #if DROPBEAR_DO_REEXEC
 				if (do_reexec) {
-					const char *self = PROC_SELF_EXE;
+					const char *self = SELF_EXE(NULL);
 					putenv(m_asprintf("DROPBEAR_REEXEC_FD=%d", childpipe[1]));
 					if ((dup2(childsock, STDIN_FILENO) < 0)) {
 						dropbear_exit("dup2:");
@@ -329,8 +330,8 @@ static void main_noinetd(int argc, char ** argv) {
 					if (fcntl(childsock, F_SETFD, FD_CLOEXEC) < 0) {
 						TRACE(("cloexec for childsock %d failed:", childsock))
 					}
-					/* Re-execute ourself, but only through an absolute path */
-					if(self[0] == '/') execv(self, argv);
+					/* Re-execute ourself */
+					if(self) execv(self, argv);
 					/* Not reached on success */
 
 					/* Fall back on plain fork otherwise.

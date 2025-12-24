@@ -1,7 +1,7 @@
 #define _GNU_SOURCE
 #include <unistd.h>
 #include "includes.h"
-#include "svr-util.h"
+#include "sys-creds.h"
 
 #ifdef HAVE_SETRESUID
 int setxuid(uid_t uid, uid_t suid){
@@ -28,5 +28,15 @@ int drop_saved_uid(){
 	return setuid(euid);
 }
 #else
-#error this needs either setresuid or setreuid
+/* just setuid() to the user and give up on utmp and lastlog ;-) */
+int setxuid(uid_t uid, uid_t IGNORED(suid)){
+	return setuid(uid);
+}
+int setxgid(gid_t gid, gid_t IGNORED(sgid)){
+	return setgid(gid);
+}
+int drop_saved_uid(){
+	/* nothing to drop, but anyways */
+	return setuid(geteuid());
+}
 #endif

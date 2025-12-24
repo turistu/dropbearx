@@ -33,6 +33,7 @@
 #include "netio.h"
 #include "fuzz.h"
 #include "main.h"
+#include "sys-self_exe.h"
 
 #if DROPBEAR_CLI_PROXYCMD
 static void cli_proxy_cmd(int *sock_in, int *sock_out, pid_t *pid_out);
@@ -107,7 +108,7 @@ static void shell_proxy_cmd(const void *user_data_cmd) {
 
 #if DROPBEAR_CLI_MULTIHOP
 static void exec_proxy_cmd(const void *UNUSED(unused)) {
-	const char *self = PROC_SELF_EXE;
+	const char *self = SELF_EXE(cli_opts.proxyexec[0]);
 	run_command(self, cli_opts.proxyexec, ses.maxfd);
 	dropbear_exit("Failed to run '%s'\n", self);
 }

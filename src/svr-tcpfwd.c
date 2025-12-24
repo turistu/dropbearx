@@ -34,7 +34,6 @@
 #include "runopts.h"
 #include "auth.h"
 #include "netio.h"
-#include "pty-util.h"	/* for setxuid.h */
 
 #if !DROPBEAR_SVR_REMOTETCPFWD
 

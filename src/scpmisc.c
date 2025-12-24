@@ -201,25 +201,6 @@ freeargs(arglist *args)
 	}
 }
 
-/*
- * NB. duplicate __progname in case it is an alias for argv[0]
- * Otherwise it may get clobbered by setproctitle()
- */
-char *ssh_get_progname(char *argv0)
-{
-	char *p;
-
-	if (argv0 == NULL)
-		return ("unknown");	/* XXX */
-	p = strrchr(argv0, '/');
-	if (p == NULL)
-		p = argv0;
-	else
-		p++;
-
-	return (xstrdup(p));
-}
-
 void fatal(char* fmt,...)
 {
 	va_list args;

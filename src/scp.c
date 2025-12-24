@@ -81,6 +81,7 @@
 #include "scpmisc.h"
 #include "progressmeter.h"
 #include "main.h"
+#include "sys-self_exe.h"
 
 void bwlimit(int);
 
@@ -100,7 +101,7 @@ int verbose_mode = 0;
 int showprogress = 1;
 
 /* This is the program to execute for the secured connection. ("ssh" or -S) */
-char *ssh_program = DROPBEAR_PATH_SSH_PROGRAM;
+const char *ssh_program = DROPBEAR_PATH_SSH_PROGRAM;
 
 /* The real ssh executable if different from ssh_program */
 const char *ssh_exe;
@@ -324,7 +325,7 @@ int scp_main(int argc, char **argv)
 	args.list = NULL;
 	addargs(&args, "%s", ssh_program);
 
-	ssh_exe = find_multi(ssh_program) ? PROC_SELF_EXE : ssh_program;
+	ssh_exe = find_multi(ssh_program) ? SELF_EXE(ssh_program) : ssh_program;
 
 	fflag = tflag = 0;
 	while ((ch = getopt(argc, argv, "dfl:prtvBCc:i:P:q1246S:o:F:")) != -1)

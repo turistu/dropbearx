@@ -40,7 +40,6 @@ void	*xrealloc(void *, size_t);
 void     xfree(void *);
 char	*xstrdup(const char *);
 
-char *ssh_get_progname(char *);
 void fatal(char* fmt,...);
 void sanitise_stdfd(void);
 

@@ -35,7 +35,7 @@
 #include "auth.h"
 #include "runopts.h"
 #include "dbrandom.h"
-#include "svr-util.h"
+#include "sys-creds.h"
 
 static int checkusername(const char *username, unsigned int userlen);
 static void fill_passwd(const char* username);
@@ -342,7 +342,7 @@ static int checkusername(const char *username, unsigned int userlen) {
 	}
 #endif /* HAVE_GETGROUPLIST */
 
-	/* set both the real and effective uid with src/svr-util.c:setxuid()
+	/* set both the real and effective uid with sys-creds.c:setxuid()
 	   if possibly, set the saved set-group-ID to the utmp gid so we can
 	   temporarily switch back to it with setegid() for writing the
 	   login records */

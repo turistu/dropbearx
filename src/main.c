@@ -1,12 +1,9 @@
-#include "includes.h"
+#include "runopts.h"
 #include "main.h"
-
-static char *av0;
 
 #ifdef MAIN
 
 int main(int ac, char **av){
-	av0 = av[0];
 	return MAIN(ac, av);
 }
 const struct prog *find_multi(const char *UNUSED(name)){
@@ -51,7 +48,6 @@ static void run(const char *name, int ac, char **av){
 	if(p) exit(p->func(ac, av));
 }
 int main(int ac, char **av){
-	av0 = av[0];
 	struct prog *p;
 	run(av[0], ac, av);
 	if(ac > 1) run(av[1], ac - 1, av + 1);
@@ -65,32 +61,3 @@ int main(int ac, char **av){
 
 #endif
 
-#if __linux__ || __DragonFly__
-const char *curpid_exe(void){
-	static char b[32];
-	snprintf(b, sizeof b, "/proc/%u/exe", getpid());
-	return b;
-}
-#elif __NetBSD__
-#include <sys/types.h>
-#include <sys/sysctl.h>
-const char *curpid_exe(void){
-        int mib[4] = { CTL_KERN, KERN_PROC_ARGS, -1, KERN_PROC_PATHNAME };
-        static char path[PATH_MAX];
-        size_t size = sizeof path;
-        if(sysctl(mib, 4, &path, &size, 0, 0)) return av0;
-        return path;
-}
-#elif __APPLE__
-#include <sys/types.h>
-#include <mach-o/dyld.h>
-const char *curpid_exe(void){
-        static char path[PATH_MAX]; uint32_t z = sizeof path;
-	if(_NSGetExecutablePath(path, &z)) return av0;
-	return path;
-}
-#else
-const char *curpid_exe(void){
-	return av0;
-}
-#endif

@@ -36,7 +36,8 @@
 #include "agentfwd.h"
 #include "runopts.h"
 #include "auth.h"
-#include "pty-util.h"
+#include "sys-pty.h"
+#include "sys-self_exe.h"
 #include "main.h"
 
 /* Handles sessions (either shells or programs) requested by the client */
@@ -638,6 +639,7 @@ static int sessioncommand(struct Channel *channel, struct ChanSess *chansess,
 
 	unsigned int cmdlen = 0;
 	int ret;
+	const char *self;
 
 	TRACE(("enter sessioncommand %d", channel->index))
 
@@ -692,12 +694,13 @@ static int sessioncommand(struct Channel *channel, struct ChanSess *chansess,
 		svr_pubkey_set_forced_command(chansess);
 	}
 
-	/* run ourselves as scp if we can do scp */
+	/* run ourselves as scp if we can do scp. nb: we should use
+	   /proc/PID/exe, not /proc/self/exe because 'self' will refer
+	   to a different program within the shell */
 	if (chansess->cmd && strncmp(chansess->cmd, "scp ", 4) == 0 &&
-			find_multi("scp")) {
-		/* nb: this should be /proc/PID/exe, not /proc/self/exe */
+			find_multi("scp") && (self = self_exe(NULL))) {
 		char *ocmd = chansess->cmd;
-		chansess->cmd = m_asprintf("%s %s", curpid_exe(), ocmd);
+		chansess->cmd = m_asprintf("%s %s", self, ocmd);
 		m_free(ocmd);
 	}
 
